@@ -20,7 +20,7 @@ fun RecyclerView.composeLinear(
     reverseLayout: Boolean = false,
     block: VerseScope.() -> Unit
 ) {
-    val adapter = getOrCreateAdapter {
+    val adapter = getOrCreateAdapter(LinearLayoutManager::class.java) {
         LinearLayoutManager(context, orientation, reverseLayout)
     }
     
@@ -67,7 +67,7 @@ fun RecyclerView.composeGrid(
     reverseLayout: Boolean = false,
     block: VerseScope.() -> Unit
 ) {
-    val adapter = getOrCreateAdapter {
+    val adapter = getOrCreateAdapter(GridLayoutManager::class.java) {
         GridLayoutManager(context, spanCount, orientation, reverseLayout).apply {
             spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
                 override fun getSpanSize(position: Int): Int {
@@ -126,7 +126,7 @@ fun RecyclerView.composeStaggered(
     gapStrategy: Int = StaggeredGridLayoutManager.GAP_HANDLING_NONE,
     block: VerseScope.() -> Unit
 ) {
-    val adapter = getOrCreateAdapter {
+    val adapter = getOrCreateAdapter(StaggeredGridLayoutManager::class.java) {
         StaggeredGridLayoutManager(spanCount, orientation).apply {
             this.reverseLayout = reverseLayout
             this.gapStrategy = gapStrategy
@@ -171,20 +171,21 @@ fun RecyclerView.composeStaggeredColumn(
 /**
  * Retrieves the existing [VerseAdapter] or creates a new one and attaches it to this [RecyclerView].
  *
+ * @param targetClass The expected [RecyclerView.LayoutManager] class.
  * @param createLayoutManager A lambda that returns a new [RecyclerView.LayoutManager] instance.
  * @return The [VerseAdapter] instance.
  */
 private fun RecyclerView.getOrCreateAdapter(
+    targetClass: Class<out RecyclerView.LayoutManager>,
     createLayoutManager: () -> RecyclerView.LayoutManager
 ): VerseAdapter {
     val currentAdapter = this.adapter as? VerseAdapter
     val currentLayoutManager = this.layoutManager
     
-    if (currentAdapter != null && currentLayoutManager != null) {
-        val tempLM = createLayoutManager()
-        if (currentLayoutManager::class.java == tempLM::class.java) {
-            return currentAdapter
-        }
+    // Reuse existing adapter if LayoutManager type matches.
+    // Exact class equality is used to ensure switching between types (e.g., Linear to Grid) works correctly.
+    if (currentAdapter != null && currentLayoutManager != null && currentLayoutManager::class.java == targetClass) {
+        return currentAdapter
     }
 
     val newAdapter = VerseAdapter()
@@ -202,5 +203,6 @@ private fun RecyclerView.getOrCreateAdapter(
 private fun submit(adapter: VerseAdapter, block: VerseScope.() -> Unit) {
     val scope = VerseScope(adapter)
     scope.block()
+    // Submit list to ListAdapter to calculate Diff on a background thread.
     adapter.submitList(scope.newWrappers)
 }
