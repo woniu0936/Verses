@@ -3,12 +3,15 @@ plugins {
     alias(libs.plugins.kotlin.android)
 }
 
-android {
+    android {
     namespace = "com.woniu0936.verses"
     compileSdk = 36
 
-    defaultConfig {
-        minSdk = 24
+    buildFeatures {
+        viewBinding = true
+    }
+
+    defaultConfig {        minSdk = 24
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -32,6 +35,7 @@ android {
 dependencies {
 
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.recyclerview)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     testImplementation(libs.junit)
