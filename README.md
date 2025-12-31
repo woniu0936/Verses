@@ -24,7 +24,8 @@ dependencies {
 
 ### 1. Basic Linear List
 ```kotlin
-recyclerView.compose {
+// Vertical list (similar to LazyColumn)
+recyclerView.composeLinearColumn {
     // Single Item (Header)
     item(ItemHeaderBinding::inflate) { binding ->
         binding.tvTitle.text = "My List"
@@ -34,9 +35,16 @@ recyclerView.compose {
     items(
         items = userList,
         inflate = ItemUserBinding::inflate,
-        key = { it.id } // Highly recommended for animations and performance
+        key = { it.id } 
     ) { binding, user ->
         binding.tvName.text = user.name
+    }
+}
+
+// Horizontal list (similar to LazyRow)
+recyclerView.composeLinearRow {
+    items(tags, ItemTagBinding::inflate) { binding, tag ->
+        binding.tvTag.text = tag
     }
 }
 ```

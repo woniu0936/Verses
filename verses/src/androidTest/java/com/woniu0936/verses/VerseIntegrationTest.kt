@@ -53,7 +53,7 @@ class VerseIntegrationTest {
         val latch = CountDownLatch(1)
 
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            recyclerView.compose {
+            recyclerView.composeLinear {
                 items(items, ::testInflate, key = { it }) { binding, item ->
                     binding.textView.text = item
                 }

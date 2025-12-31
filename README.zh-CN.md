@@ -24,7 +24,8 @@ dependencies {
 
 ### 1. 基础线性列表
 ```kotlin
-recyclerView.compose {
+// 竖向列表 (类似 Compose 的 LazyColumn)
+recyclerView.composeLinearColumn {
     // 单个 Item (如 Header)
     item(ItemHeaderBinding::inflate) { binding ->
         binding.tvTitle.text = "我的列表"
@@ -34,9 +35,16 @@ recyclerView.compose {
     items(
         items = userList,
         inflate = ItemUserBinding::inflate,
-        key = { it.id } // 强烈建议提供 Key 以优化动画和性能
+        key = { it.id } 
     ) { binding, user ->
         binding.tvName.text = user.name
+    }
+}
+
+// 横向列表 (类似 Compose 的 LazyRow)
+recyclerView.composeLinearRow {
+    items(tags, ItemTagBinding::inflate) { binding, tag ->
+        binding.tvTag.text = tag
     }
 }
 ```
