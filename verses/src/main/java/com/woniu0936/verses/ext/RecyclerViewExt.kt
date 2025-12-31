@@ -5,7 +5,11 @@ import com.woniu0936.verses.core.VerseAdapter
 import com.woniu0936.verses.dsl.VerseScope
 
 /**
- * 1. Linear Layout (LinearLayoutManager)
+ * Configures the [androidx.recyclerview.widget.RecyclerView] with a [androidx.recyclerview.widget.LinearLayoutManager] and builds its content declaratively.
+ *
+ * @param orientation The layout orientation ([androidx.recyclerview.widget.RecyclerView.VERTICAL] or [androidx.recyclerview.widget.RecyclerView.HORIZONTAL]).
+ * @param reverseLayout Whether to reverse the layout.
+ * @param block The DSL block for defining list content.
  */
 fun RecyclerView.compose(
     orientation: Int = RecyclerView.VERTICAL,
@@ -19,7 +23,15 @@ fun RecyclerView.compose(
 }
 
 /**
- * 2. Grid Layout (GridLayoutManager)
+ * Configures the [androidx.recyclerview.widget.RecyclerView] with a [androidx.recyclerview.widget.GridLayoutManager] and builds its content declaratively.
+ *
+ * This function automatically sets up a [androidx.recyclerview.widget.GridLayoutManager.SpanSizeLookup] to support
+ * items with dynamic span sizes (e.g., headers or multi-column items).
+ *
+ * @param spanCount The total number of columns in the grid.
+ * @param orientation The layout orientation ([androidx.recyclerview.widget.RecyclerView.VERTICAL] or [androidx.recyclerview.widget.RecyclerView.HORIZONTAL]).
+ * @param reverseLayout Whether to reverse the layout.
+ * @param block The DSL block for defining list content.
  */
 fun RecyclerView.composeGrid(
     spanCount: Int,
@@ -29,9 +41,7 @@ fun RecyclerView.composeGrid(
 ) {
     val adapter = getOrCreateAdapter {
         GridLayoutManager(context, spanCount, orientation, reverseLayout).apply {
-            // Auto-bind SpanLookup
             spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
-                // Note: Need to get Adapter again here because the adapter in closure might be old reference (though unlikely with getOrCreate)
                 override fun getSpanSize(position: Int): Int {
                     val currentAdapter = this@composeGrid.adapter as? VerseAdapter
                     return currentAdapter?.getSpanSize(position, spanCount) ?: 1
@@ -43,7 +53,14 @@ fun RecyclerView.composeGrid(
 }
 
 /**
- * 3. Staggered Grid Layout (StaggeredGridLayoutManager)
+ * Configures the [androidx.recyclerview.widget.RecyclerView] with a [androidx.recyclerview.widget.StaggeredGridLayoutManager] and builds its content declaratively.
+ *
+ * Support for full-span items is automatically managed by the [VerseAdapter].
+ *
+ * @param spanCount The number of spans.
+ * @param orientation The layout orientation ([androidx.recyclerview.widget.RecyclerView.VERTICAL] or [androidx.recyclerview.widget.RecyclerView.HORIZONTAL]).
+ * @param gapStrategy The gap handling strategy.
+ * @param block The DSL block for defining list content.
  */
 fun RecyclerView.composeStaggered(
     spanCount: Int,

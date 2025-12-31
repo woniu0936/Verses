@@ -8,6 +8,15 @@ import com.woniu0936.verses.model.Inflate
 import com.woniu0936.verses.model.ItemWrapper
 import com.woniu0936.verses.model.SmartViewHolder
 
+/**
+ * DSL scope for building a declarative [androidx.recyclerview.widget.RecyclerView] list.
+ *
+ * This scope provides two sets of APIs:
+ * 1. **Simple Mode**: [items] and [item] for direct mapping between data and [androidx.viewbinding.ViewBinding].
+ * 2. **Advanced Mode**: A nested [items] block combined with [render] for complex conditional logic.
+ *
+ * @property adapter The associated [VerseAdapter] used for ViewType management.
+ */
 class VerseScope(private val adapter: VerseAdapter) {
 
     internal val newWrappers = mutableListOf<ItemWrapper>()
@@ -21,7 +30,16 @@ class VerseScope(private val adapter: VerseAdapter) {
     // =======================================================
 
     /**
-     * Render list data
+     * Renders a list of items using the same [androidx.viewbinding.ViewBinding] strategy.
+     *
+     * @param T The type of the data items.
+     * @param VB The type of the [androidx.viewbinding.ViewBinding].
+     * @param items The list of data objects to render.
+     * @param inflate The [androidx.viewbinding.ViewBinding] inflate function reference.
+     * @param key A lambda to extract a unique ID from each item. Highly recommended for animations.
+     * @param span The number of columns each item occupies (for Grid layouts).
+     * @param fullSpan Whether each item should occupy the full width.
+     * @param onBind Callback for binding data to the [androidx.viewbinding.ViewBinding] instance.
      */
     fun <T : Any, VB : ViewBinding> items(
         items: List<T>,
@@ -45,7 +63,15 @@ class VerseScope(private val adapter: VerseAdapter) {
     }
 
     /**
-     * Render single Item (e.g. Header/Footer)
+     * Renders a single item (e.g., a Header, Footer, or Banner).
+     *
+     * @param VB The type of the [androidx.viewbinding.ViewBinding].
+     * @param inflate The [androidx.viewbinding.ViewBinding] inflate function reference.
+     * @param data The data object for this item. Defaults to [Unit]. Pass a value to trigger [androidx.recyclerview.widget.DiffUtil] updates.
+     * @param key A unique identifier for this item.
+     * @param span The number of columns this item occupies.
+     * @param fullSpan Whether this item should occupy the full width.
+     * @param onBind Callback for binding data to the [androidx.viewbinding.ViewBinding] instance.
      */
     fun <VB : ViewBinding> item(
         inflate: Inflate<VB>,
@@ -71,7 +97,23 @@ class VerseScope(private val adapter: VerseAdapter) {
     // =======================================================
 
     /**
-     * Traverse data, use with render
+     * Iterates over a list of items to allow conditional rendering logic within the [block].
+     *
+     * Example:
+     * ```
+     * items(myList) { item ->
+     *     if (item is User) {
+     *         render(ItemUserBinding::inflate) { ... }
+     *     } else {
+     *         render(ItemAdBinding::inflate, fullSpan = true) { ... }
+     *     }
+     * }
+     * ```
+     *
+     * @param T The type of the data items.
+     * @param items The list of data objects.
+     * @param key A lambda to extract a unique ID from each item.
+     * @param block A DSL block where [render] is called.
      */
     fun <T : Any> items(
         items: List<T>,
@@ -86,11 +128,20 @@ class VerseScope(private val adapter: VerseAdapter) {
     }
 
     /**
-     * Call inside items block for conditional rendering
+     * Declares a rendering strategy for the current item in a multi-type list.
+     *
+     * Must be called within the [items] block.
+     *
+     * @param VB The type of the [androidx.viewbinding.ViewBinding].
+     * @param inflate The [androidx.viewbinding.ViewBinding] inflate function reference.
+     * @param contentType A unique key for identifying the view type. Required if [inflate] is a dynamic lambda.
+     * @param span The number of columns this item occupies.
+     * @param fullSpan Whether this item should occupy the full width.
+     * @param onBind Callback for binding data to the [androidx.viewbinding.ViewBinding] instance.
      */
     fun <VB : ViewBinding> render(
         inflate: Inflate<VB>,
-        contentType: Any? = null, // If inflate is dynamic lambda, this Key must be provided
+        contentType: Any? = null,
         span: Int = 1,
         fullSpan: Boolean = false,
         onBind: (VB) -> Unit
@@ -119,7 +170,6 @@ class VerseScope(private val adapter: VerseAdapter) {
         fullSpan: Boolean,
         onBind: (VB) -> Unit
     ) {
-        // Core de-duplication logic: prioritize contentType, otherwise use inflate function reference
         val cacheKey = contentType ?: inflate
         val viewType = adapter.getOrCreateViewType(cacheKey)
 
