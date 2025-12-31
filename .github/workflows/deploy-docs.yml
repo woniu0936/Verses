@@ -33,3 +33,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./verses/build/dokka/html
           publish_branch: gh-pages
+          force_orphan: true # This will ensure the branch only contains the docs and nothing else
