@@ -57,14 +57,14 @@ class VerseIntegrationTest {
     }
 
     /**
-     * Verifies that [composeLinear] correctly attaches a [VerseAdapter] and sets up a [LinearLayoutManager].
+     * Verifies that [compose] correctly attaches a [VerseAdapter] and sets up a [LinearLayoutManager].
      */
     @Test
-    fun testComposeLinearPopulatesAdapter() {
+    fun testComposePopulatesAdapter() {
         val items = listOf("One", "Two", "Three")
 
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            recyclerView.composeLinear {
+            recyclerView.compose {
                 items(items, ::testInflate, key = { it }) { item ->
                     textView.text = item
                 }
@@ -96,12 +96,12 @@ class VerseIntegrationTest {
     }
 
     /**
-     * Verifies that [composeGridColumn] correctly configures the span count and vertical orientation.
+     * Verifies that [composeGrid] correctly configures the span count and vertical orientation.
      */
     @Test
-    fun testComposeGridColumn() {
+    fun testComposeGrid() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            recyclerView.composeGridColumn(spanCount = 3) {
+            recyclerView.composeGrid(spanCount = 3) {
                 items(listOf(1, 2, 3, 4), ::testInflate) { _ -> }
             }
         }
@@ -112,19 +112,19 @@ class VerseIntegrationTest {
     }
 
     /**
-     * Verifies that [composeStaggeredRow] correctly configures a [StaggeredGridLayoutManager].
+     * Verifies that [composeStaggered] correctly configures a [StaggeredGridLayoutManager].
      */
     @Test
-    fun testComposeStaggeredRow() {
+    fun testComposeStaggered() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            recyclerView.composeStaggeredRow(spanCount = 2) {
+            recyclerView.composeStaggered(spanCount = 2) {
                 item(::testInflate)
             }
         }
         Thread.sleep(100)
         val lm = recyclerView.layoutManager as StaggeredGridLayoutManager
         assertEquals(2, lm.spanCount)
-        assertEquals(RecyclerView.HORIZONTAL, lm.orientation)
+        assertEquals(RecyclerView.VERTICAL, lm.orientation)
     }
 
     /**
@@ -157,13 +157,13 @@ class VerseIntegrationTest {
     }
 
     /**
-     * Verifies that different DSL items sharing the same inflation function also share the same ViewType ID.
+     * Verifies that different DSL items sharing the same ViewBinding type share the same ViewType ID.
      */
     @Test
-    fun testMultipleViewTypes() {
+    fun testMultipleItemsSameTypeShareViewType() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            recyclerView.composeLinear {
-                // Both items use the same ::testInflate reference
+            recyclerView.compose {
+                // Both items use TestBinding::class.java as the key
                 item(::testInflate, data = "Header") { }
                 items(listOf("A"), ::testInflate) { _ -> }
             }
@@ -174,7 +174,7 @@ class VerseIntegrationTest {
         val adapter = recyclerView.adapter as VerseAdapter
         assertEquals(2, adapter.itemCount)
         
-        // They should share the same ViewType ID because the key is the function reference
+        // Under the new "Reified Safety" rule, items sharing the same Binding class share the same ViewType
         assertEquals(adapter.getItemViewType(0), adapter.getItemViewType(1))
     }
 }

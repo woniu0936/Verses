@@ -3,9 +3,9 @@
 **Verse** is a minimalist, high-performance declarative UI builder library for Android RecyclerView. It introduces a Jetpack Compose-like DSL syntax, allowing developers to build complex list interfaces without the boilerplate of Adapters, ViewHolders, and ViewType constants.
 
 - **Zero Boilerplate**: No more Adapter/ViewHolder classes.
+- **Reified Safety**: Automatically prevents "ViewType Explosion" by using Class-based keys.
 - **High Performance**: Built on `ListAdapter` and `DiffUtil` for smart asynchronous updates.
-- **Type Safety**: Strictly powered by ViewBinding, eliminating `findViewById` and casting issues.
-- **Flexible Layout**: Unified API for Linear, Grid, and Staggered layouts.
+- **Type Safety**: Powered by ViewBinding and Generic types, eliminating `findViewById`.
 
 ---
 
@@ -16,16 +16,15 @@ Add the dependency to your module's `build.gradle.kts`:
 ```kotlin
 dependencies {
     implementation(project(":verses"))
-    // Ensure ViewBinding is enabled in your module
 }
 ```
 
 ## 📖 Quick Start
 
-### 1. Basic Linear List
+### 1. Basic Linear List (ViewBinding)
 ```kotlin
-// Vertical list (similar to LazyColumn)
-recyclerView.composeLinearColumn {
+// Vertical list
+recyclerView.compose {
     // Single Item (Header)
     item(ItemHeaderBinding::inflate) {
         // 'this' is ItemHeaderBinding
@@ -42,16 +41,22 @@ recyclerView.composeLinearColumn {
         tvName.text = user.name
     }
 }
+```
 
-// Horizontal list (similar to LazyRow)
-recyclerView.composeLinearRow {
-    items(tags, ItemTagBinding::inflate) { tag ->
-        tvTag.text = tag
+### 2. Custom View Support (No XML)
+```kotlin
+recyclerView.compose {
+    items(
+        items = tags,
+        create = { context -> TextView(context).apply { textSize = 16f } }
+    ) { tag ->
+        // 'this' is TextView
+        text = tag
     }
 }
 ```
 
-### 2. Complex Grid Layout
+### 3. Grid & Staggered Layouts
 ```kotlin
 recyclerView.composeGrid(spanCount = 4) {
     // Item spans across all 4 columns
@@ -66,9 +71,9 @@ recyclerView.composeGrid(spanCount = 4) {
 }
 ```
 
-### 3. Mixed Types with Logic
+### 4. Mixed Types with Logic
 ```kotlin
-recyclerView.composeLinearColumn {
+recyclerView.compose {
     items(feedList, key = { it.id }) { feed ->
         when (feed) {
             is User -> render(ItemUserBinding::inflate) {
@@ -86,10 +91,9 @@ recyclerView.composeLinearColumn {
 
 ## 💡 Best Practices
 
-1. **ViewBinding Reference**: Always use function references like `ItemBinding::inflate`. This ensures ViewTypes are correctly cached and reused.
-2. **Provide Keys**: Always provide a `key` in `items()` to enable smooth animations and prevent unnecessary re-binds.
-3. **Item Data**: If a single `item()`'s content depends on external state (like a ViewModel variable), pass that variable to the `data` parameter to let `DiffUtil` know when to refresh.
-4. **Lambda Caution**: If you use a dynamic lambda for `inflate` in `render()`, you **must** provide a `contentType` as a manual de-duplication key.
+1. **Reified Keys**: Verse uses `VB::class.java` or `V::class.java` as ViewType keys. This means even if you use dynamic lambdas, recycling remains stable as long as the View class is the same.
+2. **Provide Keys**: Always provide a `key` in `items()` to enable smooth animations and efficient `DiffUtil` calculations.
+3. **Item Data**: If a single `item()` depends on external state, pass it to the `data` parameter to trigger updates.
 
 ## 📄 License
 MIT License.

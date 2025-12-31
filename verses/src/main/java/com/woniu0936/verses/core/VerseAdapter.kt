@@ -68,7 +68,7 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperD
     fun getSpanSize(position: Int, totalSpan: Int): Int {
         if (position !in 0 until itemCount) return 1
         val item = getItem(position)
-        return if (item.fullSpan) totalSpan else item.spanSize
+        return if (item.fullSpan) totalSpan else item.span
     }
 
     /**

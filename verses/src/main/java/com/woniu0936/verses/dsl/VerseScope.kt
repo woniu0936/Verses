@@ -1,138 +1,152 @@
 package com.woniu0936.verses.dsl
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.woniu0936.verses.core.VerseAdapter
-import com.woniu0936.verses.model.Inflate
-import com.woniu0936.verses.model.ItemWrapper
-import com.woniu0936.verses.model.SmartViewHolder
+import com.woniu0936.verses.model.*
 
-/**
- * DSL scope for building a declarative [androidx.recyclerview.widget.RecyclerView] list.
- *
- * This scope provides two sets of APIs:
- * 1. **Simple Mode**: [items] and [item] for direct mapping between data and [androidx.viewbinding.ViewBinding].
- * 2. **Advanced Mode**: A nested [items] block combined with [render] for complex conditional logic.
- *
- * @property adapter The associated [VerseAdapter] used for ViewType management.
- */
 @VerseDsl
 class VerseScope @PublishedApi internal constructor(
     @PublishedApi internal val adapter: VerseAdapter
 ) {
 
-    /**
-     * Temporary storage for the rendering units built within this scope.
-     */
     @PublishedApi
     internal val newWrappers = mutableListOf<ItemWrapper>()
 
-    /**
-     * Holds the data object currently being processed in an [items] block (Advanced Mode).
-     */
+    // Context variables (for advanced mode render)
     @PublishedApi
     internal var currentData: Any? = null
-
-    /**
-     * Holds the unique ID currently being processed in an [items] block (Advanced Mode).
-     */
     @PublishedApi
     internal var currentId: Any? = null
 
     // =======================================================
-    //  API 1.0: Simple Mode (Direct Inflate)
+    //  Part 1: ViewBinding Support (Reified Safety)
     // =======================================================
 
     /**
-     * Renders a list of items using the same [androidx.viewbinding.ViewBinding] strategy.
-     *
-     * @param T The type of the data items.
-     * @param VB The type of the [androidx.viewbinding.ViewBinding].
-     * @param items The list of data objects to render.
-     * @param inflate The [androidx.viewbinding.ViewBinding] inflate function reference.
-     * @param key A lambda to extract a unique ID from each item. Highly recommended for animations.
-     * @param span The number of columns each item occupies (for Grid layouts).
-     * @param fullSpan Whether each item should occupy the full width.
-     * @param onBind Callback for binding data to the [androidx.viewbinding.ViewBinding] instance.
+     * [List] ViewBinding list.
+     * @param noinline inflate: Must be noinline to be stored in the lambda.
      */
-    fun <T : Any, VB : ViewBinding> items(
+    inline fun <T : Any, reified VB : ViewBinding> items(
         items: List<T>,
-        inflate: Inflate<VB>,
-        key: ((T) -> Any)? = null,
+        noinline inflate: Inflate<VB>,
+        noinline key: ((T) -> Any)? = null,
         span: Int = 1,
         fullSpan: Boolean = false,
-        onBind: VB.(T) -> Unit
+        noinline onBind: VB.(T) -> Unit
     ) {
+        // ✨ MAGIC: Use ViewBinding Class as stable Key
+        val stableKey = VB::class.java
+        
         items.forEachIndexed { index, item ->
             internalRender(
-                inflate = inflate,
-                contentType = null,
+                factory = { p -> 
+                    val binding = inflate(LayoutInflater.from(p.context), p, false)
+                    SmartViewHolder(binding.root, binding) 
+                },
+                bind = { h -> (h.binding as VB).onBind(item) },
+                key = stableKey, // Pass Class Key
                 data = item,
                 id = key?.invoke(item) ?: index,
                 span = span,
-                fullSpan = fullSpan,
-                onBind = { vb -> vb.onBind(item) }
+                fullSpan = fullSpan
             )
         }
     }
 
     /**
-     * Renders a single item (e.g., a Header, Footer, or Banner).
-     *
-     * @param VB The type of the [androidx.viewbinding.ViewBinding].
-     * @param inflate The [androidx.viewbinding.ViewBinding] inflate function reference.
-     * @param data The data object for this item. Defaults to [Unit]. Pass a value to trigger [androidx.recyclerview.widget.DiffUtil] updates.
-     * @param key A unique identifier for this item.
-     * @param span The number of columns this item occupies.
-     * @param fullSpan Whether this item should occupy the full width.
-     * @param onBind Callback for binding data to the [androidx.viewbinding.ViewBinding] instance.
+     * [Single] ViewBinding item.
      */
-    fun <VB : ViewBinding> item(
-        inflate: Inflate<VB>,
+    inline fun <reified VB : ViewBinding> item(
+        noinline inflate: Inflate<VB>,
         data: Any? = Unit,
         key: Any? = null,
         span: Int = 1,
-        fullSpan: Boolean = false,
-        onBind: VB.() -> Unit = {}
+        fullSpan: Boolean = true, // Single item defaults to full span usually
+        noinline onBind: VB.() -> Unit = {}
     ) {
+        val stableKey = VB::class.java
         internalRender(
-            inflate = inflate,
-            contentType = null,
+            factory = { p -> 
+                val binding = inflate(LayoutInflater.from(p.context), p, false)
+                SmartViewHolder(binding.root, binding) 
+            },
+            bind = { h -> (h.binding as VB).onBind() },
+            key = stableKey,
             data = data ?: Unit,
-            id = key ?: "single_${inflate.hashCode()}",
+            id = key ?: "single_vb_${stableKey.name}",
             span = span,
-            fullSpan = fullSpan,
-            onBind = { vb -> vb.onBind() }
+            fullSpan = fullSpan
         )
     }
 
     // =======================================================
-    //  API 2.0: Advanced Mode (Control Flow + Render)
+    //  Part 2: Custom View Support (Reified Safety)
     // =======================================================
 
     /**
-     * Iterates over a list of items to allow conditional rendering logic within the [block].
-     *
-     * Example:
-     * ```
-     * items(myList) { item ->
-     *     if (item is User) {
-     *         render(ItemUserBinding::inflate) { ... }
-     *     } else {
-     *         render(ItemAdBinding::inflate, fullSpan = true) { ... }
-     *     }
-     * }
-     * ```
-     *
-     * @param T The type of the data items.
-     * @param items The list of data objects.
-     * @param key A lambda to extract a unique ID from each item.
-     * @param block A DSL block where [render] is called.
+     * [List] Custom View list.
      */
-    inline fun <T : Any> items(
+    inline fun <T : Any, reified V : View> items(
         items: List<T>,
+        noinline create: ViewCreator<V>,
         noinline key: ((T) -> Any)? = null,
+        span: Int = 1,
+        fullSpan: Boolean = false,
+        noinline onBind: V.(T) -> Unit
+    ) {
+        // ✨ MAGIC: Use View Class as stable Key
+        val stableKey = V::class.java
+        
+        items.forEachIndexed { index, item ->
+            internalRender(
+                factory = { p -> createSafeViewHolder(p, create) },
+                bind = { h -> (h.view as V).onBind(item) },
+                key = stableKey, // Pass Class Key
+                data = item,
+                id = key?.invoke(item) ?: index,
+                span = span,
+                fullSpan = fullSpan
+            )
+        }
+    }
+
+    /**
+     * [Single] Custom View item.
+     */
+    inline fun <reified V : View> item(
+        noinline create: ViewCreator<V>,
+        data: Any? = Unit,
+        key: Any? = null,
+        span: Int = 1,
+        fullSpan: Boolean = true,
+        noinline onBind: V.() -> Unit = {}
+    ) {
+        val stableKey = V::class.java
+        internalRender(
+            factory = { p -> createSafeViewHolder(p, create) },
+            bind = { h -> (h.view as V).onBind() },
+            key = stableKey,
+            data = data ?: Unit,
+            id = key ?: "single_view_${stableKey.name}",
+            span = span,
+            fullSpan = fullSpan
+        )
+    }
+
+    // =======================================================
+    //  Part 3: Advanced Mode (If/Else Render)
+    // =======================================================
+
+    /**
+     * Iterator: Only used to open control flow.
+     */
+    fun <T : Any> items(
+        items: List<T>,
+        key: ((T) -> Any)? = null,
         block: VerseScope.(T) -> Unit
     ) {
         items.forEachIndexed { index, item ->
@@ -143,73 +157,97 @@ class VerseScope @PublishedApi internal constructor(
     }
 
     /**
-     * Declares a rendering strategy for the current item in a multi-type list.
-     *
-     * Must be called within the [items] block.
-     *
-     * @param VB The type of the [androidx.viewbinding.ViewBinding].
-     * @param inflate The [androidx.viewbinding.ViewBinding] inflate function reference.
-     * @param contentType A unique key for identifying the view type. Required if [inflate] is a dynamic lambda.
-     * @param span The number of columns this item occupies.
-     * @param fullSpan Whether this item should occupy the full width.
-     * @param onBind Callback for binding data to the [androidx.viewbinding.ViewBinding] instance.
+     * [Render] instruction: ViewBinding support.
      */
-    fun <VB : ViewBinding> render(
-        inflate: Inflate<VB>,
+    inline fun <reified VB : ViewBinding> render(
+        noinline inflate: Inflate<VB>,
         contentType: Any? = null,
         span: Int = 1,
         fullSpan: Boolean = false,
-        onBind: VB.() -> Unit
+        noinline onBind: VB.() -> Unit
     ) {
+        // Prefer contentType (escape hatch), otherwise Class
+        val stableKey = contentType ?: VB::class.java
+        val data = currentData ?: Unit
+        
         internalRender(
-            inflate = inflate,
-            contentType = contentType,
-            data = currentData ?: Unit,
-            id = currentId ?: System.identityHashCode(currentData),
+            factory = { p -> 
+                val binding = inflate(LayoutInflater.from(p.context), p, false)
+                SmartViewHolder(binding.root, binding) 
+            },
+            bind = { h -> (h.binding as VB).onBind() },
+            key = stableKey,
+            data = data,
+            id = currentId ?: System.identityHashCode(data),
             span = span,
-            fullSpan = fullSpan,
-            onBind = { vb -> vb.onBind() }
+            fullSpan = fullSpan
         )
     }
 
     /**
-     * Internal helper to create and add an [ItemWrapper] to the current scope.
-     *
-     * @param inflate The view binding inflate function.
-     * @param contentType Optional key for view type identification.
-     * @param data The data object associated with this item.
-     * @param id The unique identifier for DiffUtil.
-     * @param span The column span size.
-     * @param fullSpan Whether to force full width.
-     * @param onBind The binding logic lambda.
+     * [Render] instruction: Custom View support.
      */
-    private fun <VB : ViewBinding> internalRender(
-        inflate: Inflate<VB>,
-        contentType: Any?,
+    inline fun <reified V : View> render(
+        noinline create: ViewCreator<V>,
+        contentType: Any? = null,
+        span: Int = 1,
+        fullSpan: Boolean = false,
+        noinline onBind: V.() -> Unit
+    ) {
+        val stableKey = contentType ?: V::class.java
+        val data = currentData ?: Unit
+
+        internalRender(
+            factory = { p -> createSafeViewHolder(p, create) },
+            bind = { h -> (h.view as V).onBind() },
+            key = stableKey,
+            data = data,
+            id = currentId ?: System.identityHashCode(data),
+            span = span,
+            fullSpan = fullSpan
+        )
+    }
+
+    // =======================================================
+    //  Internal Helpers
+    // =======================================================
+
+    @PublishedApi
+    internal fun <V : View> createSafeViewHolder(parent: ViewGroup, create: ViewCreator<V>): SmartViewHolder {
+        val view = create(parent.context)
+        // Automatically ensure LayoutParams to prevent crashes
+        if (view.layoutParams == null) {
+            view.layoutParams = RecyclerView.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        } else if (view.layoutParams !is RecyclerView.LayoutParams) {
+            view.layoutParams = RecyclerView.LayoutParams(view.layoutParams)
+        }
+        return SmartViewHolder(view, null)
+    }
+
+    @PublishedApi
+    internal fun internalRender(
+        factory: (ViewGroup) -> SmartViewHolder,
+        bind: (SmartViewHolder) -> Unit,
+        key: Any,
         data: Any,
         id: Any,
         span: Int,
-        fullSpan: Boolean,
-        onBind: (VB) -> Unit
+        fullSpan: Boolean
     ) {
-        // Decide which key to use for ViewType caching. 
-        // Prioritize explicit contentType, otherwise use the inflate function reference.
-        val cacheKey = contentType ?: inflate
-        val viewType = adapter.getOrCreateViewType(cacheKey)
-
+        // Convert Class Key to Int ID
+        val viewType = adapter.getOrCreateViewType(key)
+        
         newWrappers.add(ItemWrapper(
             id = id,
             viewType = viewType,
             data = data,
-            spanSize = span,
+            span = span,
             fullSpan = fullSpan,
-            factory = { parent -> 
-                SmartViewHolder(inflate(LayoutInflater.from(parent.context), parent, false)) 
-            },
-            bind = { holder -> 
-                @Suppress("UNCHECKED_CAST")
-                onBind(holder.binding as VB) 
-            }
+            factory = factory,
+            bind = bind
         ))
     }
 }
