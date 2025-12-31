@@ -19,10 +19,19 @@ import com.woniu0936.verses.model.SmartViewHolder
  */
 class VerseScope(private val adapter: VerseAdapter) {
 
+    /**
+     * Temporary storage for the rendering units built within this scope.
+     */
     internal val newWrappers = mutableListOf<ItemWrapper>()
 
-    // Temporary context variables (only for advanced mode)
+    /**
+     * Holds the data object currently being processed in an [items] block (Advanced Mode).
+     */
     private var currentData: Any? = null
+
+    /**
+     * Holds the unique ID currently being processed in an [items] block (Advanced Mode).
+     */
     private var currentId: Any? = null
 
     // =======================================================
@@ -157,10 +166,17 @@ class VerseScope(private val adapter: VerseAdapter) {
         )
     }
 
-    // =======================================================
-    //  Internal Implementation
-    // =======================================================
-
+    /**
+     * Internal helper to create and add an [ItemWrapper] to the current scope.
+     *
+     * @param inflate The view binding inflate function.
+     * @param contentType Optional key for view type identification.
+     * @param data The data object associated with this item.
+     * @param id The unique identifier for DiffUtil.
+     * @param span The column span size.
+     * @param fullSpan Whether to force full width.
+     * @param onBind The binding logic lambda.
+     */
     private fun <VB : ViewBinding> internalRender(
         inflate: Inflate<VB>,
         contentType: Any?,
@@ -170,6 +186,8 @@ class VerseScope(private val adapter: VerseAdapter) {
         fullSpan: Boolean,
         onBind: (VB) -> Unit
     ) {
+        // Decide which key to use for ViewType caching. 
+        // Prioritize explicit contentType, otherwise use the inflate function reference.
         val cacheKey = contentType ?: inflate
         val viewType = adapter.getOrCreateViewType(cacheKey)
 

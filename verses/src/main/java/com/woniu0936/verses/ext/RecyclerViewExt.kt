@@ -76,8 +76,12 @@ fun RecyclerView.composeStaggered(
     submit(adapter, block)
 }
 
-// --- Private Helpers ---
-
+/**
+ * Retrieves the existing [VerseAdapter] or creates a new one and attaches it to this [RecyclerView].
+ *
+ * @param createLayoutManager A lambda that returns a new [RecyclerView.LayoutManager] instance.
+ * @return The [VerseAdapter] instance.
+ */
 private fun RecyclerView.getOrCreateAdapter(
     createLayoutManager: () -> RecyclerView.LayoutManager
 ): VerseAdapter {
@@ -90,9 +94,15 @@ private fun RecyclerView.getOrCreateAdapter(
     return newAdapter
 }
 
+/**
+ * Executes the DSL block to build the new state and submits it to the adapter.
+ *
+ * @param adapter The [VerseAdapter] to submit the list to.
+ * @param block The DSL block to execute.
+ */
 private fun submit(adapter: VerseAdapter, block: VerseScope.() -> Unit) {
     val scope = VerseScope(adapter)
     scope.block()
-    // Submit list to ListAdapter to calculate Diff
+    // Submit list to ListAdapter to calculate Diff on a background thread.
     adapter.submitList(scope.newWrappers)
 }

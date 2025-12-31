@@ -14,8 +14,14 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperDiffCallback) {
 
-    // ViewType Cache Pool (Key -> Int ID)
+    /**
+     * Cache for mapping view type keys (Inflate functions or custom IDs) to unique integer IDs.
+     */
     private val viewTypeCache = mutableMapOf<Any, Int>()
+
+    /**
+     * Counter to generate unique view type IDs incrementally.
+     */
     private val typeCounter = AtomicInteger(0)
 
     /**
@@ -31,7 +37,8 @@ class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperDiffCallba
     override fun getItemViewType(position: Int): Int = getItem(position).viewType
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SmartViewHolder {
-        // Find Factory based on ViewType (from a sample in current list)
+        // Look up the factory from the current list using the viewType.
+        // Since DiffUtil works asynchronously, we find the first item that matches this type to use its factory.
         val wrapper = currentList.first { it.viewType == viewType }
         return wrapper.factory(parent)
     }
@@ -39,6 +46,7 @@ class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperDiffCallba
     override fun onBindViewHolder(holder: SmartViewHolder, position: Int) {
         val item = getItem(position)
         
+        // Special handling for StaggeredGridLayout: Apply full-span attribute to the LayoutParams.
         val params = holder.itemView.layoutParams
         if (params is StaggeredGridLayoutManager.LayoutParams) {
             if (params.isFullSpan != item.fullSpan) {

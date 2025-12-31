@@ -21,8 +21,7 @@ typealias Inflate<VB> = (LayoutInflater, ViewGroup, Boolean) -> VB
  * A flattened rendering unit that encapsulates data and its layout strategy.
  *
  * Each [ItemWrapper] corresponds to a single item in the [androidx.recyclerview.widget.RecyclerView]. It defines
- * how the item is identified, its view type, the data it carries, and how it should
- * be laid out and bound.
+ * how the item is identified, its view type, the data it carries, and how it should be laid out and bound.
  *
  * @property id Unique identifier used by [androidx.recyclerview.widget.DiffUtil] to determine if two items are the same.
  * @property viewType The view type ID used for [androidx.recyclerview.widget.RecyclerView] view recycling.
