@@ -4,21 +4,22 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import android.widget.TextView
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.viewbinding.ViewBinding
-import com.woniu0936.verses.ext.compose
+import com.woniu0936.verses.core.VerseAdapter
+import com.woniu0936.verses.ext.*
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class VerseIntegrationTest {
@@ -37,8 +38,8 @@ class VerseIntegrationTest {
     }
 
     // Manual ViewBinding implementation for testing
-    class TestBinding(val root: View, val textView: TextView) : ViewBinding {
-        override fun getRoot(): View = root
+    class TestBinding(private val _root: View, val textView: TextView) : ViewBinding {
+        override fun getRoot(): View = _root
     }
 
     private fun testInflate(inflater: LayoutInflater, parent: ViewGroup, attach: Boolean): TestBinding {
@@ -48,9 +49,8 @@ class VerseIntegrationTest {
     }
 
     @Test
-    fun testComposePopulatesAdapter() {
+    fun testComposeLinearPopulatesAdapter() {
         val items = listOf("One", "Two", "Three")
-        val latch = CountDownLatch(1)
 
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             recyclerView.composeLinear {
@@ -58,13 +58,6 @@ class VerseIntegrationTest {
                     binding.textView.text = item
                 }
             }
-            
-            // Wait for diff util (though usually synchronous on main thread for first submit if configured, 
-            // ListAdapter submits are async on background thread by default but DiffUtil can be tricky.
-            // VerseAdapter uses default AsyncDifferConfig which uses background thread for diffing.
-            // So we strictly need to wait or use commitCallback if possible, but ListAdapter doesn't expose it easily in submitList.
-            // However, since we are in test and list was empty, it might be fast.
-            // Let's check adapter count directly.
         }
 
         // Allow some time for AsyncListDiffer
@@ -73,21 +66,84 @@ class VerseIntegrationTest {
         val adapter = recyclerView.adapter
         assertNotNull(adapter)
         assertEquals(3, adapter?.itemCount)
-        assertEquals(0, adapter?.getItemViewType(0)) // First type should be 0
+        assertTrue(recyclerView.layoutManager is LinearLayoutManager)
     }
-    
+
+    @Test
+    fun testComposeLinearRow() {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            recyclerView.composeLinearRow {
+                item(::testInflate, data = "Row Item")
+            }
+        }
+        Thread.sleep(100)
+        val lm = recyclerView.layoutManager as LinearLayoutManager
+        assertEquals(RecyclerView.HORIZONTAL, lm.orientation)
+    }
+
+    @Test
+    fun testComposeGridColumn() {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            recyclerView.composeGridColumn(spanCount = 3) {
+                items(listOf(1, 2, 3, 4), ::testInflate) { _, _ -> }
+            }
+        }
+        Thread.sleep(100)
+        val lm = recyclerView.layoutManager as GridLayoutManager
+        assertEquals(3, lm.spanCount)
+        assertEquals(RecyclerView.VERTICAL, lm.orientation)
+    }
+
+    @Test
+    fun testComposeStaggeredRow() {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            recyclerView.composeStaggeredRow(spanCount = 2) {
+                item(::testInflate)
+            }
+        }
+        Thread.sleep(100)
+        val lm = recyclerView.layoutManager as StaggeredGridLayoutManager
+        assertEquals(2, lm.spanCount)
+        assertEquals(RecyclerView.HORIZONTAL, lm.orientation)
+    }
+
+    @Test
+    fun testLayoutManagerUpdateWithoutRecreation() {
+        var firstLM: LinearLayoutManager? = null
+        
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            recyclerView.composeLinearColumn {
+                item(::testInflate)
+            }
+            firstLM = recyclerView.layoutManager as LinearLayoutManager
+            
+            // Call again with different params
+            recyclerView.composeLinearRow(reverseLayout = true) {
+                item(::testInflate)
+            }
+        }
+        
+        Thread.sleep(100)
+        val secondLM = recyclerView.layoutManager as LinearLayoutManager
+        
+        // Should be the same instance
+        assertTrue(firstLM === secondLM)
+        assertEquals(RecyclerView.HORIZONTAL, secondLM.orientation)
+        assertEquals(true, secondLM.reverseLayout)
+    }
+
     @Test
     fun testMultipleViewTypes() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            recyclerView.compose {
+            recyclerView.composeLinear {
                 item(::testInflate, data = "Header") { }
-                items(listOf("A"), ::testInflate) { _, _ -> } // Same inflate, should be same type if VerseScope logic holds
+                items(listOf("A"), ::testInflate) { _, _ -> }
             }
         }
         
         Thread.sleep(100)
         
-        val adapter = recyclerView.adapter!!
+        val adapter = recyclerView.adapter as VerseAdapter
         assertEquals(2, adapter.itemCount)
         // Since both use ::testInflate, they should share the viewType ID (which is cached by function ref)
         assertEquals(adapter.getItemViewType(0), adapter.getItemViewType(1))
