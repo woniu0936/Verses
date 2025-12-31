@@ -27,8 +27,9 @@ dependencies {
 // Vertical list (similar to LazyColumn)
 recyclerView.composeLinearColumn {
     // Single Item (Header)
-    item(ItemHeaderBinding::inflate) { binding ->
-        binding.tvTitle.text = "My List"
+    item(ItemHeaderBinding::inflate) {
+        // 'this' is ItemHeaderBinding
+        tvTitle.text = "My List"
     }
 
     // List of Items
@@ -36,15 +37,16 @@ recyclerView.composeLinearColumn {
         items = userList,
         inflate = ItemUserBinding::inflate,
         key = { it.id } 
-    ) { binding, user ->
-        binding.tvName.text = user.name
+    ) { user ->
+        // 'this' is ItemUserBinding
+        tvName.text = user.name
     }
 }
 
 // Horizontal list (similar to LazyRow)
 recyclerView.composeLinearRow {
-    items(tags, ItemTagBinding::inflate) { binding, tag ->
-        binding.tvTag.text = tag
+    items(tags, ItemTagBinding::inflate) { tag ->
+        tvTag.text = tag
     }
 }
 ```
@@ -53,12 +55,12 @@ recyclerView.composeLinearRow {
 ```kotlin
 recyclerView.composeGrid(spanCount = 4) {
     // Item spans across all 4 columns
-    item(ItemBannerBinding::inflate, fullSpan = true) { binding ->
+    item(ItemBannerBinding::inflate, fullSpan = true) {
         // bind banner
     }
 
     // Individual grid items (default span = 1)
-    items(productList, ItemProductBinding::inflate) { binding, product ->
+    items(productList, ItemProductBinding::inflate) { product ->
         // bind product
     }
 }
@@ -66,14 +68,14 @@ recyclerView.composeGrid(spanCount = 4) {
 
 ### 3. Mixed Types with Logic
 ```kotlin
-recyclerView.compose {
+recyclerView.composeLinearColumn {
     items(feedList, key = { it.id }) { feed ->
         when (feed) {
-            is User -> render(ItemUserBinding::inflate) { binding ->
-                binding.name.text = feed.name
+            is User -> render(ItemUserBinding::inflate) {
+                name.text = feed.name
             }
-            is Ad -> render(ItemAdBinding::inflate, fullSpan = true) { binding ->
-                binding.img.load(feed.imageUrl)
+            is Ad -> render(ItemAdBinding::inflate, fullSpan = true) {
+                img.load(feed.imageUrl)
             }
         }
     }

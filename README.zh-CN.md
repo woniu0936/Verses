@@ -27,8 +27,9 @@ dependencies {
 // 竖向列表 (类似 Compose 的 LazyColumn)
 recyclerView.composeLinearColumn {
     // 单个 Item (如 Header)
-    item(ItemHeaderBinding::inflate) { binding ->
-        binding.tvTitle.text = "我的列表"
+    item(ItemHeaderBinding::inflate) {
+        // 'this' 是 ItemHeaderBinding
+        tvTitle.text = "我的列表"
     }
 
     // 列表数据
@@ -36,15 +37,16 @@ recyclerView.composeLinearColumn {
         items = userList,
         inflate = ItemUserBinding::inflate,
         key = { it.id } 
-    ) { binding, user ->
-        binding.tvName.text = user.name
+    ) { user ->
+        // 'this' 是 ItemUserBinding
+        tvName.text = user.name
     }
 }
 
 // 横向列表 (类似 Compose 的 LazyRow)
 recyclerView.composeLinearRow {
-    items(tags, ItemTagBinding::inflate) { binding, tag ->
-        binding.tvTag.text = tag
+    items(tags, ItemTagBinding::inflate) { tag ->
+        tvTag.text = tag
     }
 }
 ```
@@ -53,12 +55,12 @@ recyclerView.composeLinearRow {
 ```kotlin
 recyclerView.composeGrid(spanCount = 4) {
     // 占满整行 (4列)
-    item(ItemBannerBinding::inflate, fullSpan = true) { binding ->
+    item(ItemBannerBinding::inflate, fullSpan = true) {
         // 绑定 Banner
     }
 
     // 网格单元格 (默认占 1 列)
-    items(productList, ItemProductBinding::inflate) { binding, product ->
+    items(productList, ItemProductBinding::inflate) { product ->
         // 绑定商品
     }
 }
@@ -66,14 +68,14 @@ recyclerView.composeGrid(spanCount = 4) {
 
 ### 3. 多类型混合逻辑
 ```kotlin
-recyclerView.compose {
+recyclerView.composeLinearColumn {
     items(feedList, key = { it.id }) { feed ->
         when (feed) {
-            is User -> render(ItemUserBinding::inflate) { binding ->
-                binding.name.text = feed.name
+            is User -> render(ItemUserBinding::inflate) {
+                name.text = feed.name
             }
-            is Ad -> render(ItemAdBinding::inflate, fullSpan = true) { binding ->
-                binding.img.load(feed.imageUrl)
+            is Ad -> render(ItemAdBinding::inflate, fullSpan = true) {
+                img.load(feed.imageUrl)
             }
         }
     }

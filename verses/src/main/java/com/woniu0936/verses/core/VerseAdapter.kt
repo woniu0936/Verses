@@ -12,7 +12,8 @@ import java.util.concurrent.atomic.AtomicInteger
  * This adapter manages ViewType caching and provides helper methods for Grid and Staggered
  * layout managers to support dynamic span sizes and full-span items.
  */
-class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperDiffCallback) {
+@PublishedApi
+internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperDiffCallback) {
 
     /**
      * Cache for mapping view type keys (Inflate functions or custom IDs) to unique integer IDs.

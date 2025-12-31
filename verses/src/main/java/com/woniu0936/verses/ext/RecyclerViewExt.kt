@@ -15,7 +15,7 @@ import com.woniu0936.verses.dsl.VerseScope
  * @param reverseLayout Whether to reverse the layout.
  * @param block The DSL block for defining list content.
  */
-fun RecyclerView.composeLinear(
+inline fun RecyclerView.composeLinear(
     orientation: Int = RecyclerView.VERTICAL,
     reverseLayout: Boolean = false,
     block: VerseScope.() -> Unit
@@ -35,7 +35,7 @@ fun RecyclerView.composeLinear(
 /**
  * Convenience entry for a horizontal linear list (similar to Compose's LazyRow).
  */
-fun RecyclerView.composeLinearRow(
+inline fun RecyclerView.composeLinearRow(
     reverseLayout: Boolean = false,
     block: VerseScope.() -> Unit
 ) = composeLinear(RecyclerView.HORIZONTAL, reverseLayout, block)
@@ -43,7 +43,7 @@ fun RecyclerView.composeLinearRow(
 /**
  * Convenience entry for a vertical linear list (similar to Compose's LazyColumn).
  */
-fun RecyclerView.composeLinearColumn(
+inline fun RecyclerView.composeLinearColumn(
     reverseLayout: Boolean = false,
     block: VerseScope.() -> Unit
 ) = composeLinear(RecyclerView.VERTICAL, reverseLayout, block)
@@ -61,7 +61,7 @@ fun RecyclerView.composeLinearColumn(
  * @param reverseLayout Whether to reverse the layout.
  * @param block The DSL block for defining list content.
  */
-fun RecyclerView.composeGrid(
+inline fun RecyclerView.composeGrid(
     spanCount: Int,
     orientation: Int = RecyclerView.VERTICAL,
     reverseLayout: Boolean = false,
@@ -90,7 +90,7 @@ fun RecyclerView.composeGrid(
 /**
  * Convenience entry for a horizontal grid list.
  */
-fun RecyclerView.composeGridRow(
+inline fun RecyclerView.composeGridRow(
     spanCount: Int,
     reverseLayout: Boolean = false,
     block: VerseScope.() -> Unit
@@ -99,7 +99,7 @@ fun RecyclerView.composeGridRow(
 /**
  * Convenience entry for a vertical grid list.
  */
-fun RecyclerView.composeGridColumn(
+inline fun RecyclerView.composeGridColumn(
     spanCount: Int,
     reverseLayout: Boolean = false,
     block: VerseScope.() -> Unit
@@ -119,7 +119,7 @@ fun RecyclerView.composeGridColumn(
  * @param gapStrategy The gap handling strategy.
  * @param block The DSL block for defining list content.
  */
-fun RecyclerView.composeStaggered(
+inline fun RecyclerView.composeStaggered(
     spanCount: Int,
     orientation: Int = RecyclerView.VERTICAL,
     reverseLayout: Boolean = false,
@@ -146,7 +146,7 @@ fun RecyclerView.composeStaggered(
 /**
  * Convenience entry for a horizontal staggered grid list.
  */
-fun RecyclerView.composeStaggeredRow(
+inline fun RecyclerView.composeStaggeredRow(
     spanCount: Int,
     reverseLayout: Boolean = false,
     gapStrategy: Int = StaggeredGridLayoutManager.GAP_HANDLING_NONE,
@@ -156,7 +156,7 @@ fun RecyclerView.composeStaggeredRow(
 /**
  * Convenience entry for a vertical staggered grid list.
  */
-fun RecyclerView.composeStaggeredColumn(
+inline fun RecyclerView.composeStaggeredColumn(
     spanCount: Int,
     reverseLayout: Boolean = false,
     gapStrategy: Int = StaggeredGridLayoutManager.GAP_HANDLING_NONE,
@@ -175,7 +175,8 @@ fun RecyclerView.composeStaggeredColumn(
  * @param createLayoutManager A lambda that returns a new [RecyclerView.LayoutManager] instance.
  * @return The [VerseAdapter] instance.
  */
-private fun RecyclerView.getOrCreateAdapter(
+@PublishedApi
+internal fun RecyclerView.getOrCreateAdapter(
     targetClass: Class<out RecyclerView.LayoutManager>,
     createLayoutManager: () -> RecyclerView.LayoutManager
 ): VerseAdapter {
@@ -200,7 +201,8 @@ private fun RecyclerView.getOrCreateAdapter(
  * @param adapter The [VerseAdapter] to submit the list to.
  * @param block The DSL block to execute.
  */
-private fun submit(adapter: VerseAdapter, block: VerseScope.() -> Unit) {
+@PublishedApi
+internal inline fun submit(adapter: VerseAdapter, block: VerseScope.() -> Unit) {
     val scope = VerseScope(adapter)
     scope.block()
     // Submit list to ListAdapter to calculate Diff on a background thread.

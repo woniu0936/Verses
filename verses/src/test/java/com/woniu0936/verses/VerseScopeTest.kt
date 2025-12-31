@@ -1,8 +1,5 @@
 package com.woniu0936.verses
 
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import androidx.viewbinding.ViewBinding
 import com.woniu0936.verses.core.VerseAdapter
 import com.woniu0936.verses.dsl.VerseScope
@@ -13,6 +10,9 @@ import io.mockk.verify
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
+/**
+ * Unit tests for [VerseScope] to verify the DSL building logic.
+ */
 class VerseScopeTest {
 
     private val adapter: VerseAdapter = mockk(relaxed = true)
@@ -22,12 +22,16 @@ class VerseScopeTest {
     private val mockBinding: ViewBinding = mockk(relaxed = true)
     private val mockInflate: Inflate<ViewBinding> = { _, _, _ -> mockBinding }
 
+    /**
+     * Verifies that [VerseScope.item] correctly creates and adds a single [com.woniu0936.verses.model.ItemWrapper]
+     * with all provided attributes (data, key, span size, etc.).
+     */
     @Test
     fun `item() adds single wrapper to list`() {
         val testData = "Test Data"
         val testKey = "Test Key"
-        
-        // Setup adapter behavior
+
+        // Setup adapter behavior to return a fixed view type ID
         every { adapter.getOrCreateViewType(any()) } returns 1
 
         scope.item(
@@ -40,7 +44,7 @@ class VerseScopeTest {
 
         assertEquals(1, scope.newWrappers.size)
         val wrapper = scope.newWrappers.first()
-        
+
         assertEquals(testData, wrapper.data)
         assertEquals(testKey, wrapper.id)
         assertEquals(2, wrapper.spanSize)
@@ -48,17 +52,21 @@ class VerseScopeTest {
         assertEquals(1, wrapper.viewType)
     }
 
+    /**
+     * Verifies that the simple [VerseScope.items] API correctly maps a list of data objects
+     * to multiple [com.woniu0936.verses.model.ItemWrapper] instances.
+     */
     @Test
     fun `items() adds multiple wrappers`() {
         val list = listOf("A", "B", "C")
-        
+
         every { adapter.getOrCreateViewType(any()) } returns 2
 
         scope.items(
             items = list,
             inflate = mockInflate,
             key = { it }
-        ) { _, _ -> }
+        ) { _ -> }
 
         assertEquals(3, scope.newWrappers.size)
         assertEquals("A", scope.newWrappers[0].data)
@@ -66,13 +74,18 @@ class VerseScopeTest {
         assertEquals("C", scope.newWrappers[2].data)
     }
 
+    /**
+     * Verifies the Advanced Mode DSL where [VerseScope.items] provides a block for conditional
+     * rendering using the [VerseScope.render] function.
+     */
     @Test
     fun `render() inside items() with block adds wrappers`() {
         val list = listOf(1, 2)
-        
+
         every { adapter.getOrCreateViewType(any()) } returns 3
 
         scope.items(list, key = { it }) { item ->
+            // Use logic to decide which layout to render
             if (item == 1) {
                 render(mockInflate) { }
             } else {
@@ -81,7 +94,7 @@ class VerseScopeTest {
         }
 
         assertEquals(2, scope.newWrappers.size)
-        
+
         val first = scope.newWrappers[0]
         assertEquals(1, first.data)
         assertEquals(false, first.fullSpan)
@@ -91,13 +104,16 @@ class VerseScopeTest {
         assertEquals(true, second.fullSpan)
     }
 
+    /**
+     * Verifies that the ViewType caching mechanism uses the correct keys (inflate reference or explicit content type).
+     */
     @Test
     fun `adapter getOrCreateViewType is called with correct keys`() {
-        // Case 1: Simple item with function ref (simulated by mockInflate)
+        // Case 1: Simple item should use the function reference as the cache key
         scope.item(mockInflate)
         verify { adapter.getOrCreateViewType(mockInflate) }
 
-        // Case 2: Render with explicit contentType
+        // Case 2: Rendering with an explicit contentType should use that key instead of the function ref
         val contentType = "MY_TYPE"
         scope.items(listOf("A")) {
             render(mockInflate, contentType = contentType) {}

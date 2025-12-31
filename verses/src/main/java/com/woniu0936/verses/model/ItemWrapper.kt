@@ -10,7 +10,8 @@ import androidx.viewbinding.ViewBinding
  *
  * @property binding The ViewBinding instance for this ViewHolder's root view.
  */
-class SmartViewHolder(val binding: ViewBinding) : RecyclerView.ViewHolder(binding.root)
+@PublishedApi
+internal class SmartViewHolder(val binding: ViewBinding) : RecyclerView.ViewHolder(binding.root)
 
 /**
  * Typealias for ViewBinding's inflate function.
@@ -31,7 +32,8 @@ typealias Inflate<VB> = (LayoutInflater, ViewGroup, Boolean) -> VB
  * @property factory A lambda to create a [SmartViewHolder] for this item.
  * @property bind A lambda to bind data to the [SmartViewHolder].
  */
-data class ItemWrapper(
+@PublishedApi
+internal data class ItemWrapper(
     val id: Any,
     val viewType: Int,
     val data: Any,

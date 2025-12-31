@@ -17,22 +17,28 @@ import com.woniu0936.verses.model.SmartViewHolder
  *
  * @property adapter The associated [VerseAdapter] used for ViewType management.
  */
-class VerseScope(private val adapter: VerseAdapter) {
+@VerseDsl
+class VerseScope @PublishedApi internal constructor(
+    @PublishedApi internal val adapter: VerseAdapter
+) {
 
     /**
      * Temporary storage for the rendering units built within this scope.
      */
+    @PublishedApi
     internal val newWrappers = mutableListOf<ItemWrapper>()
 
     /**
      * Holds the data object currently being processed in an [items] block (Advanced Mode).
      */
-    private var currentData: Any? = null
+    @PublishedApi
+    internal var currentData: Any? = null
 
     /**
      * Holds the unique ID currently being processed in an [items] block (Advanced Mode).
      */
-    private var currentId: Any? = null
+    @PublishedApi
+    internal var currentId: Any? = null
 
     // =======================================================
     //  API 1.0: Simple Mode (Direct Inflate)
@@ -56,7 +62,7 @@ class VerseScope(private val adapter: VerseAdapter) {
         key: ((T) -> Any)? = null,
         span: Int = 1,
         fullSpan: Boolean = false,
-        onBind: (VB, T) -> Unit
+        onBind: VB.(T) -> Unit
     ) {
         items.forEachIndexed { index, item ->
             internalRender(
@@ -66,7 +72,7 @@ class VerseScope(private val adapter: VerseAdapter) {
                 id = key?.invoke(item) ?: index,
                 span = span,
                 fullSpan = fullSpan,
-                onBind = { vb -> onBind(vb, item) }
+                onBind = { vb -> vb.onBind(item) }
             )
         }
     }
@@ -88,7 +94,7 @@ class VerseScope(private val adapter: VerseAdapter) {
         key: Any? = null,
         span: Int = 1,
         fullSpan: Boolean = false,
-        onBind: (VB) -> Unit = {}
+        onBind: VB.() -> Unit = {}
     ) {
         internalRender(
             inflate = inflate,
@@ -97,7 +103,7 @@ class VerseScope(private val adapter: VerseAdapter) {
             id = key ?: "single_${inflate.hashCode()}",
             span = span,
             fullSpan = fullSpan,
-            onBind = onBind
+            onBind = { vb -> vb.onBind() }
         )
     }
 
@@ -124,9 +130,9 @@ class VerseScope(private val adapter: VerseAdapter) {
      * @param key A lambda to extract a unique ID from each item.
      * @param block A DSL block where [render] is called.
      */
-    fun <T : Any> items(
+    inline fun <T : Any> items(
         items: List<T>,
-        key: ((T) -> Any)? = null,
+        noinline key: ((T) -> Any)? = null,
         block: VerseScope.(T) -> Unit
     ) {
         items.forEachIndexed { index, item ->
@@ -153,7 +159,7 @@ class VerseScope(private val adapter: VerseAdapter) {
         contentType: Any? = null,
         span: Int = 1,
         fullSpan: Boolean = false,
-        onBind: (VB) -> Unit
+        onBind: VB.() -> Unit
     ) {
         internalRender(
             inflate = inflate,
@@ -162,7 +168,7 @@ class VerseScope(private val adapter: VerseAdapter) {
             id = currentId ?: System.identityHashCode(currentData),
             span = span,
             fullSpan = fullSpan,
-            onBind = onBind
+            onBind = { vb -> vb.onBind() }
         )
     }
 
