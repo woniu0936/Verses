@@ -4,52 +4,46 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.*
 import com.woniu0936.verses.model.ItemWrapper
 import com.woniu0936.verses.model.SmartViewHolder
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * A specialized [androidx.recyclerview.widget.ListAdapter] that handles [ItemWrapper] units.
  *
- * This adapter manages ViewType caching and provides helper methods for Grid and Staggered
- * layout managers to support dynamic span sizes and full-span items.
+ * This adapter manages ViewType caching globally to ensure that same layouts have the same 
+ * ViewType ID across different instances, which is a prerequisite for safe RecycledViewPool sharing.
  */
 @PublishedApi
 internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperDiffCallback) {
 
-    /**
-     * Cache for mapping view type keys (Inflate functions or custom IDs) to unique integer IDs.
-     */
-    private val viewTypeCache = mutableMapOf<Any, Int>()
+    companion object {
+        private val globalViewTypeCache = ConcurrentHashMap<Any, Int>()
+        private val globalTypeToFactory = ConcurrentHashMap<Int, (ViewGroup) -> SmartViewHolder>()
+        private val globalTypeCounter = AtomicInteger(1000)
 
-    /**
-     * Cache for mapping view type IDs to their corresponding factories.
-     */
-    private val typeToFactory = mutableMapOf<Int, (ViewGroup) -> SmartViewHolder>()
+        /**
+         * A pre-configured global pool for sharing ViewHolders across multiple RecyclerViews.
+         * Recommended for nested horizontal rows using the same item types.
+         */
+        val globalPool = RecyclerView.RecycledViewPool()
 
-    /**
-     * Counter to generate unique view type IDs incrementally.
-     */
-    private val typeCounter = AtomicInteger(0)
+        fun getGlobalViewType(key: Any, factory: (ViewGroup) -> SmartViewHolder): Int {
+            return globalViewTypeCache.getOrPut(key) {
+                val type = globalTypeCounter.getAndIncrement()
+                globalTypeToFactory[type] = factory
+                type
+            }
+        }
 
-    /**
-     * Retrieves an existing ViewType ID or generates a new one for the given [key].
-     *
-     * @param key The unique key identifying a view type.
-     * @param factory The factory to create the ViewHolder for this type.
-     * @return A unique integer ID for the [androidx.recyclerview.widget.RecyclerView] view pool.
-     */
-    fun getOrCreateViewType(key: Any, factory: (ViewGroup) -> SmartViewHolder): Int {
-        return viewTypeCache.getOrPut(key) {
-            val type = typeCounter.getAndIncrement()
-            typeToFactory[type] = factory
-            type
+        fun getGlobalFactory(viewType: Int): (ViewGroup) -> SmartViewHolder {
+            return globalTypeToFactory[viewType] ?: throw IllegalStateException("No factory registered for viewType $viewType")
         }
     }
 
     override fun getItemViewType(position: Int): Int = getItem(position).viewType
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SmartViewHolder {
-        val factory = typeToFactory[viewType] ?: throw IllegalStateException("No factory registered for viewType $viewType")
-        return factory(parent)
+        return getGlobalFactory(viewType)(parent)
     }
 
     override fun onBindViewHolder(holder: SmartViewHolder, position: Int) {

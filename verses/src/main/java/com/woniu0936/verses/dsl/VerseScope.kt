@@ -237,8 +237,8 @@ class VerseScope @PublishedApi internal constructor(
         span: Int,
         fullSpan: Boolean
     ) {
-        // Convert Class Key to Int ID and cache the factory
-        val viewType = adapter.getOrCreateViewType(key, factory)
+        // Convert Class Key to Global Int ID
+        val viewType = VerseAdapter.getGlobalViewType(key, factory)
         
         newWrappers.add(ItemWrapper(
             id = id,

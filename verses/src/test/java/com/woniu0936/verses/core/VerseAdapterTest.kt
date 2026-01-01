@@ -19,8 +19,8 @@ class VerseAdapterTest {
         val mockParent = mockk<ViewGroup>()
         val factory: (ViewGroup) -> SmartViewHolder = { mockViewHolder }
 
-        val typeId = adapter.getOrCreateViewType(key, factory)
-        val secondTypeId = adapter.getOrCreateViewType(key, factory)
+        val typeId = VerseAdapter.getGlobalViewType(key, factory)
+        val secondTypeId = VerseAdapter.getGlobalViewType(key, factory)
 
         assertEquals(typeId, secondTypeId)
         

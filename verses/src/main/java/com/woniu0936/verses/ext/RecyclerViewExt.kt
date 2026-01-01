@@ -22,7 +22,7 @@ fun RecyclerView.compose(
     submit(adapter, block)
 }
 
-// Convenience aliases (optional but helpful)
+// Convenience aliases
 fun RecyclerView.composeLinearColumn(
     reverseLayout: Boolean = false,
     block: VerseScope.() -> Unit
@@ -103,9 +103,12 @@ internal fun RecyclerView.getOrCreateAdapter(
     this.layoutManager = newLM
     this.adapter = newAdapter
     
+    // ✨ THE MAGIC: Automatically inject the global shared pool.
+    // This allows all RecyclerViews in the app using Verses to share ViewHolders seamlessly.
+    this.setRecycledViewPool(VerseAdapter.globalPool)
+    
     // Transparent optimization:
     // We disable ONLY change animations to prevent flickering during data updates.
-    // This keeps 'Add' and 'Remove' animations, so the list still feels fluid.
     (itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
     
     return newAdapter
