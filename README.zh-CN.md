@@ -95,5 +95,17 @@ recyclerView.compose {
 2. **提供 Key**: 在调用 `items()` 时，务必提供 `key` 参数，这对于流畅的 Item 动画至关重要。
 3. **Item Data**: 如果单个 `item()` 的内容依赖外部变量，请将该变量传给 `data` 参数，以便 `DiffUtil` 感知内容变化。
 
-## 📄 许可证
-MIT License.
+开源协议
+-------
+
+    Copyright 2025 Woniu0936
+
+    本项目基于 MIT 协议 (the "License") 开源；
+    您可以在遵循协议的前提下使用本项目。
+    您可以在以下网址获得协议副本：
+
+       https://opensource.org/licenses/MIT
+
+    除非法律要求或书面同意，否则按“原样”分发，
+    不附带任何明示或暗示的保证或条件。
+    详情请参阅协议中的特定语言。
