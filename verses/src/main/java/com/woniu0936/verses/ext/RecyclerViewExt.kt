@@ -86,7 +86,8 @@ fun RecyclerView.composeStaggered(
 
 // Private Helpers
 
-private fun RecyclerView.getOrCreateAdapter(
+@PublishedApi
+internal fun RecyclerView.getOrCreateAdapter(
     createLayoutManager: () -> RecyclerView.LayoutManager
 ): VerseAdapter {
     val currentAdapter = this.adapter as? VerseAdapter
@@ -103,7 +104,8 @@ private fun RecyclerView.getOrCreateAdapter(
     return newAdapter
 }
 
-private fun submit(adapter: VerseAdapter, block: VerseScope.() -> Unit) {
+@PublishedApi
+internal inline fun submit(adapter: VerseAdapter, block: VerseScope.() -> Unit) {
     val scope = VerseScope(adapter)
     scope.block()
     adapter.submitList(scope.newWrappers)
