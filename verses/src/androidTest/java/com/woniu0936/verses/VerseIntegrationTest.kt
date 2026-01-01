@@ -177,4 +177,32 @@ class VerseIntegrationTest {
         // Under the new "Reified Safety" rule, items sharing the same Binding class share the same ViewType
         assertEquals(adapter.getItemViewType(0), adapter.getItemViewType(1))
     }
+
+    /**
+     * Verifies that Custom Views (programmatic UI) are correctly created and bound.
+     */
+    @Test
+    fun testCustomViewSupport() {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            recyclerView.compose {
+                items(
+                    items = listOf("Custom 1", "Custom 2"),
+                    create = { context -> TextView(context) }
+                ) { text ->
+                    // 'this' is TextView
+                    this.text = text
+                }
+            }
+        }
+        
+        Thread.sleep(100)
+        
+        val adapter = recyclerView.adapter
+        assertEquals(2, adapter?.itemCount)
+        
+        val viewHolder = recyclerView.findViewHolderForAdapterPosition(0)
+        assertNotNull(viewHolder)
+        assertTrue(viewHolder?.itemView is TextView)
+        assertEquals("Custom 1", (viewHolder?.itemView as TextView).text.toString())
+    }
 }
