@@ -91,16 +91,23 @@ internal fun RecyclerView.getOrCreateAdapter(
     createLayoutManager: () -> RecyclerView.LayoutManager
 ): VerseAdapter {
     val currentAdapter = this.adapter as? VerseAdapter
-    // Check if current LayoutManager class matches the requested one
+    val newLM = createLayoutManager()
+    
     if (currentAdapter != null && layoutManager != null) {
-        if (layoutManager!!::class.java == createLayoutManager()::class.java) {
+        if (layoutManager!!.javaClass == newLM.javaClass) {
             return currentAdapter
         }
     }
 
     val newAdapter = VerseAdapter()
-    this.layoutManager = createLayoutManager()
+    this.layoutManager = newLM
     this.adapter = newAdapter
+    
+    // Transparent optimization:
+    // We disable ONLY change animations to prevent flickering during data updates.
+    // This keeps 'Add' and 'Remove' animations, so the list still feels fluid.
+    (itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
+    
     return newAdapter
 }
 

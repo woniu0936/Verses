@@ -53,6 +53,16 @@ class MainViewModel : ViewModel() {
         }
     }
 
+    fun shuffleData() {
+        val currentState = _uiState.value
+        if (currentState.isLoading) return
+        
+        _uiState.value = currentState.copy(
+            sections = currentState.sections.shuffled().map { it.copy(apps = it.apps.shuffled()) },
+            gridApps = currentState.gridApps.shuffled()
+        )
+    }
+
     private fun createMockApps(prefix: String): List<AppModel> {
         return (1..10).map { i ->
             val id = "$prefix-$i"

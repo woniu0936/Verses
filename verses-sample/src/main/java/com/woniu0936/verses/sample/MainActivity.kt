@@ -32,6 +32,15 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+        
+        binding.fabShuffle.setOnClickListener {
+            viewModel.shuffleData()
+        }
+        
+        // Setup ItemAnimator: We enable it to prove the library's 'supportsChangeAnimations = false' 
+        // effectively prevents the flash while keeping the list fluid.
+        binding.recyclerView.itemAnimator = androidx.recyclerview.widget.DefaultItemAnimator()
+        
         observeState()
     }
 
@@ -55,7 +64,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             // 2. Featured Banners (Full Span, Nested Horizontal RV)
-            item(ItemHorizontalListBinding::inflate, fullSpan = true, key = "banners_container") {
+            item(ItemHorizontalListBinding::inflate, data = state.banners, key = "banners_container") {
                 rvHorizontal.composeLinearRow {
                     items(
                         items = state.banners,
@@ -70,7 +79,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             // 3. Categories (Full Span, Nested Horizontal RV)
-            item(ItemHorizontalListBinding::inflate, fullSpan = true, key = "categories_container") {
+            item(ItemHorizontalListBinding::inflate, data = state.categories, key = "categories_container") {
                 rvHorizontal.composeLinearRow {
                     items(
                         items = state.categories,
@@ -104,10 +113,10 @@ class MainActivity : AppCompatActivity() {
                                             }            }
             // 5. Dynamic Sections (Full Span, Nested Horizontal RV)
             state.sections.forEach { section ->
-                item(ItemSectionHeaderBinding::inflate, fullSpan = true, key = "header_${section.id}") {
+                item(ItemSectionHeaderBinding::inflate, data = section.title, fullSpan = true, key = "header_${section.id}") {
                     tvSectionTitle.text = section.title
                 }
-                item(ItemHorizontalListBinding::inflate, fullSpan = true, key = "list_${section.id}") {
+                item(ItemHorizontalListBinding::inflate, data = section.apps, fullSpan = true, key = "list_${section.id}") {
                     rvHorizontal.composeLinearRow {
                         items(section.apps, ItemAppBinding::inflate) { app ->
                             tvAppName.text = app.name

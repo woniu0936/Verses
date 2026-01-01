@@ -34,7 +34,7 @@ class VerseScopeTest {
         val testKey = "Test Key"
 
         // Setup adapter behavior to return a fixed view type ID
-        every { adapter.getOrCreateViewType(any()) } returns 1
+        every { adapter.getOrCreateViewType(any(), any()) } returns 1
 
         scope.item(
             inflate = mockInflate,
@@ -54,7 +54,7 @@ class VerseScopeTest {
         assertEquals(1, wrapper.viewType)
         
         // ✨ Verify reified key usage
-        verify { adapter.getOrCreateViewType(TestBinding::class.java) }
+        verify { adapter.getOrCreateViewType(TestBinding::class.java, any()) }
     }
 
     /**
@@ -64,7 +64,7 @@ class VerseScopeTest {
     fun `items() adds multiple wrappers`() {
         val list = listOf("A", "B", "C")
 
-        every { adapter.getOrCreateViewType(any()) } returns 2
+        every { adapter.getOrCreateViewType(any(), any()) } returns 2
 
         scope.items(
             items = list,
@@ -77,7 +77,7 @@ class VerseScopeTest {
         assertEquals("B", scope.newWrappers[1].data)
         assertEquals("C", scope.newWrappers[2].data)
         
-        verify(exactly = 3) { adapter.getOrCreateViewType(TestBinding::class.java) }
+        verify(exactly = 3) { adapter.getOrCreateViewType(TestBinding::class.java, any()) }
     }
 
     /**
@@ -88,7 +88,7 @@ class VerseScopeTest {
     fun `render() inside items() with block adds wrappers`() {
         val list = listOf(1, 2)
 
-        every { adapter.getOrCreateViewType(any()) } returns 3
+        every { adapter.getOrCreateViewType(any(), any()) } returns 3
 
         scope.items(list, key = { it }) { item ->
             if (item == 1) {
@@ -108,7 +108,7 @@ class VerseScopeTest {
         assertEquals(2, second.data)
         assertEquals(true, second.fullSpan)
         
-        verify(exactly = 2) { adapter.getOrCreateViewType(TestBinding::class.java) }
+        verify(exactly = 2) { adapter.getOrCreateViewType(TestBinding::class.java, any()) }
     }
 
     /**
@@ -116,15 +116,17 @@ class VerseScopeTest {
      */
     @Test
     fun `adapter getOrCreateViewType is called with correct keys`() {
+        every { adapter.getOrCreateViewType(any(), any()) } returns 1
+
         // Case 1: Simple item should use the Class as the cache key
         scope.item(mockInflate)
-        verify { adapter.getOrCreateViewType(TestBinding::class.java) }
+        verify { adapter.getOrCreateViewType(TestBinding::class.java, any()) }
 
         // Case 2: Rendering with an explicit contentType should use that key instead
         val contentType = "MY_TYPE"
         scope.items(listOf("A")) {
             render(mockInflate, contentType = contentType) {}
         }
-        verify { adapter.getOrCreateViewType(contentType) }
+        verify { adapter.getOrCreateViewType(eq(contentType), any()) }
     }
 }

@@ -21,6 +21,11 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperD
     private val viewTypeCache = mutableMapOf<Any, Int>()
 
     /**
+     * Cache for mapping view type IDs to their corresponding factories.
+     */
+    private val typeToFactory = mutableMapOf<Int, (ViewGroup) -> SmartViewHolder>()
+
+    /**
      * Counter to generate unique view type IDs incrementally.
      */
     private val typeCounter = AtomicInteger(0)
@@ -28,20 +33,23 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperD
     /**
      * Retrieves an existing ViewType ID or generates a new one for the given [key].
      *
-     * @param key The unique key identifying a view type (usually an [com.woniu0936.verses.model.Inflate] function or a content type).
+     * @param key The unique key identifying a view type.
+     * @param factory The factory to create the ViewHolder for this type.
      * @return A unique integer ID for the [androidx.recyclerview.widget.RecyclerView] view pool.
      */
-    fun getOrCreateViewType(key: Any): Int {
-        return viewTypeCache.getOrPut(key) { typeCounter.getAndIncrement() }
+    fun getOrCreateViewType(key: Any, factory: (ViewGroup) -> SmartViewHolder): Int {
+        return viewTypeCache.getOrPut(key) {
+            val type = typeCounter.getAndIncrement()
+            typeToFactory[type] = factory
+            type
+        }
     }
 
     override fun getItemViewType(position: Int): Int = getItem(position).viewType
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SmartViewHolder {
-        // Look up the factory from the current list using the viewType.
-        // Since DiffUtil works asynchronously, we find the first item that matches this type to use its factory.
-        val wrapper = currentList.first { it.viewType == viewType }
-        return wrapper.factory(parent)
+        val factory = typeToFactory[viewType] ?: throw IllegalStateException("No factory registered for viewType $viewType")
+        return factory(parent)
     }
 
     override fun onBindViewHolder(holder: SmartViewHolder, position: Int) {
@@ -56,6 +64,25 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperD
         }
         
         item.bind(holder)
+    }
+
+    override fun onViewRecycled(holder: SmartViewHolder) {
+        super.onViewRecycled(holder)
+        cleanupView(holder.itemView)
+    }
+
+    /**
+     * Recursively clears nested adapters to prevent stale data (ghosting).
+     * This is internal library logic to keep the user API clean.
+     */
+    private fun cleanupView(view: android.view.View) {
+        if (view is RecyclerView) {
+            (view.adapter as? VerseAdapter)?.submitList(null)
+        } else if (view is android.view.ViewGroup) {
+            for (i in 0 until view.childCount) {
+                cleanupView(view.getChildAt(i))
+            }
+        }
     }
 
     /**
