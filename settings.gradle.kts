@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Verses-Sample"
-include(":app")
+rootProject.name = "Verses"
+include(":verses-sample")
 include(":verses")
