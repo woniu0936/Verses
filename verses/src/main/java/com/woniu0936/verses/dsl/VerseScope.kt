@@ -31,7 +31,7 @@ class VerseScope @PublishedApi internal constructor(
      * Temporary storage for the current data item during control flow iterations.
      */
     @PublishedApi
-    internal var currentData: Any? = null
+    internal var currentData: Any = Unit
     
     /**
      * Temporary storage for the current stable ID during control flow iterations.
@@ -64,6 +64,7 @@ class VerseScope @PublishedApi internal constructor(
         noinline onBind: VB.(T) -> Unit
     ) {
         val stableKey = VB::class.java
+        // Hint: In a future version, we could pre-allocate newWrappers if total count is known.
         items.forEachIndexed { index, item ->
             internalRender(
                 factory = { p ->
@@ -86,7 +87,7 @@ class VerseScope @PublishedApi internal constructor(
      */
     inline fun <reified VB : ViewBinding> item(
         noinline inflate: Inflate<VB>,
-        data: Any? = Unit,
+        data: Any = Unit,
         key: Any? = null,
         span: Int = 1,
         fullSpan: Boolean = true,
@@ -94,7 +95,6 @@ class VerseScope @PublishedApi internal constructor(
         noinline onBind: VB.() -> Unit = {}
     ) {
         val stableKey = VB::class.java
-        val actualData = data ?: Unit
         internalRender(
             factory = { p ->
                 val binding = inflate(LayoutInflater.from(p.context), p, false)
@@ -102,11 +102,11 @@ class VerseScope @PublishedApi internal constructor(
             },
             bind = { h -> (h.binding as VB).onBind() },
             key = stableKey,
-            data = actualData,
+            data = data,
             id = key ?: "single_vb_${stableKey.name}",
             span = span,
             fullSpan = fullSpan,
-            onClick = onClick?.let { { it(actualData) } }
+            onClick = onClick?.let { { it(data) } }
         )
     }
 
@@ -148,7 +148,7 @@ class VerseScope @PublishedApi internal constructor(
      */
     inline fun <reified V : View> item(
         noinline create: ViewCreator<V>,
-        data: Any? = Unit,
+        data: Any = Unit,
         key: Any? = null,
         span: Int = 1,
         fullSpan: Boolean = true,
@@ -156,16 +156,15 @@ class VerseScope @PublishedApi internal constructor(
         noinline onBind: V.() -> Unit = {}
     ) {
         val stableKey = V::class.java
-        val actualData = data ?: Unit
         internalRender(
             factory = { p -> createSafeViewHolder(p, create) },
             bind = { h -> (h.view as V).onBind() },
             key = stableKey,
-            data = actualData,
+            data = data,
             id = key ?: "single_view_${stableKey.name}",
             span = span,
             fullSpan = fullSpan,
-            onClick = onClick?.let { { it(actualData) } }
+            onClick = onClick?.let { { it(data) } }
         )
     }
 
@@ -203,7 +202,7 @@ class VerseScope @PublishedApi internal constructor(
         noinline onBind: VB.() -> Unit
     ) {
         val stableKey = contentType ?: VB::class.java
-        val data = currentData ?: Unit
+        val data = currentData
         internalRender(
             factory = { p ->
                 val binding = inflate(LayoutInflater.from(p.context), p, false)
@@ -231,7 +230,7 @@ class VerseScope @PublishedApi internal constructor(
         noinline onBind: V.() -> Unit
     ) {
         val stableKey = contentType ?: V::class.java
-        val data = currentData ?: Unit
+        val data = currentData
         internalRender(
             factory = { p -> createSafeViewHolder(p, create) },
             bind = { h -> (h.view as V).onBind() },
