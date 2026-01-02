@@ -37,10 +37,14 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperD
          * Stability is critical for safe sharing of [globalPool].
          */
         fun getGlobalViewType(key: Any, factory: (ViewGroup) -> SmartViewHolder): Int {
-            return globalViewTypeCache.getOrPut(key) {
-                val type = globalTypeCounter.getAndIncrement()
-                globalTypeToFactory[type] = factory
-                type
+            return globalViewTypeCache[key] ?: synchronized(globalTypeToFactory) {
+                // Double-checked locking for thread-safe Type generation
+                globalViewTypeCache[key] ?: run {
+                    val type = globalTypeCounter.getAndIncrement()
+                    globalTypeToFactory[type] = factory
+                    globalViewTypeCache[key] = type
+                    type
+                }
             }
         }
 
@@ -48,24 +52,25 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperD
          * Retrieves the creation factory for a specific ViewType ID.
          */
         fun getGlobalFactory(viewType: Int): (ViewGroup) -> SmartViewHolder {
-            return globalTypeToFactory[viewType] ?: throw IllegalStateException("No factory registered for viewType $viewType")
+            return globalTypeToFactory[viewType] ?: synchronized(globalTypeToFactory) {
+                globalTypeToFactory[viewType]
+            } ?: throw IllegalStateException("No factory registered for viewType $viewType")
         }
     }
 
     override fun getItemViewType(position: Int): Int = getItem(position).viewType
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SmartViewHolder {
-        val holder = getGlobalFactory(viewType)(parent)
+        val factory = getGlobalFactory(viewType)
+        val holder = factory(parent)
         
         // High-performance Click Listener:
-        // Set once during creation to minimize object allocation.
-        // Uses bindingAdapter to backtrack the data at the moment of the click.
+        // Using a stateless listener capture to prevent memory leaks and redundant object creation.
         holder.itemView.setOnClickListener {
-            val position = holder.bindingAdapterPosition
-            val adapter = holder.bindingAdapter as? VerseAdapter
-            if (position != RecyclerView.NO_POSITION && adapter != null) {
-                val wrapper = adapter.getItem(position)
-                wrapper.onClick?.invoke()
+            val currentAdapter = holder.bindingAdapter as? VerseAdapter ?: return@setOnClickListener
+            val pos = holder.bindingAdapterPosition
+            if (pos != RecyclerView.NO_POSITION) {
+                currentAdapter.getItem(pos).onClick?.invoke()
             }
         }
         return holder
