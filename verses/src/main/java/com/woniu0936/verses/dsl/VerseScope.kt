@@ -8,19 +8,51 @@ import androidx.viewbinding.ViewBinding
 import com.woniu0936.verses.core.VerseAdapter
 import com.woniu0936.verses.model.*
 
+/**
+ * Receiver scope for the Verses DSL.
+ * 
+ * Provides an expressive API for building heterogeneous lists. This scope acts as a 
+ * temporary buffer that collects [ItemWrapper] units before they are submitted 
+ * to the underlying [VerseAdapter].
+ *
+ * @property adapter The associated adapter instance for ViewType generation.
+ */
 @VerseDsl
 class VerseScope @PublishedApi internal constructor(
     @PublishedApi internal val adapter: VerseAdapter
 ) {
+    /**
+     * Buffer holding the newly constructed wrappers for the current DSL execution cycle.
+     */
     @PublishedApi
     internal val newWrappers = mutableListOf<ItemWrapper>()
+    
+    /**
+     * Temporary storage for the current data item during control flow iterations.
+     */
     @PublishedApi
     internal var currentData: Any? = null
+    
+    /**
+     * Temporary storage for the current stable ID during control flow iterations.
+     */
     @PublishedApi
     internal var currentId: Any? = null
 
+    // =======================================================
+    //  Part 1: ViewBinding Support
+    // =======================================================
+
     /**
-     * [List] ViewBinding items.
+     * Declares a list of items using ViewBinding for layout and binding.
+     * 
+     * @param items The list of business data objects.
+     * @param inflate The ViewBinding inflate function (e.g., `ItemUserBinding::inflate`).
+     * @param key Optional unique key for stable DiffUtil identity. Defaults to item index.
+     * @param span Grid span size (default 1).
+     * @param fullSpan Whether to occupy full width in a grid or staggered layout.
+     * @param onClick Strongly-typed click callback.
+     * @param onBind The binding block where `this` refers to the [ViewBinding].
      */
     inline fun <T : Any, reified VB : ViewBinding> items(
         items: List<T>,
@@ -50,7 +82,7 @@ class VerseScope @PublishedApi internal constructor(
     }
 
     /**
-     * [Single] ViewBinding item.
+     * Declares a single item (e.g., Header, Footer) using ViewBinding.
      */
     inline fun <reified VB : ViewBinding> item(
         noinline inflate: Inflate<VB>,
@@ -78,8 +110,14 @@ class VerseScope @PublishedApi internal constructor(
         )
     }
 
+    // =======================================================
+    //  Part 2: Custom View Support (Pure Programmatic)
+    // =======================================================
+
     /**
-     * [List] Custom View items.
+     * Declares a list of items using programmatically created Views (no XML).
+     * 
+     * @param create Function to instantiate the View (e.g., `{ context -> TextView(context) }`).
      */
     inline fun <T : Any, reified V : View> items(
         items: List<T>,
@@ -106,7 +144,7 @@ class VerseScope @PublishedApi internal constructor(
     }
 
     /**
-     * [Single] Custom View item.
+     * Declares a single custom View item.
      */
     inline fun <reified V : View> item(
         noinline create: ViewCreator<V>,
@@ -131,6 +169,15 @@ class VerseScope @PublishedApi internal constructor(
         )
     }
 
+    // =======================================================
+    //  Part 3: Advanced Mode (Control Flow)
+    // =======================================================
+
+    /**
+     * Opens a control flow block for conditional rendering within a list.
+     * 
+     * Inside [block], use `render()` to specify different layouts for different data conditions.
+     */
     fun <T : Any> items(
         items: List<T>,
         key: ((T) -> Any)? = null,
@@ -143,6 +190,10 @@ class VerseScope @PublishedApi internal constructor(
         }
     }
 
+    /**
+     * Renders a layout instruction for the current item in a loop.
+     * Used inside [items] block.
+     */
     inline fun <reified VB : ViewBinding> render(
         noinline inflate: Inflate<VB>,
         contentType: Any? = null,
@@ -168,6 +219,9 @@ class VerseScope @PublishedApi internal constructor(
         )
     }
 
+    /**
+     * Renders a custom View instruction for the current item in a loop.
+     */
     inline fun <reified V : View> render(
         noinline create: ViewCreator<V>,
         contentType: Any? = null,
@@ -189,6 +243,10 @@ class VerseScope @PublishedApi internal constructor(
             onClick = onClick?.let { { it(data) } }
         )
     }
+
+    // =======================================================
+    //  Internal Helpers
+    // =======================================================
 
     @PublishedApi
     internal fun <V : View> createSafeViewHolder(parent: ViewGroup, create: ViewCreator<V>): SmartViewHolder {

@@ -6,6 +6,17 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
+/**
+ * A sophisticated [RecyclerView.ItemDecoration] that implements declarative spacing and padding.
+ * 
+ * Unlike standard margins, this decoration uses a proportional offset distribution algorithm 
+ * to ensure that all columns in a grid have equal width and that edge spacing does not double up.
+ *
+ * @param hSpacing Horizontal space between items (column gap).
+ * @param vSpacing Vertical space between items (row gap).
+ * @param hPadding Outer horizontal padding between the list matrix and the container edges.
+ * @param vPadding Outer vertical padding between the list matrix and the container edges.
+ */
 @PublishedApi
 internal class VerseSpacingDecoration(
     private val hSpacing: Int,
@@ -13,6 +24,7 @@ internal class VerseSpacingDecoration(
     private val hPadding: Int,
     private val vPadding: Int
 ) : RecyclerView.ItemDecoration() {
+
     override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
         val position = parent.getChildAdapterPosition(view)
         if (position == RecyclerView.NO_POSITION) return
@@ -25,6 +37,7 @@ internal class VerseSpacingDecoration(
             val spanIndex = lp.spanIndex
             
             // 1. Horizontal Logic (Grid)
+            // Distribute the total spacing across all spans to maintain uniform column width
             outRect.left = hPadding + spanIndex * hSpacing / spanCount
             outRect.right = hSpacing - (spanIndex + 1) * hSpacing / spanCount + hPadding
             
