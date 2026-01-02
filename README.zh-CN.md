@@ -7,6 +7,12 @@
 - **高性能**: 基于 `ListAdapter` 和 `DiffUtil` 实现智能异步差分更新。
 - **类型安全**: 强依赖 ViewBinding 和 Kotlin 泛型，杜绝 `findViewById` 和类型转换异常。
 
+<p align="center">
+  <img src="screenshot/sample.gif" width="300" alt="Verses 示例演示">
+  <br>
+  <i>使用 Verses 构建的复杂混合布局（网格、线性、嵌套列表）。</i>
+</p>
+
 ---
 
 ## 🚀 安装

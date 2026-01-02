@@ -7,6 +7,12 @@
 - **High Performance**: Built on `ListAdapter` and `DiffUtil` for smart asynchronous updates.
 - **Type Safety**: Powered by ViewBinding and Generic types, eliminating `findViewById`.
 
+<p align="center">
+  <img src="screenshot/sample.gif" width="300" alt="Verses Sample Demo">
+  <br>
+  <i>Complex mixed layouts (Grid, Linear, Nested) built with Verses.</i>
+</p>
+
 ---
 
 ## 🚀 Installation
