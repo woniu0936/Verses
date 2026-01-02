@@ -12,21 +12,7 @@ class VersesPublishConventionPlugin : Plugin<Project> {
             pluginManager.apply(libs.findPlugin("vanniktech-maven-publish").get().get().pluginId)
             pluginManager.apply(libs.findPlugin("dokka").get().get().pluginId)
 
-            // 1. Configure standard Maven Publish for GitHub Packages
-            extensions.configure<PublishingExtension> {
-                repositories {
-                    maven {
-                        name = "GitHubPackages"
-                        url = uri("https://maven.pkg.github.com/woniu0936/Verses")
-                        credentials {
-                            username = System.getenv("GITHUB_ACTOR")
-                            password = System.getenv("GITHUB_TOKEN")
-                        }
-                    }
-                }
-            }
-
-            // 2. Configure Vanniktech plugin for Maven Central
+            // Configure Vanniktech plugin for Maven Central
             extensions.configure<MavenPublishBaseExtension> {
                 val myGroup = providers.gradleProperty("GROUP").getOrElse("io.github.woniu0936")
                 val myVersion = providers.gradleProperty("VERSION_NAME").getOrElse("1.0.0")
