@@ -22,48 +22,56 @@
 
 ## 💎 为什么选择 Verses？
 
-在现代 Android 生态中，为什么依然需要一个基于 RecyclerView 的库？
-
-- **🚀 性能巅峰**：基于 `ListAdapter` 和 `AsyncListDiffer` 构建，配合专用的后台线程池。即使处理 10,000+ 条数据也能保持 0 卡顿。
-- **🛡️ 工业级安全**：
-    - **确定性 ViewType**：参考 Epoxy 的线性探测算法，确保在共享 ViewPool 场景下 ID 绝对唯一且稳定。
-    - **内存泄漏防范**：全自动、双层销毁机制（生命周期感知 + 附件状态感知），自动清理嵌套适配器和观察者。
-- **✨ 类似 Compose 的语法**：只写 UI，不写样板。告别 `Adapter`、`ViewHolder` 和手动定义的 `ViewType` 常量。
-- **🧩 极高灵活性**：深度集成 `ViewBinding`，同时对纯代码构建的自定义 View 提供一流支持。
-- **📦 隐式优化**：开箱即用，自动注入全局资源池，并优化了 Item 刷新动画。
+- **🚀 性能巅峰**：基于 `ListAdapter` 配合专用后台线程池，处理万级数据依然丝滑。
+- **🛡️ 工业级安全**：确定性 ViewType 生成（线性探测）+ 双层内存泄漏防护。
+- **✨ 类 Compose 语法**：只写 UI，不写样板。彻底告别 `Adapter` 和 `ViewHolder`。
+- **🧩 极高灵活性**：原生支持 `ViewBinding`、纯代码 `自定义 View` 以及复杂的多类型混合逻辑。
+- **📦 隐式优化**：自动注入全局资源复用池，内置优化的刷新动画。
 
 ## 📦 安装
 
-在模块的 `build.gradle.kts` 中添加：
-
 ```kotlin
 dependencies {
-    implementation("io.github.woniu0936:verses:1.0.0-alpha6")
+    implementation("io.github.woniu0936:verses:1.0.0-beta02")
 }
 ```
 
-## 📖 快速上手
+## 📖 全能 API 与能力展示
 
-### 1. 基础纵向列表 (ViewBinding)
+Verses 提供统一的 DSL 来覆盖所有列表场景。
+
+### 1. "全家桶" 示例 (功能演示)
 ```kotlin
-recyclerView.composeLinearColumn(spacing = 16.dp) {
-    // 单个 Header
-    item(ItemHeaderBinding::inflate) {
-        tvTitle.text = "我的仪表盘"
+recyclerView.composeGrid(
+    spanCount = 2,
+    spacing = 16.dp,             // 内部间距
+    contentPadding = 20.dp,      // 外部边距
+    orientation = RecyclerView.VERTICAL
+) {
+    // A. 单个 ViewBinding 项目 (占满全行)
+    item(ItemHeaderBinding::inflate, fullSpan = true) {
+        tvTitle.text = "全功能演示"
     }
 
-    // 列表数据
-    items(userList, ItemUserBinding::inflate, key = { it.id }) { user ->
+    // B. 纯代码构建的自定义 View
+    item(create = { context -> MyCustomHeader(context) }) {
+        // 'this' 即是 MyCustomHeader 实例
+        setTitle("区域 A")
+    }
+
+    // C. 标准数据列表 (ViewBinding)
+    items(
+        items = userList,
+        inflate = ItemUserBinding::inflate,
+        key = { it.id },
+        span = 1,
+        onClick = { user -> toast("点击了 ${user.name}") }
+    ) { user ->
         tvName.text = user.name
-        root.setOnClickListener { /* 处理点击 */ }
     }
-}
-```
 
-### 2. 多类型混合网格
-```kotlin
-recyclerView.composeGrid(spanCount = 2) {
-    items(feedList) { feed ->
+    // D. 带业务逻辑的多类型渲染
+    items(feedList, key = { it.id }) { feed ->
         when (feed) {
             is Banner -> render(ItemBannerBinding::inflate, fullSpan = true) {
                 ivBanner.load(feed.url)
@@ -71,33 +79,36 @@ recyclerView.composeGrid(spanCount = 2) {
             is Post -> render(ItemPostBinding::inflate) {
                 tvContent.text = feed.text
             }
+            is Video -> render(create = { context -> VideoPlayerView(context) }) {
+                play(feed.videoUrl)
+            }
+        }
+    }
+
+    // E. 嵌套横向列表 (自动关联全局复用池)
+    item(ItemHorizontalListBinding::inflate, fullSpan = true) {
+        rvNested.composeLinearRow(spacing = 8.dp) {
+            items(categories, ItemCategoryBinding::inflate) { cat ->
+                tvCategory.text = cat.name
+            }
         }
     }
 }
 ```
 
-### 3. 纯代码自定义 View (无需 XML)
-```kotlin
-recyclerView.compose {
-    items(tags, create = { context -> MyTagView(context) }) { tag ->
-        // 'this' 即是 MyTagView 实例
-        setData(tag)
-    }
-}
-```
+### 2. 可用入口方法
+| 方法名 | 描述 |
+| :--- | :--- |
+| `composeLinearColumn` | 标准竖向线性列表 |
+| `composeLinearRow` | 标准横向线性列表 |
+| `composeGrid` | 网格布局，支持跨列设置 |
+| `composeStaggered` | 瀑布流布局 |
+| `compose` | 基础构建器，可自定义 LayoutManager |
 
-## 🛠 进阶功能
-
-### 全局注册表销毁
-在发生重大状态变更（如退出登录）时，手动释放所有静态引用：
+### 3. 全局生命周期与资源管理
+Verses 会在 View 分离或 Activity 销毁时自动清理。如需手动重置全局缓存（如退出登录时）：
 ```kotlin
 VerseAdapter.clearRegistry()
-```
-
-### 网格跨列控制
-控制某个 Item 在网格中占据的列数：
-```kotlin
-items(data, inflate, span = 2) { ... }
 ```
 
 开源协议

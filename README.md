@@ -22,48 +22,56 @@
 
 ## 💎 Why Verses?
 
-In the modern Android ecosystem, why still choose a RecyclerView-based library?
-
-- **🚀 Performance Peak**: Built on `ListAdapter` and `AsyncListDiffer` with a dedicated background thread pool. It handles 10,000+ items with zero jank.
-- **🛡️ Industrial-Grade Safety**: 
-    - **Deterministic ViewTypes**: Uses an Epoxy-inspired linear probing algorithm to ensure unique IDs across shared ViewPools.
-    - **Memory Leaks Prevention**: Automatic, dual-layer disposal (Lifecycle-aware + Attachment-aware) to clear nested adapters and listeners.
-- **✨ Compose-like Syntax**: Write UI, not boilerplate. No more `Adapter`, `ViewHolder`, or manual `ViewType` constants.
-- **🧩 Extreme Flexibility**: Deeply integrates with `ViewBinding`, while providing first-class support for programmatic custom Views.
-- **📦 Transparent Optimization**: Automatically injects global resource pools and optimizes item animations out of the box.
+- **🚀 Performance Peak**: Built on `ListAdapter` and `AsyncListDiffer` with a dedicated background thread pool.
+- **🛡️ Industrial-Grade Safety**: Deterministic ViewTypes (Linear Probing) and dual-layer memory leak prevention.
+- **✨ Compose-like Syntax**: Write UI, not boilerplate. No more `Adapter` or `ViewHolder`.
+- **🧩 Extreme Flexibility**: Supports `ViewBinding`, programmatic `Custom Views`, and mixed-type logic.
+- **📦 Transparent Optimization**: Auto-injects global resource pools and optimizes item animations.
 
 ## 📦 Installation
 
-Add the dependency to your module's `build.gradle.kts`:
-
 ```kotlin
 dependencies {
-    implementation("io.github.woniu0936:verses:1.0.0-alpha6")
+    implementation("io.github.woniu0936:verses:1.0.0-beta02")
 }
 ```
 
-## 📖 Quick Start
+## 📖 Complete API & Capability Showcase
 
-### 1. Basic Column (ViewBinding)
+Verses provides a unified DSL to handle all your list requirements.
+
+### 1. The "Kitchen Sink" Example (Comprehensive)
 ```kotlin
-recyclerView.composeLinearColumn(spacing = 16.dp) {
-    // Single Header
-    item(ItemHeaderBinding::inflate) {
-        tvTitle.text = "My Dashboard"
+recyclerView.composeGrid(
+    spanCount = 2,
+    spacing = 16.dp,             // Internal item spacing
+    contentPadding = 20.dp,      // Outer list padding
+    orientation = RecyclerView.VERTICAL
+) {
+    // A. Single ViewBinding Item (Full Span)
+    item(ItemHeaderBinding::inflate, fullSpan = true) {
+        tvTitle.text = "Comprehensive Demo"
     }
 
-    // List of data
-    items(userList, ItemUserBinding::inflate, key = { it.id }) { user ->
+    // B. Custom View Item (Programmatic)
+    item(create = { context -> MyCustomHeader(context) }) {
+        // 'this' is MyCustomHeader
+        setTitle("Section A")
+    }
+
+    // C. Standard List (ViewBinding)
+    items(
+        items = userList,
+        inflate = ItemUserBinding::inflate,
+        key = { it.id },
+        span = 1,
+        onClick = { user -> toast("Clicked ${user.name}") }
+    ) { user ->
         tvName.text = user.name
-        root.setOnClickListener { /* Click Handling */ }
     }
-}
-```
 
-### 2. Multi-Type Grid
-```kotlin
-recyclerView.composeGrid(spanCount = 2) {
-    items(feedList) { feed ->
+    // D. Multi-Type rendering with logic
+    items(feedList, key = { it.id }) { feed ->
         when (feed) {
             is Banner -> render(ItemBannerBinding::inflate, fullSpan = true) {
                 ivBanner.load(feed.url)
@@ -71,33 +79,36 @@ recyclerView.composeGrid(spanCount = 2) {
             is Post -> render(ItemPostBinding::inflate) {
                 tvContent.text = feed.text
             }
+            is Video -> render(create = { context -> VideoPlayerView(context) }) {
+                play(feed.videoUrl)
+            }
+        }
+    }
+
+    // E. Horizontal Nested List (Automatic Pool Optimization)
+    item(ItemHorizontalListBinding::inflate, fullSpan = true) {
+        rvNested.composeLinearRow(spacing = 8.dp) {
+            items(categories, ItemCategoryBinding::inflate) { cat ->
+                tvCategory.text = cat.name
+            }
         }
     }
 }
 ```
 
-### 3. Programmatic Custom Views (No XML)
-```kotlin
-recyclerView.compose {
-    items(tags, create = { context -> MyTagView(context) }) { tag ->
-        // 'this' is MyTagView
-        setData(tag)
-    }
-}
-```
+### 2. Available Entry Points
+| Method | Description |
+| :--- | :--- |
+| `composeLinearColumn` | Standard vertical list |
+| `composeLinearRow` | Standard horizontal list |
+| `composeGrid` | Grid layout with span support |
+| `composeStaggered` | Staggered grid (Waterfall) |
+| `compose` | Base builder for any LayoutManager |
 
-## 🛠 Advanced Features
-
-### Global Registry Teardown
-When undergoing a major state change (e.g., Logout), manually release all static references:
+### 3. Global Lifecycle & Resource Management
+Verses automatically cleans up when the View is detached or the Activity is destroyed. To manually wipe all caches (e.g., on Logout):
 ```kotlin
 VerseAdapter.clearRegistry()
-```
-
-### Grid Span Control
-Control how many columns an item occupies in a grid:
-```kotlin
-items(data, inflate, span = 2) { ... }
 ```
 
 License
