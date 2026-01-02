@@ -15,7 +15,8 @@ class VerseAdapterTest {
     @Test
     fun `getOrCreateViewType registers factory and returns stable ID`() {
         val key = "TestKey"
-        val mockViewHolder = mockk<SmartViewHolder>()
+        val mockView = mockk<View>(relaxed = true)
+        val mockViewHolder = SmartViewHolder(mockView)
         val mockParent = mockk<ViewGroup>()
         val factory: (ViewGroup) -> SmartViewHolder = { mockViewHolder }
 

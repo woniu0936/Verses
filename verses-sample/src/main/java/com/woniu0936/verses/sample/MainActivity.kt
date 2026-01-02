@@ -13,20 +13,12 @@ import androidx.lifecycle.repeatOnLifecycle
 import coil.load
 import com.woniu0936.verses.ext.composeGrid
 import com.woniu0936.verses.ext.composeLinearRow
-import com.woniu0936.verses.sample.databinding.ActivityMainBinding
-import com.woniu0936.verses.sample.databinding.ItemAppBinding
-import com.woniu0936.verses.sample.databinding.ItemAppGridBinding
-import com.woniu0936.verses.sample.databinding.ItemBannerBinding
-import com.woniu0936.verses.sample.databinding.ItemCategoryBinding
-import com.woniu0936.verses.sample.databinding.ItemHorizontalListBinding
-import com.woniu0936.verses.sample.databinding.ItemSearchBarBinding
-import com.woniu0936.verses.sample.databinding.ItemSectionHeaderBinding
+import com.woniu0936.verses.sample.databinding.*
 import com.woniu0936.verses.sample.model.HomeState
 import com.woniu0936.verses.sample.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
-
     private val viewModel: MainViewModel by viewModels()
     private lateinit var binding: ActivityMainBinding
 
@@ -40,15 +32,9 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-
         binding.fabShuffle.setOnClickListener {
             viewModel.shuffleData()
         }
-
-        // Setup ItemAnimator: We enable it to prove the library's 'supportsChangeAnimations = false' 
-        // effectively prevents the flash while keeping the list fluid.
-        binding.recyclerView.itemAnimator = androidx.recyclerview.widget.DefaultItemAnimator()
-
         observeState()
     }
 
@@ -64,16 +50,20 @@ class MainActivity : AppCompatActivity() {
 
     private fun render(state: HomeState) {
         if (state.isLoading) return
-
-        binding.recyclerView.composeGrid(spanCount = 3) {
-            // 1. Search Bar (Full Span)
+        // 🚀 Using Verses with built-in spacing and automatic lifecycle disposal
+        binding.recyclerView.composeGrid(
+            spanCount = 3,
+            spacing = 16,        // Global item gap
+            contentPadding = 8   // Edge padding
+        ) {
+            // 1. Search Bar
             item(ItemSearchBarBinding::inflate, fullSpan = true) {
                 tvSearchHint.text = state.searchHint
             }
 
-            // 2. Featured Banners (Full Span, Nested Horizontal RV)
+            // 2. Featured Banners
             item(ItemHorizontalListBinding::inflate, data = state.banners, key = "banners_container") {
-                rvHorizontal.composeLinearRow {
+                rvHorizontal.composeLinearRow(spacing = 12) {
                     items(
                         items = state.banners,
                         inflate = ItemBannerBinding::inflate,
@@ -89,9 +79,9 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            // 3. Categories (Full Span, Nested Horizontal RV)
+            // 3. Categories
             item(ItemHorizontalListBinding::inflate, data = state.categories, key = "categories_container") {
-                rvHorizontal.composeLinearRow {
+                rvHorizontal.composeLinearRow(spacing = 8) {
                     items(
                         items = state.categories,
                         inflate = ItemCategoryBinding::inflate,
@@ -105,9 +95,8 @@ class MainActivity : AppCompatActivity() {
             // 4. Grid Apps (3 Columns)
             if (state.gridApps.isNotEmpty()) {
                 item(ItemSectionHeaderBinding::inflate, fullSpan = true, key = "grid_header_title") {
-                    tvSectionTitle.text = "Popular Apps (Grid 3-Columns)"
+                    tvSectionTitle.text = "Popular Apps"
                 }
-
                 items(
                     items = state.gridApps,
                     inflate = ItemAppGridBinding::inflate,
@@ -127,18 +116,18 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            // 5. Dynamic Sections (Full Span, Nested Horizontal RV)
+            // 5. Dynamic Sections
             state.sections.forEach { section ->
                 item(ItemSectionHeaderBinding::inflate, data = section.title, fullSpan = true, key = "header_${section.id}") {
                     tvSectionTitle.text = section.title
                 }
                 item(ItemHorizontalListBinding::inflate, data = section.apps, fullSpan = true, key = "list_${section.id}") {
-                    rvHorizontal.composeLinearRow {
+                    rvHorizontal.composeLinearRow(spacing = 8) {
                         items(
                             items = section.apps,
                             inflate = ItemAppBinding::inflate,
                             onClick = { app ->
-                                Toast.makeText(this@MainActivity, "Clicked App in Section: ${app.name}", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this@MainActivity, "Clicked App: ${app.name}", Toast.LENGTH_SHORT).show()
                             }
                         ) { app ->
                             tvAppName.text = app.name

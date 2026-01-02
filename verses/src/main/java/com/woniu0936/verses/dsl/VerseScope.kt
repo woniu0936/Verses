@@ -6,10 +6,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.woniu0936.verses.core.VerseAdapter
-import com.woniu0936.verses.model.Inflate
-import com.woniu0936.verses.model.ItemWrapper
-import com.woniu0936.verses.model.SmartViewHolder
-import com.woniu0936.verses.model.ViewCreator
+import com.woniu0936.verses.model.*
 
 @VerseDsl
 class VerseScope @PublishedApi internal constructor(
@@ -17,19 +14,13 @@ class VerseScope @PublishedApi internal constructor(
 ) {
     @PublishedApi
     internal val newWrappers = mutableListOf<ItemWrapper>()
-
     @PublishedApi
     internal var currentData: Any? = null
-
     @PublishedApi
     internal var currentId: Any? = null
 
-    // =======================================================
-    //  Part 1: ViewBinding Support
-    // =======================================================
-
     /**
-     * [List] ViewBinding list.
+     * [List] ViewBinding items.
      */
     inline fun <T : Any, reified VB : ViewBinding> items(
         items: List<T>,
@@ -87,12 +78,8 @@ class VerseScope @PublishedApi internal constructor(
         )
     }
 
-    // =======================================================
-    //  Part 2: Custom View Support
-    // =======================================================
-
     /**
-     * [List] Custom View list.
+     * [List] Custom View items.
      */
     inline fun <T : Any, reified V : View> items(
         items: List<T>,
@@ -144,13 +131,6 @@ class VerseScope @PublishedApi internal constructor(
         )
     }
 
-    // =======================================================
-    //  Part 3: Advanced Mode (If/Else Render)
-    // =======================================================
-
-    /**
-     * Iterator for custom control flow.
-     */
     fun <T : Any> items(
         items: List<T>,
         key: ((T) -> Any)? = null,
@@ -163,9 +143,6 @@ class VerseScope @PublishedApi internal constructor(
         }
     }
 
-    /**
-     * [Render] instruction for ViewBinding.
-     */
     inline fun <reified VB : ViewBinding> render(
         noinline inflate: Inflate<VB>,
         contentType: Any? = null,
@@ -191,9 +168,6 @@ class VerseScope @PublishedApi internal constructor(
         )
     }
 
-    /**
-     * [Render] instruction for Custom View.
-     */
     inline fun <reified V : View> render(
         noinline create: ViewCreator<V>,
         contentType: Any? = null,
@@ -215,10 +189,6 @@ class VerseScope @PublishedApi internal constructor(
             onClick = onClick?.let { { it(data) } }
         )
     }
-
-    // =======================================================
-    //  Internal Helpers
-    // =======================================================
 
     @PublishedApi
     internal fun <V : View> createSafeViewHolder(parent: ViewGroup, create: ViewCreator<V>): SmartViewHolder {
@@ -246,17 +216,15 @@ class VerseScope @PublishedApi internal constructor(
         onClick: (() -> Unit)? = null
     ) {
         val viewType = VerseAdapter.getGlobalViewType(key, factory)
-        newWrappers.add(
-            ItemWrapper(
-                id = id,
-                viewType = viewType,
-                data = data,
-                span = span,
-                fullSpan = fullSpan,
-                factory = factory,
-                bind = bind,
-                onClick = onClick
-            )
-        )
+        newWrappers.add(ItemWrapper(
+            id = id,
+            viewType = viewType,
+            data = data,
+            span = span,
+            fullSpan = fullSpan,
+            factory = factory,
+            bind = bind,
+            onClick = onClick
+        ))
     }
 }
