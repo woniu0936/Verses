@@ -1,7 +1,10 @@
 package com.woniu0936.verses.core
 
 import android.view.ViewGroup
-import androidx.recyclerview.widget.*
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.woniu0936.verses.model.ItemWrapper
 import com.woniu0936.verses.model.SmartViewHolder
 import java.util.concurrent.ConcurrentHashMap
@@ -10,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger
 /**
  * A specialized [androidx.recyclerview.widget.ListAdapter] that handles [ItemWrapper] units.
  *
- * This adapter manages ViewType caching globally to ensure that same layouts have the same 
+ * This adapter manages ViewType caching globally to ensure that same layouts have the same
  * ViewType ID across different instances, which is a prerequisite for safe RecycledViewPool sharing.
  */
 @PublishedApi
@@ -44,7 +47,7 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperD
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SmartViewHolder {
         val holder = getGlobalFactory(viewType)(parent)
-        
+
         // Performance Optimization: Set listener once in onCreate.
         // We use 'bindingAdapter' to dynamically find the adapter currently using this holder.
         // This is much cleaner than using tags and is safer for RecycledViewPool sharing.
@@ -57,16 +60,16 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperD
                 wrapper.onClick?.invoke()
             }
         }
-        
+
         return holder
     }
 
     override fun onBindViewHolder(holder: SmartViewHolder, position: Int) {
         val item = getItem(position)
-        
+
         // Just update the clickable state, no tag needed.
         holder.itemView.isClickable = item.onClick != null
-        
+
         // Special handling for StaggeredGridLayout: Apply full-span attribute to the LayoutParams.
         val params = holder.itemView.layoutParams
         if (params is StaggeredGridLayoutManager.LayoutParams) {
@@ -74,7 +77,7 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperD
                 params.isFullSpan = item.fullSpan
             }
         }
-        
+
         item.bind(holder)
     }
 

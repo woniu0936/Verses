@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.dokka)
 }
 
-    android {
+android {
     namespace = "com.woniu0936.verses"
     compileSdk = 36
 
@@ -12,8 +12,8 @@ plugins {
         viewBinding = true
     }
 
-    defaultConfig {        minSdk = 24
-
+    defaultConfig {
+        minSdk = 24
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }
@@ -37,18 +37,19 @@ plugins {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
     kotlin {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
     }
+
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.recyclerview)
     implementation(libs.androidx.appcompat)

@@ -1,6 +1,10 @@
 package com.woniu0936.verses.ext
 
-import androidx.recyclerview.widget.*
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.SimpleItemAnimator
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.woniu0936.verses.core.VerseAdapter
 import com.woniu0936.verses.dsl.VerseScope
 
@@ -13,12 +17,12 @@ fun RecyclerView.compose(
     val adapter = getOrCreateAdapter {
         LinearLayoutManager(context, orientation, reverseLayout)
     }
-    
+
     (layoutManager as? LinearLayoutManager)?.let {
         if (it.orientation != orientation) it.orientation = orientation
         if (it.reverseLayout != reverseLayout) it.reverseLayout = reverseLayout
     }
-    
+
     submit(adapter, block)
 }
 
@@ -50,13 +54,13 @@ fun RecyclerView.composeGrid(
             }
         }
     }
-    
+
     (layoutManager as? GridLayoutManager)?.let {
         if (it.spanCount != spanCount) it.spanCount = spanCount
         if (it.orientation != orientation) it.orientation = orientation
         if (it.reverseLayout != reverseLayout) it.reverseLayout = reverseLayout
     }
-    
+
     submit(adapter, block)
 }
 
@@ -73,14 +77,14 @@ fun RecyclerView.composeStaggered(
             this.gapStrategy = gapStrategy
         }
     }
-    
+
     (layoutManager as? StaggeredGridLayoutManager)?.let {
         if (it.spanCount != spanCount) it.spanCount = spanCount
         if (it.orientation != orientation) it.orientation = orientation
         if (it.reverseLayout != reverseLayout) it.reverseLayout = reverseLayout
         if (it.gapStrategy != gapStrategy) it.gapStrategy = gapStrategy
     }
-    
+
     submit(adapter, block)
 }
 
@@ -92,7 +96,7 @@ internal fun RecyclerView.getOrCreateAdapter(
 ): VerseAdapter {
     val currentAdapter = this.adapter as? VerseAdapter
     val newLM = createLayoutManager()
-    
+
     if (currentAdapter != null && layoutManager != null) {
         if (layoutManager!!.javaClass == newLM.javaClass) {
             return currentAdapter
@@ -102,15 +106,15 @@ internal fun RecyclerView.getOrCreateAdapter(
     val newAdapter = VerseAdapter()
     this.layoutManager = newLM
     this.adapter = newAdapter
-    
+
     // ✨ THE MAGIC: Automatically inject the global shared pool.
     // This allows all RecyclerViews in the app using Verses to share ViewHolders seamlessly.
     this.setRecycledViewPool(VerseAdapter.globalPool)
-    
+
     // Transparent optimization:
     // We disable ONLY change animations to prevent flickering during data updates.
     (itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
-    
+
     return newAdapter
 }
 

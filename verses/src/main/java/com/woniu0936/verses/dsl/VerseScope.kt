@@ -15,11 +15,9 @@ import com.woniu0936.verses.model.ViewCreator
 class VerseScope @PublishedApi internal constructor(
     @PublishedApi internal val adapter: VerseAdapter
 ) {
-
     @PublishedApi
     internal val newWrappers = mutableListOf<ItemWrapper>()
 
-    // Context variables (for advanced mode render)
     @PublishedApi
     internal var currentData: Any? = null
 
@@ -27,12 +25,11 @@ class VerseScope @PublishedApi internal constructor(
     internal var currentId: Any? = null
 
     // =======================================================
-    //  Part 1: ViewBinding Support (Reified Safety)
+    //  Part 1: ViewBinding Support
     // =======================================================
 
     /**
      * [List] ViewBinding list.
-     * @param noinline inflate: Must be noinline to be stored in the lambda.
      */
     inline fun <T : Any, reified VB : ViewBinding> items(
         items: List<T>,
@@ -43,22 +40,20 @@ class VerseScope @PublishedApi internal constructor(
         noinline onClick: ((T) -> Unit)? = null,
         noinline onBind: VB.(T) -> Unit
     ) {
-        // ✨ MAGIC: Use ViewBinding Class as stable Key
         val stableKey = VB::class.java
-
         items.forEachIndexed { index, item ->
             internalRender(
                 factory = { p ->
                     val binding = inflate(LayoutInflater.from(p.context), p, false)
                     SmartViewHolder(binding.root, binding)
                 },
+                bind = { h -> (h.binding as VB).onBind(item) },
+                key = stableKey,
+                data = item,
                 id = key?.invoke(item) ?: index,
                 span = span,
                 fullSpan = fullSpan,
-                onClick = onClick?.let { { it(item) } },
-                bind = { h -> (h.binding as VB).onBind(item) },
-                key = stableKey,
-                data = item
+                onClick = onClick?.let { { it(item) } }
             )
         }
     }
@@ -71,7 +66,7 @@ class VerseScope @PublishedApi internal constructor(
         data: Any? = Unit,
         key: Any? = null,
         span: Int = 1,
-        fullSpan: Boolean = true, // Single item defaults to full span usually
+        fullSpan: Boolean = true,
         noinline onClick: ((Any) -> Unit)? = null,
         noinline onBind: VB.() -> Unit = {}
     ) {
@@ -93,7 +88,7 @@ class VerseScope @PublishedApi internal constructor(
     }
 
     // =======================================================
-    //  Part 2: Custom View Support (Reified Safety)
+    //  Part 2: Custom View Support
     // =======================================================
 
     /**
@@ -108,14 +103,12 @@ class VerseScope @PublishedApi internal constructor(
         noinline onClick: ((T) -> Unit)? = null,
         noinline onBind: V.(T) -> Unit
     ) {
-        // ✨ MAGIC: Use View Class as stable Key
         val stableKey = V::class.java
-
         items.forEachIndexed { index, item ->
             internalRender(
                 factory = { p -> createSafeViewHolder(p, create) },
                 bind = { h -> (h.view as V).onBind(item) },
-                key = stableKey, // Pass Class Key
+                key = stableKey,
                 data = item,
                 id = key?.invoke(item) ?: index,
                 span = span,
@@ -156,7 +149,7 @@ class VerseScope @PublishedApi internal constructor(
     // =======================================================
 
     /**
-     * Iterator: Only used to open control flow.
+     * Iterator for custom control flow.
      */
     fun <T : Any> items(
         items: List<T>,
@@ -171,7 +164,7 @@ class VerseScope @PublishedApi internal constructor(
     }
 
     /**
-     * [Render] instruction: ViewBinding support.
+     * [Render] instruction for ViewBinding.
      */
     inline fun <reified VB : ViewBinding> render(
         noinline inflate: Inflate<VB>,
@@ -181,10 +174,8 @@ class VerseScope @PublishedApi internal constructor(
         noinline onClick: ((Any) -> Unit)? = null,
         noinline onBind: VB.() -> Unit
     ) {
-        // Prefer contentType (escape hatch), otherwise Class
         val stableKey = contentType ?: VB::class.java
         val data = currentData ?: Unit
-
         internalRender(
             factory = { p ->
                 val binding = inflate(LayoutInflater.from(p.context), p, false)
@@ -201,7 +192,7 @@ class VerseScope @PublishedApi internal constructor(
     }
 
     /**
-     * [Render] instruction: Custom View support.
+     * [Render] instruction for Custom View.
      */
     inline fun <reified V : View> render(
         noinline create: ViewCreator<V>,
@@ -213,7 +204,6 @@ class VerseScope @PublishedApi internal constructor(
     ) {
         val stableKey = contentType ?: V::class.java
         val data = currentData ?: Unit
-
         internalRender(
             factory = { p -> createSafeViewHolder(p, create) },
             bind = { h -> (h.view as V).onBind() },
@@ -233,7 +223,6 @@ class VerseScope @PublishedApi internal constructor(
     @PublishedApi
     internal fun <V : View> createSafeViewHolder(parent: ViewGroup, create: ViewCreator<V>): SmartViewHolder {
         val view = create(parent.context)
-        // Automatically ensure LayoutParams to prevent crashes
         if (view.layoutParams == null) {
             view.layoutParams = RecyclerView.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -256,9 +245,7 @@ class VerseScope @PublishedApi internal constructor(
         fullSpan: Boolean,
         onClick: (() -> Unit)? = null
     ) {
-        // Convert Class Key to Global Int ID
         val viewType = VerseAdapter.getGlobalViewType(key, factory)
-
         newWrappers.add(
             ItemWrapper(
                 id = id,
