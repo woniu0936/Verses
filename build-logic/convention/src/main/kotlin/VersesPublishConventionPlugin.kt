@@ -46,8 +46,10 @@ class VersesPublishConventionPlugin : Plugin<Project> {
 
                 publishToMavenCentral()
                 
-                // Only sign if GPG keys are provided (e.g., in CI or local gradle.user.properties)
-                if (project.hasProperty("signing.keyId") || project.hasProperty("signing.password")) {
+                // Enhanced signing logic:
+                // Supports both file-based (local) and memory-based (CI) signing
+                val hasGpgKey = project.hasProperty("signing.keyId") || project.hasProperty("signingInMemoryKey")
+                if (hasGpgKey) {
                     signAllPublications()
                 }
             }
