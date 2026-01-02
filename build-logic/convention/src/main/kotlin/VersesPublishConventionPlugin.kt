@@ -47,8 +47,7 @@ class VersesPublishConventionPlugin : Plugin<Project> {
                 // Automatically configure Dokka and Sources JARs
                 configure(com.vanniktech.maven.publish.AndroidSingleVariantLibrary("release", true, true))
 
-                // Modern Sonatype (S01) configuration with automatic release
-                publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.S01, true)
+                publishToMavenCentral()
                 
                 // Enhanced signing logic:
                 // Supports both file-based (local) and memory-based (CI) signing
