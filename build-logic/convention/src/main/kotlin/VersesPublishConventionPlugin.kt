@@ -48,10 +48,6 @@ class VersesPublishConventionPlugin : Plugin<Project> {
                 configure(com.vanniktech.maven.publish.AndroidSingleVariantLibrary("release", true, true))
 
                 publishToMavenCentral()
-                
-                // Use standard signing configuration. 
-                // It will automatically pick up signing.keyId, signing.password, signing.secretKey
-                signAllPublications()
             }
 
             // Migrating to Dokka V2 configuration

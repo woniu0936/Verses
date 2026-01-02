@@ -1,4 +1,4 @@
-name: Publish
+name: Publish to Maven Central
 
 on:
   push:
@@ -12,7 +12,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout sources
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
@@ -22,43 +22,37 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Publish to Maven Central
-        run: ./gradlew publishAllPublicationsToMavenCentralRepository --no-configuration-cache
+      - name: Decode GPG Key
         env:
-          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.OSSRH_USERNAME }}
-          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.OSSRH_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_SECRET_KEY }}
-          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_SECRET_KEY_RING_FILE_BASE64: ${{ secrets.GPG_SECRET_KEY_RING_FILE_BASE64 }}
+        run: |
+          echo "$GPG_SECRET_KEY_RING_FILE_BASE64" | base64 --decode > secring.gpg
+
+      - name: Publish to Maven Central
+        env:
+          MC_USER: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MC_PWD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+          GPG_PWD: ${{ secrets.GPG_PASSWORD }}
+          GPG_FILE: ${{ github.workspace }}/secring.gpg
+        run: |
+          ./gradlew publishToMavenCentral \
+            -PmavenCentralUsername="$MC_USER" \
+            -PmavenCentralPassword="$MC_PWD" \
+            -Psigning.keyId="$GPG_KEY_ID" \
+            -Psigning.password="$GPG_PWD" \
+            -Psigning.secretKeyRingFile="$GPG_FILE"
 
       - name: Generate Documentation
         run: ./gradlew :verses:dokkaGenerateHtml
 
-      - name: Prepare Artifacts
-        run: |
-          mkdir -p release-artifacts
-          cp verses/build/outputs/aar/verses-release.aar release-artifacts/verses-${{ github.ref_name }}.aar
-          cd verses/build/dokka
-          zip -r ../../../release-artifacts/verses-docs-${{ github.ref_name }}.zip .
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref, '-') }}
           files: |
-            release-artifacts/*.aar
-            release-artifacts/*.zip
-          name: Verses ${{ github.ref_name }}
-          body: |
-            ## 🚀 Verses ${{ github.ref_name }} Released!
-            
-            Minimalist, high-performance declarative RecyclerView adapter for Modern Kotlin.
-            
-            ### 📝 Installation
-            ```kotlin
-            dependencies {
-                implementation("io.github.woniu0936:verses:${{ github.ref_name }}".replace("v", ""))
-            }
-            ```
-          draft: false
-          prerelease: false
+            verses/build/outputs/aar/*.aar
+            verses/build/dokka/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
