@@ -7,11 +7,20 @@
 - **High Performance**: Built on `ListAdapter` and `DiffUtil` for smart asynchronous updates.
 - **Type Safety**: Powered by ViewBinding and Generic types, eliminating `findViewById`.
 
-<p align="center">
-  <img src="./screenshot/sample.mp4" width="300" />
-  <br>
-  <i>Complex mixed layouts (Grid, Linear, Nested) built with Verses.</i>
-</p>
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="screenshot/sample01.png" width="300" alt="Verses Sample 1" /><br>
+        <i>Linear & Grid Mixed</i>
+      </td>
+      <td align="center">
+        <img src="screenshot/sample02.png" width="300" alt="Verses Sample 2" /><br>
+        <i>Nested Horizontal Lists</i>
+      </td>
+    </tr>
+  </table>
+</div>
 
 ---
 

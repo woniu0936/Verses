@@ -7,11 +7,20 @@
 - **高性能**: 基于 `ListAdapter` 和 `DiffUtil` 实现智能异步差分更新。
 - **类型安全**: 强依赖 ViewBinding 和 Kotlin 泛型，杜绝 `findViewById` 和类型转换异常。
 
-<p align="center">
-  <img src="./screenshot/sample.mp4" width="300" />
-  <br>
-  <i>使用 Verses 构建的复杂混合布局（网格、线性、嵌套列表）。</i>
-</p>
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="screenshot/sample01.png" width="300" alt="Verses 示例 1" /><br>
+        <i>线性与网格混合布局</i>
+      </td>
+      <td align="center">
+        <img src="screenshot/sample02.png" width="300" alt="Verses 示例 2" /><br>
+        <i>嵌套横向列表</i>
+      </td>
+    </tr>
+  </table>
+</div>
 
 ---
 
