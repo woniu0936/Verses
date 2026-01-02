@@ -52,8 +52,9 @@ if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
     echo "🗑️ Deleting local tag $TAG_NAME..."
     git tag -d "$TAG_NAME"
     
-    # Check if tag exists on remote
-    if git ls-remote --tags origin | grep -q "refs/tags/$TAG_NAME"; then
+    # Check if tag exists on remote before trying to delete
+    REMOTE_TAG_EXISTS=$(git ls-remote --tags origin "refs/tags/$TAG_NAME")
+    if [ -n "$REMOTE_TAG_EXISTS" ]; then
         echo "🌐 Tag $TAG_NAME found on remote. Deleting..."
         git push origin :refs/tags/"$TAG_NAME"
     fi
