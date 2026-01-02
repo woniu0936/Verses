@@ -1,6 +1,7 @@
 package com.woniu0936.verses.core
 
 import android.view.ViewGroup
+import androidx.recyclerview.widget.AsyncDifferConfig
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -8,7 +9,7 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.woniu0936.verses.model.ItemWrapper
 import com.woniu0936.verses.model.SmartViewHolder
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.Executors
 
 /**
  * A high-performance [ListAdapter] that orchestrates the rendering of [ItemWrapper] units.
@@ -20,11 +21,15 @@ import java.util.concurrent.atomic.AtomicInteger
  * 4. **Safe Click Handling**: Implements a stateless click system using the modern `bindingAdapter` API.
  */
 @PublishedApi
-internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperDiffCallback) {
+internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
+    AsyncDifferConfig.Builder(WrapperDiffCallback)
+        .setBackgroundThreadExecutor(diffExecutor)
+        .build()
+) {
     companion object {
+        private val diffExecutor = Executors.newFixedThreadPool(2)
         private val globalViewTypeCache = ConcurrentHashMap<Any, Int>()
         private val globalTypeToFactory = ConcurrentHashMap<Int, (ViewGroup) -> SmartViewHolder>()
-        private val globalTypeCounter = AtomicInteger(1000)
 
         /**
          * A shared [RecyclerView.RecycledViewPool] used automatically by the library to optimize
@@ -35,12 +40,24 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperD
         /**
          * Assigns or retrieves a unique, stable ViewType ID for a given layout key.
          * Stability is critical for safe sharing of [globalPool].
+         * 
+         * Inspired by Epoxy's approach: We use the hashCode as the primary ID
+         * but implement linear probing to resolve rare collisions, ensuring
+         * absolute uniqueness in the global registry.
          */
         fun getGlobalViewType(key: Any, factory: (ViewGroup) -> SmartViewHolder): Int {
             return globalViewTypeCache[key] ?: synchronized(globalTypeToFactory) {
-                // Double-checked locking for thread-safe Type generation
                 globalViewTypeCache[key] ?: run {
-                    val type = globalTypeCounter.getAndIncrement()
+                    var type = key.hashCode()
+                    
+                    // Linear probing: If this hashCode is already taken by a DIFFERENT key,
+                    // increment until we find a free slot.
+                    while (globalTypeToFactory.containsKey(type)) {
+                        val existingKey = globalViewTypeCache.entries.find { it.value == type }?.key
+                        if (existingKey == null || existingKey == key) break
+                        type++
+                    }
+                    
                     globalTypeToFactory[type] = factory
                     globalViewTypeCache[key] = type
                     type
@@ -59,6 +76,13 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperD
     }
 
     override fun getItemViewType(position: Int): Int = getItem(position).viewType
+
+    /**
+     * Submits a new list to be diffed, and displayed.
+     */
+    fun submit(list: List<ItemWrapper>, commitCallback: (() -> Unit)? = null) {
+        submitList(list, commitCallback)
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SmartViewHolder {
         val factory = getGlobalFactory(viewType)
@@ -103,13 +127,13 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperD
     }
 
     private fun cleanupNestedRecyclerViews(view: android.view.View) {
-        if (view is RecyclerView) {
-            (view.adapter as? VerseAdapter)?.submitList(null)
-        } else if (view is android.view.ViewGroup) {
-            for (i in 0 until view.childCount) {
-                val child = view.getChildAt(i)
-                if (child is RecyclerView) {
-                    (child.adapter as? VerseAdapter)?.submitList(null)
+        when (view) {
+            is RecyclerView -> {
+                view.adapter = null
+            }
+            is android.view.ViewGroup -> {
+                for (i in 0 until view.childCount) {
+                    cleanupNestedRecyclerViews(view.getChildAt(i))
                 }
             }
         }
