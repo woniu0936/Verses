@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Verses Release Script
-# Only handles tagging and pushing. No automatic commits or builds.
+# Updates version, commits changes (if any), and handles tagging/pushing.
 # Usage: ./release.sh <version>
 # Example: ./release.sh 1.0.0
 
@@ -17,23 +17,23 @@ VERSION=$1
 TAG_NAME="v$VERSION"
 PROP_FILE="gradle.properties"
 
-# Safety Check: Verify if version matches gradle.properties
+# 1. Update gradle.properties
 if [ -f "$PROP_FILE" ]; then
     CURRENT_VERSION=$(grep "VERSION_NAME=" "$PROP_FILE" | cut -d'=' -f2)
+    
     if [ "$CURRENT_VERSION" != "$VERSION" ]; then
-        echo "⚠️  Warning: Version '$VERSION' does not match VERSION_NAME ($CURRENT_VERSION) in $PROP_FILE."
-        read -p "❓ Proceed anyway? (y/n) " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            echo "❌ Aborted."
-            exit 1
+        echo "📝 Updating VERSION_NAME from $CURRENT_VERSION to $VERSION..."
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "s/VERSION_NAME=.*/VERSION_NAME=$VERSION/" "$PROP_FILE"
+        else
+            sed -i "s/VERSION_NAME=.*/VERSION_NAME=$VERSION/" "$PROP_FILE"
         fi
+    else
+        echo "ℹ️  Version in $PROP_FILE is already $VERSION."
     fi
 fi
 
-echo "🚀 Preparing to release Verses $TAG_NAME..."
-
-# Check if tag already exists
+# 2. Handle Tag Overwrite
 LOCAL_TAG_EXISTS=$(git tag -l "$TAG_NAME")
 REMOTE_TAG_EXISTS=$(git ls-remote --tags origin "refs/tags/$TAG_NAME" 2>/dev/null || echo "")
 
@@ -63,12 +63,21 @@ if [ -n "$LOCAL_TAG_EXISTS" ] || [ -n "$REMOTE_TAG_EXISTS" ]; then
     fi
 fi
 
-# Tag and Push
-echo "📦 Tagging..."
+# 3. Git Commit (only if there are changes)
+git add "$PROP_FILE"
+if ! git diff --cached --quiet; then
+    echo "📦 Committing version update..."
+    git commit -m "chore(release): prepare release $TAG_NAME"
+else
+    echo "ℹ️  No changes to commit (gradle.properties already up to date)."
+fi
+
+# 4. Tag and Push
+echo "🏷️  Tagging $TAG_NAME..."
 git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
 
 echo "📤 Pushing to GitHub..."
 git push origin main
 git push origin "$TAG_NAME"
 
-echo "✅ Success! Tag $TAG_NAME and code have been pushed."
+echo "✅ Success! Tag $TAG_NAME and changes have been pushed."
