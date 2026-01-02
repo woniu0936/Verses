@@ -46,6 +46,11 @@ jobs:
       - name: Generate Documentation
         run: ./gradlew :verses:dokkaGenerateHtml
 
+      - name: Package Documentation
+        run: |
+          cd verses/build/dokka
+          zip -r ../../../verses-docs-${{ github.ref_name }}.zip .
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -53,6 +58,6 @@ jobs:
           prerelease: ${{ contains(github.ref, '-') }}
           files: |
             verses/build/outputs/aar/*.aar
-            verses/build/dokka/*.zip
+            verses-docs-*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
