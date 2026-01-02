@@ -6,7 +6,10 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.woniu0936.verses.core.VerseAdapter
-import com.woniu0936.verses.model.*
+import com.woniu0936.verses.model.Inflate
+import com.woniu0936.verses.model.ItemWrapper
+import com.woniu0936.verses.model.SmartViewHolder
+import com.woniu0936.verses.model.ViewCreator
 
 @VerseDsl
 class VerseScope @PublishedApi internal constructor(
@@ -19,6 +22,7 @@ class VerseScope @PublishedApi internal constructor(
     // Context variables (for advanced mode render)
     @PublishedApi
     internal var currentData: Any? = null
+
     @PublishedApi
     internal var currentId: Any? = null
 
@@ -36,23 +40,25 @@ class VerseScope @PublishedApi internal constructor(
         noinline key: ((T) -> Any)? = null,
         span: Int = 1,
         fullSpan: Boolean = false,
+        noinline onClick: ((T) -> Unit)? = null,
         noinline onBind: VB.(T) -> Unit
     ) {
         // ✨ MAGIC: Use ViewBinding Class as stable Key
         val stableKey = VB::class.java
-        
+
         items.forEachIndexed { index, item ->
             internalRender(
-                factory = { p -> 
+                factory = { p ->
                     val binding = inflate(LayoutInflater.from(p.context), p, false)
-                    SmartViewHolder(binding.root, binding) 
+                    SmartViewHolder(binding.root, binding)
                 },
-                bind = { h -> (h.binding as VB).onBind(item) },
-                key = stableKey, // Pass Class Key
-                data = item,
                 id = key?.invoke(item) ?: index,
                 span = span,
-                fullSpan = fullSpan
+                fullSpan = fullSpan,
+                onClick = onClick?.let { { it(item) } },
+                bind = { h -> (h.binding as VB).onBind(item) },
+                key = stableKey,
+                data = item
             )
         }
     }
@@ -66,20 +72,23 @@ class VerseScope @PublishedApi internal constructor(
         key: Any? = null,
         span: Int = 1,
         fullSpan: Boolean = true, // Single item defaults to full span usually
+        noinline onClick: ((Any) -> Unit)? = null,
         noinline onBind: VB.() -> Unit = {}
     ) {
         val stableKey = VB::class.java
+        val actualData = data ?: Unit
         internalRender(
-            factory = { p -> 
+            factory = { p ->
                 val binding = inflate(LayoutInflater.from(p.context), p, false)
-                SmartViewHolder(binding.root, binding) 
+                SmartViewHolder(binding.root, binding)
             },
             bind = { h -> (h.binding as VB).onBind() },
             key = stableKey,
-            data = data ?: Unit,
+            data = actualData,
             id = key ?: "single_vb_${stableKey.name}",
             span = span,
-            fullSpan = fullSpan
+            fullSpan = fullSpan,
+            onClick = onClick?.let { { it(actualData) } }
         )
     }
 
@@ -96,11 +105,12 @@ class VerseScope @PublishedApi internal constructor(
         noinline key: ((T) -> Any)? = null,
         span: Int = 1,
         fullSpan: Boolean = false,
+        noinline onClick: ((T) -> Unit)? = null,
         noinline onBind: V.(T) -> Unit
     ) {
         // ✨ MAGIC: Use View Class as stable Key
         val stableKey = V::class.java
-        
+
         items.forEachIndexed { index, item ->
             internalRender(
                 factory = { p -> createSafeViewHolder(p, create) },
@@ -109,7 +119,8 @@ class VerseScope @PublishedApi internal constructor(
                 data = item,
                 id = key?.invoke(item) ?: index,
                 span = span,
-                fullSpan = fullSpan
+                fullSpan = fullSpan,
+                onClick = onClick?.let { { it(item) } }
             )
         }
     }
@@ -123,17 +134,20 @@ class VerseScope @PublishedApi internal constructor(
         key: Any? = null,
         span: Int = 1,
         fullSpan: Boolean = true,
+        noinline onClick: ((Any) -> Unit)? = null,
         noinline onBind: V.() -> Unit = {}
     ) {
         val stableKey = V::class.java
+        val actualData = data ?: Unit
         internalRender(
             factory = { p -> createSafeViewHolder(p, create) },
             bind = { h -> (h.view as V).onBind() },
             key = stableKey,
-            data = data ?: Unit,
+            data = actualData,
             id = key ?: "single_view_${stableKey.name}",
             span = span,
-            fullSpan = fullSpan
+            fullSpan = fullSpan,
+            onClick = onClick?.let { { it(actualData) } }
         )
     }
 
@@ -164,23 +178,25 @@ class VerseScope @PublishedApi internal constructor(
         contentType: Any? = null,
         span: Int = 1,
         fullSpan: Boolean = false,
+        noinline onClick: ((Any) -> Unit)? = null,
         noinline onBind: VB.() -> Unit
     ) {
         // Prefer contentType (escape hatch), otherwise Class
         val stableKey = contentType ?: VB::class.java
         val data = currentData ?: Unit
-        
+
         internalRender(
-            factory = { p -> 
+            factory = { p ->
                 val binding = inflate(LayoutInflater.from(p.context), p, false)
-                SmartViewHolder(binding.root, binding) 
+                SmartViewHolder(binding.root, binding)
             },
             bind = { h -> (h.binding as VB).onBind() },
             key = stableKey,
             data = data,
             id = currentId ?: System.identityHashCode(data),
             span = span,
-            fullSpan = fullSpan
+            fullSpan = fullSpan,
+            onClick = onClick?.let { { it(data) } }
         )
     }
 
@@ -192,6 +208,7 @@ class VerseScope @PublishedApi internal constructor(
         contentType: Any? = null,
         span: Int = 1,
         fullSpan: Boolean = false,
+        noinline onClick: ((Any) -> Unit)? = null,
         noinline onBind: V.() -> Unit
     ) {
         val stableKey = contentType ?: V::class.java
@@ -204,7 +221,8 @@ class VerseScope @PublishedApi internal constructor(
             data = data,
             id = currentId ?: System.identityHashCode(data),
             span = span,
-            fullSpan = fullSpan
+            fullSpan = fullSpan,
+            onClick = onClick?.let { { it(data) } }
         )
     }
 
@@ -235,19 +253,23 @@ class VerseScope @PublishedApi internal constructor(
         data: Any,
         id: Any,
         span: Int,
-        fullSpan: Boolean
+        fullSpan: Boolean,
+        onClick: (() -> Unit)? = null
     ) {
         // Convert Class Key to Global Int ID
         val viewType = VerseAdapter.getGlobalViewType(key, factory)
-        
-        newWrappers.add(ItemWrapper(
-            id = id,
-            viewType = viewType,
-            data = data,
-            span = span,
-            fullSpan = fullSpan,
-            factory = factory,
-            bind = bind
-        ))
+
+        newWrappers.add(
+            ItemWrapper(
+                id = id,
+                viewType = viewType,
+                data = data,
+                span = span,
+                fullSpan = fullSpan,
+                factory = factory,
+                bind = bind,
+                onClick = onClick
+            )
+        )
     }
 }

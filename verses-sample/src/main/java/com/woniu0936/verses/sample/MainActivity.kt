@@ -1,6 +1,7 @@
 package com.woniu0936.verses.sample
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -12,7 +13,14 @@ import androidx.lifecycle.repeatOnLifecycle
 import coil.load
 import com.woniu0936.verses.ext.composeGrid
 import com.woniu0936.verses.ext.composeLinearRow
-import com.woniu0936.verses.sample.databinding.*
+import com.woniu0936.verses.sample.databinding.ActivityMainBinding
+import com.woniu0936.verses.sample.databinding.ItemAppBinding
+import com.woniu0936.verses.sample.databinding.ItemAppGridBinding
+import com.woniu0936.verses.sample.databinding.ItemBannerBinding
+import com.woniu0936.verses.sample.databinding.ItemCategoryBinding
+import com.woniu0936.verses.sample.databinding.ItemHorizontalListBinding
+import com.woniu0936.verses.sample.databinding.ItemSearchBarBinding
+import com.woniu0936.verses.sample.databinding.ItemSectionHeaderBinding
 import com.woniu0936.verses.sample.model.HomeState
 import com.woniu0936.verses.sample.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
@@ -32,15 +40,15 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-        
+
         binding.fabShuffle.setOnClickListener {
             viewModel.shuffleData()
         }
-        
+
         // Setup ItemAnimator: We enable it to prove the library's 'supportsChangeAnimations = false' 
         // effectively prevents the flash while keeping the list fluid.
         binding.recyclerView.itemAnimator = androidx.recyclerview.widget.DefaultItemAnimator()
-        
+
         observeState()
     }
 
@@ -69,7 +77,10 @@ class MainActivity : AppCompatActivity() {
                     items(
                         items = state.banners,
                         inflate = ItemBannerBinding::inflate,
-                        key = { it.id }
+                        key = { it.id },
+                        onClick = { banner ->
+                            Toast.makeText(this@MainActivity, "Clicked Banner: ${banner.title}", Toast.LENGTH_SHORT).show()
+                        }
                     ) { banner ->
                         tvTitle.text = banner.title
                         tvSubtitle.text = banner.subtitle
@@ -101,16 +112,21 @@ class MainActivity : AppCompatActivity() {
                     items = state.gridApps,
                     inflate = ItemAppGridBinding::inflate,
                     key = { "grid_${it.id}" },
-                    span = 1
-                                            ) { app ->
-                                                tvAppName.text = app.name
-                                                tvRating.text = app.rating.toString()
-                                                ratingBar.rating = app.rating
-                                                ivIcon.load(app.iconUrl) {
-                                                    crossfade(true)
-                                                    placeholder(android.R.drawable.ic_menu_report_image)
-                                                }
-                                            }            }
+                    span = 1,
+                    onClick = { app ->
+                        Toast.makeText(this@MainActivity, "Clicked Grid App: ${app.name}", Toast.LENGTH_SHORT).show()
+                    }
+                ) { app ->
+                    tvAppName.text = app.name
+                    tvRating.text = app.rating.toString()
+                    ratingBar.rating = app.rating
+                    ivIcon.load(app.iconUrl) {
+                        crossfade(true)
+                        placeholder(android.R.drawable.ic_menu_report_image)
+                    }
+                }
+            }
+
             // 5. Dynamic Sections (Full Span, Nested Horizontal RV)
             state.sections.forEach { section ->
                 item(ItemSectionHeaderBinding::inflate, data = section.title, fullSpan = true, key = "header_${section.id}") {
@@ -118,7 +134,13 @@ class MainActivity : AppCompatActivity() {
                 }
                 item(ItemHorizontalListBinding::inflate, data = section.apps, fullSpan = true, key = "list_${section.id}") {
                     rvHorizontal.composeLinearRow {
-                        items(section.apps, ItemAppBinding::inflate) { app ->
+                        items(
+                            items = section.apps,
+                            inflate = ItemAppBinding::inflate,
+                            onClick = { app ->
+                                Toast.makeText(this@MainActivity, "Clicked App in Section: ${app.name}", Toast.LENGTH_SHORT).show()
+                            }
+                        ) { app ->
                             tvAppName.text = app.name
                             tvRating.text = app.rating.toString()
                             ratingBar.rating = app.rating

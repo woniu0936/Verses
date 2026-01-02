@@ -43,11 +43,29 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperD
     override fun getItemViewType(position: Int): Int = getItem(position).viewType
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SmartViewHolder {
-        return getGlobalFactory(viewType)(parent)
+        val holder = getGlobalFactory(viewType)(parent)
+        
+        // Performance Optimization: Set listener once in onCreate.
+        // We use 'bindingAdapter' to dynamically find the adapter currently using this holder.
+        // This is much cleaner than using tags and is safer for RecycledViewPool sharing.
+        holder.itemView.setOnClickListener {
+            val position = holder.bindingAdapterPosition
+            val adapter = holder.bindingAdapter as? VerseAdapter
+            if (position != RecyclerView.NO_POSITION && adapter != null) {
+                val wrapper = adapter.getItem(position)
+                // Simply invoke the baked closure. No data passing needed!
+                wrapper.onClick?.invoke()
+            }
+        }
+        
+        return holder
     }
 
     override fun onBindViewHolder(holder: SmartViewHolder, position: Int) {
         val item = getItem(position)
+        
+        // Just update the clickable state, no tag needed.
+        holder.itemView.isClickable = item.onClick != null
         
         // Special handling for StaggeredGridLayout: Apply full-span attribute to the LayoutParams.
         val params = holder.itemView.layoutParams
@@ -62,6 +80,8 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperD
 
     override fun onViewRecycled(holder: SmartViewHolder) {
         super.onViewRecycled(holder)
+        // No need to null out the listener because it's set in onCreate and
+        // doesn't hold stale references to data. Just cleanup the view state.
         cleanupView(holder.itemView)
     }
 
