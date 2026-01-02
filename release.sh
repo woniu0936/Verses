@@ -39,6 +39,26 @@ fi
 
 echo "🚀 Preparing to release Verses v$VERSION..."
 
+# Check if tag already exists
+TAG_NAME="v$VERSION"
+if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+    echo "⚠️  Tag $TAG_NAME already exists locally."
+    read -p "❓ Overwrite existing tag? (y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "❌ Aborted."
+        exit 1
+    fi
+    echo "🗑️ Deleting local tag $TAG_NAME..."
+    git tag -d "$TAG_NAME"
+    
+    # Check if tag exists on remote
+    if git ls-remote --tags origin | grep -q "refs/tags/$TAG_NAME"; then
+        echo "🌐 Tag $TAG_NAME found on remote. Deleting..."
+        git push origin :refs/tags/"$TAG_NAME"
+    fi
+fi
+
 # 1. Update gradle.properties
 echo "📝 Updating VERSION_NAME to $VERSION in $PROP_FILE..."
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -59,5 +79,9 @@ git add "$PROP_FILE"
 git commit -m "chore(release): prepare release v$VERSION"
 git tag -a "v$VERSION" -m "Release v$VERSION"
 
-echo "✅ Local preparation complete! Tag v$VERSION has been created."
-echo "👉 Now you can review the changes and run 'git push origin main --tags' to trigger the CI."
+# 4. Push to GitHub
+echo "📤 Pushing to GitHub..."
+git push origin main
+git push origin "v$VERSION"
+
+echo "✅ Success! Tag v$VERSION has been pushed. GitHub Actions will handle the rest."
