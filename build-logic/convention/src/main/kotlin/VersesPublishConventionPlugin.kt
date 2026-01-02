@@ -48,6 +48,7 @@ class VersesPublishConventionPlugin : Plugin<Project> {
                 configure(com.vanniktech.maven.publish.AndroidSingleVariantLibrary("release", true, true))
 
                 publishToMavenCentral()
+                signAllPublications()
             }
 
             // Migrating to Dokka V2 configuration
