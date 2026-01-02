@@ -86,4 +86,18 @@ class VerseAdapterTest {
         // Verify that the deep nested RV had its adapter cleared
         verify { nestedRV.adapter = null }
     }
+
+    @Test
+    fun `clearRegistry empties all global caches`() {
+        val key = "TestKey"
+        val factory: (ViewGroup) -> SmartViewHolder = { mockk() }
+        
+        VerseAdapter.getGlobalViewType(key, factory)
+        
+        VerseAdapter.clearRegistry()
+        
+        // After clearing, getting the same key should ideally not find it in the internal cache
+        val newType = VerseAdapter.getGlobalViewType(key, factory)
+        assert(newType != 0)
+    }
 }

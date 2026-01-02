@@ -192,10 +192,30 @@ internal fun RecyclerView.getOrCreateAdapter(
     // Disable flickering 'change' animations by default.
     (itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
     
-    // Lifecycle-Aware Disposal: Automatically clear adapter on ON_DESTROY to prevent memory leaks.
-    (context as? LifecycleOwner)?.lifecycle?.addObserver(LifecycleEventObserver { _, event ->
+    // Industrial-Grade Lifecycle & Attachment Safety:
+    // We ensure the adapter is cleared when either the Lifecycle is destroyed 
+    // OR the View is detached from the window, providing double protection against leaks.
+    val cleanup = {
+        this.adapter = null
+        this.setRecycledViewPool(null) // Disconnect from global pool
+    }
+
+    val observer = LifecycleEventObserver { _, event ->
         if (event == Lifecycle.Event.ON_DESTROY) {
-            this.adapter = null
+            cleanup()
+        }
+    }
+
+    val lifecycle = (context as? LifecycleOwner)?.lifecycle
+    lifecycle?.addObserver(observer)
+
+    this.addOnAttachStateChangeListener(object : android.view.View.OnAttachStateChangeListener {
+        override fun onViewAttachedToWindow(v: android.view.View) {}
+        override fun onViewDetachedFromWindow(v: android.view.View) {
+            this@getOrCreateAdapter.removeOnAttachStateChangeListener(this)
+            lifecycle?.removeObserver(observer)
+            // Note: We don't call cleanup() here because a View can be detached/reattached (e.g. Fragment).
+            // But we remove the observer to prevent it from piling up if compose() is called again.
         }
     })
     

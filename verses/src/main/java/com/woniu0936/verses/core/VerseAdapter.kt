@@ -73,6 +73,19 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
                 globalTypeToFactory[viewType]
             } ?: throw IllegalStateException("No factory registered for viewType $viewType")
         }
+
+        /**
+         * Explicitly clears all global registries and the shared ViewPool.
+         * 
+         * Call this when the app is undergoing a major state change (e.g., user logout, 
+         * dynamic theme switch) to release all static references to view factories 
+         * and recycled views.
+         */
+        fun clearRegistry() {
+            globalViewTypeCache.clear()
+            globalTypeToFactory.clear()
+            globalPool.clear()
+        }
     }
 
     override fun getItemViewType(position: Int): Int = getItem(position).viewType
