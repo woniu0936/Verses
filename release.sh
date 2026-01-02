@@ -15,6 +15,28 @@ fi
 VERSION=$1
 PROP_FILE="gradle.properties"
 
+# Extract current version
+CURRENT_VERSION=$(grep "VERSION_NAME=" "$PROP_FILE" | cut -d'=' -f2)
+
+echo "🔍 Current version: $CURRENT_VERSION"
+echo "🚀 Target version:  $VERSION"
+
+if [ "$CURRENT_VERSION" == "$VERSION" ]; then
+    read -p "⚠️  Version is the same as current. Proceed anyway? (y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "❌ Aborted."
+        exit 1
+    fi
+else
+    read -p "❓ Update version and proceed with release? (y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "❌ Aborted."
+        exit 1
+    fi
+fi
+
 echo "🚀 Preparing to release Verses v$VERSION..."
 
 # 1. Update gradle.properties
