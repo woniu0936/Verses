@@ -57,6 +57,7 @@ jobs:
         with:
           name: Verses ${{ github.ref_name }}
           generate_release_notes: true
+          make_latest: true
           prerelease: ${{ contains(github.ref, '-') }}
           body: |
             ## 🌌 Verses ${{ github.ref_name }} is here!
