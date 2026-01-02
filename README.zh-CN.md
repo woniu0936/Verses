@@ -8,7 +8,7 @@
 - **类型安全**: 强依赖 ViewBinding 和 Kotlin 泛型，杜绝 `findViewById` 和类型转换异常。
 
 <p align="center">
-  <video src="screenshot/sample.mp4" width="300" autoplay loop muted playsinline></video>
+  <img src="./screenshot/sample.mp4" width="300" />
   <br>
   <i>使用 Verses 构建的复杂混合布局（网格、线性、嵌套列表）。</i>
 </p>
