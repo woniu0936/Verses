@@ -24,9 +24,19 @@
 
 ---
 
-## 🚀 安装
+### 安装
 
-在你的模块 `build.gradle.kts` 中添加依赖：
+#### 远程依赖 (推荐)
+在模块的 `build.gradle.kts` 中添加：
+
+```kotlin
+dependencies {
+    implementation("io.github.woniu0936:verses:1.0.0")
+}
+```
+
+#### 本地项目
+如果你正在参与 Verses 的开发：
 
 ```kotlin
 dependencies {

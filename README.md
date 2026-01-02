@@ -24,9 +24,19 @@
 
 ---
 
-## 🚀 Installation
+### Installation
 
-Add the dependency to your module's `build.gradle.kts`:
+#### Remote Dependency (Recommended)
+Add it to your module's `build.gradle.kts`:
+
+```kotlin
+dependencies {
+    implementation("io.github.woniu0936:verses:1.0.0")
+}
+```
+
+#### Local Project
+If you are contributing to Verses:
 
 ```kotlin
 dependencies {
