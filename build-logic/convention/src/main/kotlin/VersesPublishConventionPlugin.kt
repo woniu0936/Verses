@@ -49,12 +49,9 @@ class VersesPublishConventionPlugin : Plugin<Project> {
 
                 publishToMavenCentral()
                 
-                // Enhanced signing logic:
-                // Supports both file-based (local) and memory-based (CI) signing
-                val hasGpgKey = project.hasProperty("signing.keyId") || project.hasProperty("signingInMemoryKey")
-                if (hasGpgKey) {
-                    signAllPublications()
-                }
+                // Use standard signing configuration. 
+                // It will automatically pick up signing.keyId, signing.password, signing.secretKey
+                signAllPublications()
             }
 
             // Migrating to Dokka V2 configuration
