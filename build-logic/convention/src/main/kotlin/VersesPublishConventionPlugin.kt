@@ -11,7 +11,7 @@ class VersesPublishConventionPlugin : Plugin<Project> {
             pluginManager.apply("org.jetbrains.dokka")
 
             extensions.configure<MavenPublishBaseExtension> {
-                val myGroup = providers.gradleProperty("GROUP").getOrElse("com.woniu0936")
+                val myGroup = providers.gradleProperty("GROUP").getOrElse("io.github.woniu0936")
                 val myVersion = providers.gradleProperty("VERSION_NAME").getOrElse("1.0.0")
 
                 coordinates(myGroup, project.name, myVersion)
@@ -45,7 +45,11 @@ class VersesPublishConventionPlugin : Plugin<Project> {
                 configure(com.vanniktech.maven.publish.AndroidSingleVariantLibrary("release", true, true))
 
                 publishToMavenCentral()
-                signAllPublications()
+                
+                // Only sign if GPG keys are provided (e.g., in CI or local gradle.user.properties)
+                if (project.hasProperty("signing.keyId") || project.hasProperty("signing.password")) {
+                    signAllPublications()
+                }
             }
 
             // Migrating to Dokka V2 configuration
