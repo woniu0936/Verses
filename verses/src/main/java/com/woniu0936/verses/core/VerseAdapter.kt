@@ -74,8 +74,11 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperD
     override fun onBindViewHolder(holder: SmartViewHolder, position: Int) {
         val item = getItem(position)
         
-        // Update interactive state without re-setting listeners
-        holder.itemView.isClickable = item.onClick != null
+        // Update interactive state efficiently
+        val isClickable = item.onClick != null
+        if (holder.itemView.isClickable != isClickable) {
+            holder.itemView.isClickable = isClickable
+        }
         
         // Handle StaggeredGrid full-span items
         val params = holder.itemView.layoutParams
@@ -89,23 +92,20 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(WrapperD
 
     override fun onViewRecycled(holder: SmartViewHolder) {
         super.onViewRecycled(holder)
-        // Auto-clean nested adapters to prevent 'ghosting' visual artifacts
-        cleanupView(holder.itemView)
+        // Auto-clean nested adapters to prevent 'ghosting' visual artifacts.
+        // We only look for direct RecyclerView children to avoid deep tree traversal.
+        cleanupNestedRecyclerViews(holder.itemView)
     }
 
-    /**
-     * Recursively cleans up nested [RecyclerView] instances when a holder is recycled.
-     *
-     * This is vital for nested horizontal lists. By clearing the nested adapter's list,
-     * we prevent "ghosting" (where a recycled view briefly shows old data from a previous
-     * row before being updated).
-     */
-    private fun cleanupView(view: android.view.View) {
+    private fun cleanupNestedRecyclerViews(view: android.view.View) {
         if (view is RecyclerView) {
             (view.adapter as? VerseAdapter)?.submitList(null)
         } else if (view is android.view.ViewGroup) {
             for (i in 0 until view.childCount) {
-                cleanupView(view.getChildAt(i))
+                val child = view.getChildAt(i)
+                if (child is RecyclerView) {
+                    (child.adapter as? VerseAdapter)?.submitList(null)
+                }
             }
         }
     }
