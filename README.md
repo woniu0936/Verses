@@ -8,7 +8,7 @@
 - **Type Safety**: Powered by ViewBinding and Generic types, eliminating `findViewById`.
 
 <p align="center">
-  <img src="screenshot/sample.gif" width="300" alt="Verses Sample Demo">
+  <video src="screenshot/sample.mp4" width="300" autoplay loop muted playsinline></video>
   <br>
   <i>Complex mixed layouts (Grid, Linear, Nested) built with Verses.</i>
 </p>
