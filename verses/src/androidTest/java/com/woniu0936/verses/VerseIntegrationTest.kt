@@ -34,10 +34,21 @@ class VerseIntegrationTest {
     fun setup() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
         recyclerView = RecyclerView(context)
-        recyclerView.layoutParams = ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        )
+        // Give it a fixed size so it can layout its children
+        recyclerView.layout(0, 0, 1080, 1920)
+    }
+
+    /**
+     * Triggers a manual layout pass on the RecyclerView.
+     */
+    private fun triggerLayout() {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            recyclerView.measure(
+                View.MeasureSpec.makeMeasureSpec(1080, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(1920, View.MeasureSpec.EXACTLY)
+            )
+            recyclerView.layout(0, 0, 1080, 1920)
+        }
     }
 
     /**
@@ -196,6 +207,7 @@ class VerseIntegrationTest {
         }
         
         Thread.sleep(100)
+        triggerLayout()
         
         val adapter = recyclerView.adapter
         assertEquals(2, adapter?.itemCount)
@@ -204,5 +216,29 @@ class VerseIntegrationTest {
         assertNotNull(viewHolder)
         assertTrue(viewHolder?.itemView is TextView)
         assertEquals("Custom 1", (viewHolder?.itemView as TextView).text.toString())
+    }
+
+    /**
+     * Verifies that [VerseSpacingDecoration] is correctly applied when spacing is provided.
+     */
+    @Test
+    fun testSpacingDecorationIsApplied() {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            recyclerView.composeLinearColumn(spacing = 16) {
+                item(::testInflate)
+            }
+        }
+
+        val decorationCount = recyclerView.itemDecorationCount
+        assertTrue("Decoration should be applied when spacing > 0", decorationCount > 0)
+        
+        var foundSpacingDecoration = false
+        for (i in 0 until decorationCount) {
+            if (recyclerView.getItemDecorationAt(i).javaClass.simpleName == "VerseSpacingDecoration") {
+                foundSpacingDecoration = true
+                break
+            }
+        }
+        assertTrue("VerseSpacingDecoration should be present", foundSpacingDecoration)
     }
 }

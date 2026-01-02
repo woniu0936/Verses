@@ -24,12 +24,7 @@
 
 ---
 
-### 安装
-# ... (existing content)
-
-#### 常见问题
-- **同步延迟**：新版本发布后，通常需要 **10-30 分钟** 才能下载，而出现在 [Maven Central](https://search.maven.org/) 搜索结果中可能需要长达 **4 小时**。
-- **快照版本**：目前我们不发布快照 (Snapshot) 版本，请在生产环境使用稳定版。
+### 📦 安装
 
 #### 远程依赖 (推荐)
 在模块的 `build.gradle.kts` 中添加：
@@ -48,6 +43,12 @@ dependencies {
     implementation(project(":verses"))
 }
 ```
+
+#### 常见问题
+- **同步延迟**：新版本发布后，通常需要 **10-30 分钟** 才能下载，而出现在 [Maven Central](https://search.maven.org/) 搜索结果中可能需要长达 **4 小时**。
+- **快照版本**：目前我们不发布快照 (Snapshot) 版本，请在生产环境使用稳定版。
+
+---
 
 ## 📖 快速上手
 
@@ -130,12 +131,14 @@ recyclerView.compose {
 
     Copyright 2025 Woniu0936
 
-    本项目基于 MIT 协议 (the "License") 开源；
-    您可以在遵循协议的前提下使用本项目。
-    您可以在以下网址获得协议副本：
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-       https://opensource.org/licenses/MIT
+       http://www.apache.org/licenses/LICENSE-2.0
 
-    除非法律要求或书面同意，否则按“原样”分发，
-    不附带任何明示或暗示的保证或条件。
-    详情请参阅协议中的特定语言。
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
