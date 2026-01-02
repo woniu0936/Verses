@@ -59,9 +59,5 @@ git add "$PROP_FILE"
 git commit -m "chore(release): prepare release v$VERSION"
 git tag -a "v$VERSION" -m "Release v$VERSION"
 
-# 4. Push to GitHub
-echo "📤 Pushing to GitHub..."
-git push origin main
-git push origin "v$VERSION"
-
-echo "✅ Success! Tag v$VERSION has been pushed. GitHub Actions will handle the rest."
+echo "✅ Local preparation complete! Tag v$VERSION has been created."
+echo "👉 Now you can review the changes and run 'git push origin main --tags' to trigger the CI."
