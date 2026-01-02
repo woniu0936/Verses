@@ -1,11 +1,9 @@
-# 🌌 Verse
+# 🌌 Verses
 
-**Verse** is a minimalist, high-performance declarative UI builder library for Android RecyclerView. It introduces a Jetpack Compose-like DSL syntax, allowing developers to build complex list interfaces without the boilerplate of Adapters, ViewHolders, and ViewType constants.
+**Verses** is a minimalist, industrial-grade declarative UI engine for Android RecyclerView. It brings the expressive power of Jetpack Compose DSL to the mature and stable world of RecyclerView, enabling you to build complex, high-performance lists with 80% less code.
 
-- **Zero Boilerplate**: No more Adapter/ViewHolder classes.
-- **Reified Safety**: Automatically prevents "ViewType Explosion" by using Class-based keys.
-- **High Performance**: Built on `ListAdapter` and `DiffUtil` for smart asynchronous updates.
-- **Type Safety**: Powered by ViewBinding and Generic types, eliminating `findViewById`.
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.woniu0936/verses)](https://search.maven.org/artifact/io.github.woniu0936/verses)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 <div align="center">
   <table>
@@ -22,108 +20,85 @@
   </table>
 </div>
 
----
+## 💎 Why Verses?
 
-### Installation
-# ... (existing content)
+In the modern Android ecosystem, why still choose a RecyclerView-based library?
 
-#### Troubleshooting
-- **Sync Delay**: New releases may take **10-30 minutes** to become available for download and up to **4 hours** to appear in search results on [Maven Central](https://search.maven.org/).
-- **Snapshots**: Currently, we do not publish snapshot builds. Use stable versions for production.
+- **🚀 Performance Peak**: Built on `ListAdapter` and `AsyncListDiffer` with a dedicated background thread pool. It handles 10,000+ items with zero jank.
+- **🛡️ Industrial-Grade Safety**: 
+    - **Deterministic ViewTypes**: Uses an Epoxy-inspired linear probing algorithm to ensure unique IDs across shared ViewPools.
+    - **Memory Leaks Prevention**: Automatic, dual-layer disposal (Lifecycle-aware + Attachment-aware) to clear nested adapters and listeners.
+- **✨ Compose-like Syntax**: Write UI, not boilerplate. No more `Adapter`, `ViewHolder`, or manual `ViewType` constants.
+- **🧩 Extreme Flexibility**: Deeply integrates with `ViewBinding`, while providing first-class support for programmatic custom Views.
+- **📦 Transparent Optimization**: Automatically injects global resource pools and optimizes item animations out of the box.
 
-#### Remote Dependency (Recommended)
-Add it to your module's `build.gradle.kts`:
+## 📦 Installation
 
-```kotlin
-dependencies {
-    implementation("io.github.woniu0936:verses:1.0.0")
-}
-```
-
-#### Local Project
-If you are contributing to Verses:
+Add the dependency to your module's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation(project(":verses"))
+    implementation("io.github.woniu0936:verses:1.0.0-alpha6")
 }
 ```
 
 ## 📖 Quick Start
 
-### 1. Basic Linear List (ViewBinding)
+### 1. Basic Column (ViewBinding)
 ```kotlin
-// Vertical list
-recyclerView.compose {
-    // Single Item (Header)
+recyclerView.composeLinearColumn(spacing = 16.dp) {
+    // Single Header
     item(ItemHeaderBinding::inflate) {
-        // 'this' is ItemHeaderBinding
-        tvTitle.text = "My List"
+        tvTitle.text = "My Dashboard"
     }
 
-    // List of Items
-    items(
-        items = userList,
-        inflate = ItemUserBinding::inflate,
-        key = { it.id } 
-    ) { user ->
-        // 'this' is ItemUserBinding
+    // List of data
+    items(userList, ItemUserBinding::inflate, key = { it.id }) { user ->
         tvName.text = user.name
+        root.setOnClickListener { /* Click Handling */ }
     }
 }
 ```
 
-### 2. Custom View Support (No XML)
+### 2. Multi-Type Grid
 ```kotlin
-recyclerView.compose {
-    items(
-        items = tags,
-        create = { context -> TextView(context).apply { textSize = 16f } }
-    ) { tag ->
-        // 'this' is TextView
-        text = tag
-    }
-}
-```
-
-### 3. Grid & Staggered Layouts
-```kotlin
-recyclerView.composeGrid(spanCount = 4) {
-    // Item spans across all 4 columns
-    item(ItemBannerBinding::inflate, fullSpan = true) {
-        // bind banner
-    }
-
-    // Individual grid items (default span = 1)
-    items(productList, ItemProductBinding::inflate) { product ->
-        // bind product
-    }
-}
-```
-
-### 4. Mixed Types with Logic
-```kotlin
-recyclerView.compose {
-    items(feedList, key = { it.id }) { feed ->
+recyclerView.composeGrid(spanCount = 2) {
+    items(feedList) { feed ->
         when (feed) {
-            is User -> render(ItemUserBinding::inflate) {
-                name.text = feed.name
+            is Banner -> render(ItemBannerBinding::inflate, fullSpan = true) {
+                ivBanner.load(feed.url)
             }
-            is Ad -> render(ItemAdBinding::inflate, fullSpan = true) {
-                img.load(feed.imageUrl)
+            is Post -> render(ItemPostBinding::inflate) {
+                tvContent.text = feed.text
             }
         }
     }
 }
 ```
 
----
+### 3. Programmatic Custom Views (No XML)
+```kotlin
+recyclerView.compose {
+    items(tags, create = { context -> MyTagView(context) }) { tag ->
+        // 'this' is MyTagView
+        setData(tag)
+    }
+}
+```
 
-## 💡 Best Practices
+## 🛠 Advanced Features
 
-1. **Reified Keys**: Verse uses `VB::class.java` or `V::class.java` as ViewType keys. This means even if you use dynamic lambdas, recycling remains stable as long as the View class is the same.
-2. **Provide Keys**: Always provide a `key` in `items()` to enable smooth animations and efficient `DiffUtil` calculations.
-3. **Item Data**: If a single `item()` depends on external state, pass it to the `data` parameter to trigger updates.
+### Global Registry Teardown
+When undergoing a major state change (e.g., Logout), manually release all static references:
+```kotlin
+VerseAdapter.clearRegistry()
+```
+
+### Grid Span Control
+Control how many columns an item occupies in a grid:
+```kotlin
+items(data, inflate, span = 2) { ... }
+```
 
 License
 -------
