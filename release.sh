@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Verses Release Script
+# Only handles tagging and pushing. No automatic commits or builds.
 # Usage: ./release.sh <version>
 # Example: ./release.sh 1.0.0
 
@@ -13,76 +14,61 @@ if [ -z "$1" ]; then
 fi
 
 VERSION=$1
+TAG_NAME="v$VERSION"
 PROP_FILE="gradle.properties"
 
-# Extract current version
-CURRENT_VERSION=$(grep "VERSION_NAME=" "$PROP_FILE" | cut -d'=' -f2)
-
-echo "🔍 Current version: $CURRENT_VERSION"
-echo "🚀 Target version:  $VERSION"
-
-if [ "$CURRENT_VERSION" == "$VERSION" ]; then
-    read -p "⚠️  Version is the same as current. Proceed anyway? (y/n) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "❌ Aborted."
-        exit 1
-    fi
-else
-    read -p "❓ Update version and proceed with release? (y/n) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "❌ Aborted."
-        exit 1
+# Safety Check: Verify if version matches gradle.properties
+if [ -f "$PROP_FILE" ]; then
+    CURRENT_VERSION=$(grep "VERSION_NAME=" "$PROP_FILE" | cut -d'=' -f2)
+    if [ "$CURRENT_VERSION" != "$VERSION" ]; then
+        echo "⚠️  Warning: Version '$VERSION' does not match VERSION_NAME ($CURRENT_VERSION) in $PROP_FILE."
+        read -p "❓ Proceed anyway? (y/n) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "❌ Aborted."
+            exit 1
+        fi
     fi
 fi
 
-echo "🚀 Preparing to release Verses v$VERSION..."
+echo "🚀 Preparing to release Verses $TAG_NAME..."
 
 # Check if tag already exists
-TAG_NAME="v$VERSION"
-if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
-    echo "⚠️  Tag $TAG_NAME already exists locally."
+LOCAL_TAG_EXISTS=$(git tag -l "$TAG_NAME")
+REMOTE_TAG_EXISTS=$(git ls-remote --tags origin "refs/tags/$TAG_NAME" 2>/dev/null || echo "")
+
+LOCAL_TAG_DISPLAY="No"
+if [ -n "$LOCAL_TAG_EXISTS" ]; then LOCAL_TAG_DISPLAY="Yes"; fi
+
+REMOTE_TAG_DISPLAY="No"
+if [ -n "$REMOTE_TAG_EXISTS" ]; then REMOTE_TAG_DISPLAY="Yes"; fi
+
+if [ -n "$LOCAL_TAG_EXISTS" ] || [ -n "$REMOTE_TAG_EXISTS" ]; then
+    echo "⚠️  Tag $TAG_NAME already exists (Local: $LOCAL_TAG_DISPLAY, Remote: $REMOTE_TAG_DISPLAY)."
     read -p "❓ Overwrite existing tag? (y/n) " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         echo "❌ Aborted."
         exit 1
     fi
-    echo "🗑️ Deleting local tag $TAG_NAME..."
-    git tag -d "$TAG_NAME"
     
-    # Check if tag exists on remote before trying to delete
-    REMOTE_TAG_EXISTS=$(git ls-remote --tags origin "refs/tags/$TAG_NAME")
+    if [ -n "$LOCAL_TAG_EXISTS" ]; then
+        echo "🗑️ Deleting local tag $TAG_NAME..."
+        git tag -d "$TAG_NAME"
+    fi
+    
     if [ -n "$REMOTE_TAG_EXISTS" ]; then
-        echo "🌐 Tag $TAG_NAME found on remote. Deleting..."
+        echo "🌐 Deleting remote tag $TAG_NAME..."
         git push origin :refs/tags/"$TAG_NAME"
     fi
 fi
 
-# 1. Update gradle.properties
-echo "📝 Updating VERSION_NAME to $VERSION in $PROP_FILE..."
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' "s/VERSION_NAME=.*/VERSION_NAME=$VERSION/" "$PROP_FILE"
-else
-    sed -i "s/VERSION_NAME=.*/VERSION_NAME=$VERSION/" "$PROP_FILE"
-fi
+# Tag and Push
+echo "📦 Tagging..."
+git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
 
-# 2. Run local verification
-echo "🏗️ Running local verification (Build & Tests)..."
-./gradlew :verses:clean :verses:testDebugUnitTest :verses:assembleRelease > /dev/null
-
-echo "✅ Verification passed."
-
-# 3. Git Commit & Tag
-echo "📦 Committing and tagging..."
-git add "$PROP_FILE"
-git commit -m "chore(release): prepare release v$VERSION"
-git tag -a "v$VERSION" -m "Release v$VERSION"
-
-# 4. Push to GitHub
 echo "📤 Pushing to GitHub..."
 git push origin main
-git push origin "v$VERSION"
+git push origin "$TAG_NAME"
 
-echo "✅ Success! Tag v$VERSION has been pushed. GitHub Actions will handle the rest."
+echo "✅ Success! Tag $TAG_NAME and code have been pushed."
