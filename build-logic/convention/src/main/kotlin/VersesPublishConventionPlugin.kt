@@ -47,8 +47,16 @@ class VersesPublishConventionPlugin : Plugin<Project> {
                 // Automatically configure Dokka and Sources JARs
                 configure(com.vanniktech.maven.publish.AndroidSingleVariantLibrary("release", true, true))
 
+                // Standard Maven Central configuration
                 publishToMavenCentral()
-                signAllPublications()
+                
+                // Smart Signing: 
+                // Only enforce signing if we are running a publish task.
+                // This prevents the "Key ID" error during normal builds or local tests.
+                val isPublishTask = project.gradle.startParameter.taskNames.any { it.contains("publish", ignoreCase = true) }
+                if (isPublishTask) {
+                    signAllPublications()
+                }
             }
 
             // Migrating to Dokka V2 configuration

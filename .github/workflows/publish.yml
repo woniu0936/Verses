@@ -36,7 +36,8 @@ jobs:
           GPG_PWD: ${{ secrets.GPG_PASSWORD }}
           GPG_FILE: ${{ github.workspace }}/secring.gpg
         run: |
-          ./gradlew publishToMavenCentral \
+          ./gradlew publishAllPublicationsToMavenCentralRepository \
+            --no-configuration-cache \
             -PmavenCentralUsername="$MC_USER" \
             -PmavenCentralPassword="$MC_PWD" \
             -Psigning.keyId="$GPG_KEY_ID" \
