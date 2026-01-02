@@ -1,4 +1,5 @@
 pluginManagement {
+    includeBuild("build-logic")
     repositories {
         google {
             content {
@@ -19,6 +20,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Verses"
+rootProject.name = "VersesProject"
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 include(":verses-sample")
 include(":verses")
