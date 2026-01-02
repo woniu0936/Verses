@@ -29,31 +29,39 @@ if [ "$CURRENT_BRANCH" != "main" ]; then
     fi
 fi
 
-# 1. Update gradle.properties
-if [ -f "$PROP_FILE" ]; then
-    CURRENT_VERSION=$(grep "^VERSION_NAME=" "$PROP_FILE" | cut -d'=' -f2)
-    echo "🔍 Current version in $PROP_FILE: $CURRENT_VERSION"
-    
-    if [ "$CURRENT_VERSION" != "$VERSION" ]; then
-        echo "📝 Updating VERSION_NAME to $VERSION..."
-        # Use a temporary file for more robust cross-platform replacement
-        sed "s/^VERSION_NAME=.*/VERSION_NAME=$VERSION/" "$PROP_FILE" > "$PROP_FILE.tmp"
-        mv "$PROP_FILE.tmp" "$PROP_FILE"
+# 1. Update Version in Files
+FILES_TO_UPDATE=("$PROP_FILE" "README.md" "README.zh-CN.md")
+
+for FILE in "${FILES_TO_UPDATE[@]}"; do
+    if [ -f "$FILE" ]; then
+        echo "🔍 Checking $FILE..."
         
-        # Verify the update
-        NEW_VERSION=$(grep "^VERSION_NAME=" "$PROP_FILE" | cut -d'=' -f2)
-        if [ "$NEW_VERSION" != "$VERSION" ]; then
-            echo "❌ Error: Failed to update version in $PROP_FILE (Still $NEW_VERSION)."
+        if [[ "$FILE" == "$PROP_FILE" ]]; then
+            # Update VERSION_NAME in gradle.properties
+            CURRENT_VAL=$(grep "^VERSION_NAME=" "$FILE" | cut -d'=' -f2)
+            if [ "$CURRENT_VAL" != "$VERSION" ]; then
+                echo "📝 Updating VERSION_NAME to $VERSION in $FILE..."
+                sed "s/^VERSION_NAME=.*/VERSION_NAME=$VERSION/" "$FILE" > "$FILE.tmp"
+                mv "$FILE.tmp" "$FILE"
+            fi
+        else
+            # Update implementation line in READMEs
+            # Matches: implementation("io.github.woniu0936:verses:VERSION")
+            echo "📝 Updating dependency version to $VERSION in $FILE..."
+            sed "s/\(io.github.woniu0936:verses:\)[^\"]*/\1$VERSION/" "$FILE" > "$FILE.tmp"
+            mv "$FILE.tmp" "$FILE"
+        fi
+        
+        # Verify update (basic check)
+        if ! grep -q "$VERSION" "$FILE"; then
+            echo "❌ Error: Failed to verify version $VERSION in $FILE"
             exit 1
         fi
-        echo "✅ Version successfully updated to $NEW_VERSION."
+        echo "✅ $FILE updated and verified."
     else
-        echo "ℹ️  Version in $PROP_FILE is already $VERSION."
+        echo "⚠️  Warning: $FILE not found, skipping."
     fi
-else
-    echo "❌ Error: $PROP_FILE not found."
-    exit 1
-fi
+done
 
 # 2. Handle Tag Overwrite
 LOCAL_TAG_EXISTS=$(git tag -l "$TAG_NAME")
@@ -87,13 +95,13 @@ fi
 
 # 3. Git Commit (only if there are changes)
 echo "📦 Checking for changes to commit..."
-git add "$PROP_FILE"
+git add "${FILES_TO_UPDATE[@]}"
 if ! git diff --cached --quiet; then
-    echo "📝 Changes detected in $PROP_FILE. Committing..."
+    echo "📝 Changes detected in project files. Committing..."
     git commit -m "chore(release): prepare release $TAG_NAME"
     echo "✅ Commit created."
 else
-    echo "ℹ️  No changes detected in $PROP_FILE (already matches target version in HEAD)."
+    echo "ℹ️  No changes detected (all files already match target version)."
 fi
 
 # 4. Tag and Push
