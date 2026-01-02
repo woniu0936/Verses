@@ -25,6 +25,11 @@
 ---
 
 ### Installation
+# ... (existing content)
+
+#### Troubleshooting
+- **Sync Delay**: New releases may take **10-30 minutes** to become available for download and up to **4 hours** to appear in search results on [Maven Central](https://search.maven.org/).
+- **Snapshots**: Currently, we do not publish snapshot builds. Use stable versions for production.
 
 #### Remote Dependency (Recommended)
 Add it to your module's `build.gradle.kts`:

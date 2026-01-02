@@ -47,9 +47,11 @@ else
     sed -i "s/VERSION_NAME=.*/VERSION_NAME=$VERSION/" "$PROP_FILE"
 fi
 
-# 2. Run local build verification
-echo "🏗️ Running local build verification..."
-./gradlew :verses:assembleRelease > /dev/null
+# 2. Run local verification
+echo "🏗️ Running local verification (Build & Tests)..."
+./gradlew :verses:clean :verses:testDebugUnitTest :verses:assembleRelease > /dev/null
+
+echo "✅ Verification passed."
 
 # 3. Git Commit & Tag
 echo "📦 Committing and tagging..."
