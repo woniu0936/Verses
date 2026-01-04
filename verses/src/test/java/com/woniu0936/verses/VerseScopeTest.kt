@@ -35,8 +35,8 @@ class VerseScopeTest {
         val testData = "Test Data"
         val testKey = "Test Key"
 
-        mockkObject(VerseAdapter.Companion)
-        every { VerseAdapter.getGlobalViewType(any(), any()) } returns 1
+        // Mock the instance method of the adapter
+        every { adapter.getOrCreateViewType(any(), any()) } returns 1
 
         scope.item(
             inflate = mockInflate,
@@ -55,8 +55,8 @@ class VerseScopeTest {
         assertEquals(true, wrapper.fullSpan)
         assertEquals(1, wrapper.viewType)
         
-        verify { VerseAdapter.getGlobalViewType(TestBinding::class.java, any()) }
-        unmockkObject(VerseAdapter.Companion)
+        // Verify the instance method was called with the correct key (Binding Class)
+        verify { adapter.getOrCreateViewType(TestBinding::class.java, any()) }
     }
 
     /**
@@ -66,8 +66,7 @@ class VerseScopeTest {
     fun `items() adds multiple wrappers`() {
         val list = listOf("A", "B", "C")
 
-        mockkObject(VerseAdapter.Companion)
-        every { VerseAdapter.getGlobalViewType(any(), any()) } returns 2
+        every { adapter.getOrCreateViewType(any(), any()) } returns 2
 
         scope.items(
             items = list,
@@ -80,8 +79,7 @@ class VerseScopeTest {
         assertEquals("B", scope.newWrappers[1].data)
         assertEquals("C", scope.newWrappers[2].data)
         
-        verify(exactly = 3) { VerseAdapter.getGlobalViewType(TestBinding::class.java, any()) }
-        unmockkObject(VerseAdapter.Companion)
+        verify(exactly = 3) { adapter.getOrCreateViewType(TestBinding::class.java, any()) }
     }
 
     /**
@@ -92,8 +90,7 @@ class VerseScopeTest {
     fun `render() inside items() with block adds wrappers`() {
         val list = listOf(1, 2)
 
-        mockkObject(VerseAdapter.Companion)
-        every { VerseAdapter.getGlobalViewType(any(), any()) } returns 3
+        every { adapter.getOrCreateViewType(any(), any()) } returns 3
 
         scope.items(list, key = { it }) { item ->
             if (item == 1) {
@@ -113,8 +110,7 @@ class VerseScopeTest {
         assertEquals(2, second.data)
         assertEquals(true, second.fullSpan)
         
-        verify(exactly = 2) { VerseAdapter.getGlobalViewType(TestBinding::class.java, any()) }
-        unmockkObject(VerseAdapter.Companion)
+        verify(exactly = 2) { adapter.getOrCreateViewType(TestBinding::class.java, any()) }
     }
 
     /**
@@ -122,19 +118,17 @@ class VerseScopeTest {
      */
     @Test
     fun `adapter getOrCreateViewType is called with correct keys`() {
-        mockkObject(VerseAdapter.Companion)
-        every { VerseAdapter.getGlobalViewType(any(), any()) } returns 1
+        every { adapter.getOrCreateViewType(any(), any()) } returns 1
 
         // Case 1: Simple item should use the Class as the cache key
         scope.item(mockInflate)
-        verify { VerseAdapter.getGlobalViewType(TestBinding::class.java, any()) }
+        verify { adapter.getOrCreateViewType(TestBinding::class.java, any()) }
 
         // Case 2: Rendering with an explicit contentType should use that key instead
         val contentType = "MY_TYPE"
         scope.items(listOf("A")) {
             render(mockInflate, contentType = contentType) {}
         }
-        verify { VerseAdapter.getGlobalViewType(eq(contentType), any()) }
-        unmockkObject(VerseAdapter.Companion)
+        verify { adapter.getOrCreateViewType(eq(contentType), any()) }
     }
 }

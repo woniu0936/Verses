@@ -92,12 +92,12 @@ class VerseIntegrationTest {
     }
 
     /**
-     * Verifies that [composeLinearRow] correctly sets the [RecyclerView.HORIZONTAL] orientation.
+     * Verifies that [composeRow] correctly sets the [RecyclerView.HORIZONTAL] orientation.
      */
     @Test
-    fun testComposeLinearRow() {
+    fun testComposeRow() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            recyclerView.composeLinearRow {
+            recyclerView.composeRow {
                 item(::testInflate, data = "Row Item")
             }
         }
@@ -107,12 +107,12 @@ class VerseIntegrationTest {
     }
 
     /**
-     * Verifies that [composeGrid] correctly configures the span count and vertical orientation.
+     * Verifies that [composeVerticalGrid] correctly configures the span count and vertical orientation.
      */
     @Test
-    fun testComposeGrid() {
+    fun testComposeVerticalGrid() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            recyclerView.composeGrid(spanCount = 3) {
+            recyclerView.composeVerticalGrid(spanCount = 3) {
                 items(listOf(1, 2, 3, 4), ::testInflate) { _ -> }
             }
         }
@@ -123,12 +123,12 @@ class VerseIntegrationTest {
     }
 
     /**
-     * Verifies that [composeStaggered] correctly configures a [StaggeredGridLayoutManager].
+     * Verifies that [composeVerticalStaggeredGrid] correctly configures a [StaggeredGridLayoutManager].
      */
     @Test
-    fun testComposeStaggered() {
+    fun testComposeVerticalStaggeredGrid() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            recyclerView.composeStaggered(spanCount = 2) {
+            recyclerView.composeVerticalStaggeredGrid(spanCount = 2) {
                 item(::testInflate)
             }
         }
@@ -147,13 +147,13 @@ class VerseIntegrationTest {
         var firstLM: LinearLayoutManager? = null
         
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            recyclerView.composeLinearColumn {
+            recyclerView.composeColumn {
                 item(::testInflate)
             }
             firstLM = recyclerView.layoutManager as LinearLayoutManager
             
             // Re-configuring with different parameters (orientation, reverse)
-            recyclerView.composeLinearRow(reverseLayout = true) {
+            recyclerView.composeRow(reverseLayout = true) {
                 item(::testInflate)
             }
         }
@@ -224,7 +224,7 @@ class VerseIntegrationTest {
     @Test
     fun testSpacingDecorationIsApplied() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            recyclerView.composeLinearColumn(spacing = 16) {
+            recyclerView.composeColumn(spacing = 16) {
                 item(::testInflate)
             }
         }

@@ -106,11 +106,32 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SmartViewHolder {
         val factory = getGlobalFactory(viewType)
-        return factory(parent)
+        val holder = factory(parent)
+        
+        // High-performance Stateless Proxy Listener:
+        // 1. Set ONCE during creation (Zero allocation during scroll).
+        // 2. Dynamically looks up the CURRENT wrapper from the adapter when clicked.
+        // 3. This allows us to ignore 'onClick' changes in DiffUtil (preventing flashes)
+        //    while ensuring the latest logic is always executed.
+        holder.itemView.setOnClickListener {
+            val currentAdapter = holder.bindingAdapter as? VerseAdapter ?: return@setOnClickListener
+            val pos = holder.bindingAdapterPosition
+            if (pos != RecyclerView.NO_POSITION) {
+                // Fetch the LATEST wrapper from the current list
+                currentAdapter.getItem(pos).onClick?.invoke()
+            }
+        }
+        return holder
     }
 
     override fun onBindViewHolder(holder: SmartViewHolder, position: Int) {
         val item = getItem(position)
+        
+        // Efficiently toggle clickable state without resetting the listener
+        val isClickable = item.onClick != null
+        if (holder.itemView.isClickable != isClickable) {
+            holder.itemView.isClickable = isClickable
+        }
         
         // Handle StaggeredGrid full-span items
         val params = holder.itemView.layoutParams

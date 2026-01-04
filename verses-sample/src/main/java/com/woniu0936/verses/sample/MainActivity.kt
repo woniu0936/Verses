@@ -67,11 +67,11 @@ class MainActivity : AppCompatActivity() {
                     items(
                         items = state.banners,
                         inflate = ItemBannerBinding::inflate,
-                        key = { it.id }
-                    ) { banner ->
-                        root.setOnClickListener {
+                        key = { it.id },
+                        onClick = { banner ->
                             Toast.makeText(this@MainActivity, "Clicked Banner: ${banner.title}", Toast.LENGTH_SHORT).show()
                         }
+                    ) { banner ->
                         tvTitle.text = banner.title
                         tvSubtitle.text = banner.subtitle
                         ivBanner.load(banner.imageUrl)
@@ -101,11 +101,11 @@ class MainActivity : AppCompatActivity() {
                     items = state.gridApps,
                     inflate = ItemAppGridBinding::inflate,
                     key = { "grid_${it.id}" },
-                    span = 1
-                ) { app ->
-                    root.setOnClickListener {
+                    span = 1,
+                    onClick = { app ->
                         Toast.makeText(this@MainActivity, "Clicked Grid App: ${app.name}", Toast.LENGTH_SHORT).show()
                     }
+                ) { app ->
                     tvAppName.text = app.name
                     tvRating.text = app.rating.toString()
                     ratingBar.rating = app.rating
@@ -125,11 +125,11 @@ class MainActivity : AppCompatActivity() {
                     rvHorizontal.composeRow(spacing = 8) {
                         items(
                             items = section.apps,
-                            inflate = ItemAppBinding::inflate
-                        ) { app ->
-                            root.setOnClickListener {
+                            inflate = ItemAppBinding::inflate,
+                            onClick = { app ->
                                 Toast.makeText(this@MainActivity, "Clicked App: ${app.name}", Toast.LENGTH_SHORT).show()
                             }
+                        ) { app ->
                             tvAppName.text = app.name
                             tvRating.text = app.rating.toString()
                             ratingBar.rating = app.rating
