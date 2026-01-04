@@ -46,6 +46,9 @@ class VerseScope @PublishedApi internal constructor(
     ) {
         val stableKey = VB::class.java
         items.forEachIndexed { index, item ->
+            // WARNING: Using 'index' as a key is discouraged for dynamic lists.
+            // It can cause full-item rebinds and loss of state during insertions/deletions.
+            // ALWAYS provide a stable key (e.g., item.id) for production lists.
             internalRender(
                 factory = { p -> 
                     val binding = inflate(LayoutInflater.from(p.context), p, false)
@@ -84,6 +87,9 @@ class VerseScope @PublishedApi internal constructor(
     ) {
         val stableKey = V::class.java
         items.forEachIndexed { index, item ->
+            // WARNING: Using 'index' as a key is discouraged for dynamic lists.
+            // It can cause full-item rebinds and loss of state during insertions/deletions.
+            // ALWAYS provide a stable key (e.g., item.id) for production lists.
             internalRender(
                 factory = { p -> createSafeViewHolder(p, create) },
                 bind = { data ->
@@ -187,6 +193,7 @@ class VerseScope @PublishedApi internal constructor(
         block: VerseScope.(T) -> Unit
     ) {
         items.forEachIndexed { index, item ->
+            // WARNING: Using 'index' as a key is discouraged for dynamic lists.
             currentData = item
             currentId = key?.invoke(item) ?: index
             block(item)

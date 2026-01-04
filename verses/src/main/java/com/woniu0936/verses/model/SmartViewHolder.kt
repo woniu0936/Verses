@@ -7,14 +7,13 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.woniu0936.verses.BuildConfig
-import java.lang.ref.WeakReference
 
 /**
- * Global reference to the holder currently being bound.
- * Wrapped in WeakReference to prevent static memory leaks.
+ * Thread-local reference to the holder currently being bound.
+ * This ensures thread safety while maintaining a clean DSL syntax.
  */
 @PublishedApi
-internal var currentProcessingHolder: WeakReference<SmartViewHolder>? = null
+internal val currentProcessingHolder = ThreadLocal<SmartViewHolder>()
 
 /**
  * A stateful ViewHolder that acts as a micro-recomposition scope.
@@ -26,13 +25,13 @@ class SmartViewHolder(
 
     @PublishedApi
     internal val memoTable = mutableListOf<Any?>()
-    
+
     @PublishedApi
     internal var pointer = 0
-    
+
     @PublishedApi
     internal var currentData: Any? = null
-    
+
     private var lastBoundId: Any? = null
 
     /**
@@ -71,7 +70,7 @@ class SmartViewHolder(
  * Binds a view property to a single dependency.
  */
 inline fun <V : View, R> V.bind(value: R, crossinline block: V.(R) -> Unit) {
-    val h = currentProcessingHolder?.get() ?: return
+    val h = currentProcessingHolder.get() ?: return
     val p = h.pointer
     if (p >= h.memoTable.size) {
         h.memoTable.add(value)
@@ -87,10 +86,10 @@ inline fun <V : View, R> V.bind(value: R, crossinline block: V.(R) -> Unit) {
  * Binds a view property to two dependencies without allocation.
  */
 inline fun <V : View, R1, R2> V.bind(v1: R1, v2: R2, crossinline block: V.(R1, R2) -> Unit) {
-    val h = currentProcessingHolder?.get() ?: return
+    val h = currentProcessingHolder.get() ?: return
     val p1 = h.pointer
     val p2 = h.pointer + 1
-    
+
     if (p2 >= h.memoTable.size) {
         while (h.memoTable.size <= p2) h.memoTable.add(null)
         h.memoTable[p1] = v1
@@ -108,14 +107,13 @@ inline fun <V : View, R1, R2> V.bind(v1: R1, v2: R2, crossinline block: V.(R1, R
 
 /**
  * Binds a view property to three dependencies without allocation.
- * 🚀 V3.2: Universal tri-key binding support.
  */
 inline fun <V : View, R1, R2, R3> V.bind(v1: R1, v2: R2, v3: R3, crossinline block: V.(R1, R2, R3) -> Unit) {
-    val h = currentProcessingHolder?.get() ?: return
+    val h = currentProcessingHolder.get() ?: return
     val p1 = h.pointer
     val p2 = h.pointer + 1
     val p3 = h.pointer + 2
-    
+
     if (p3 >= h.memoTable.size) {
         while (h.memoTable.size <= p3) h.memoTable.add(null)
         h.memoTable[p1] = v1
@@ -137,7 +135,7 @@ inline fun <V : View, R1, R2, R3> V.bind(v1: R1, v2: R2, v3: R3, crossinline blo
  * A hook for one-time initialization.
  */
 inline fun once(crossinline block: SmartViewHolder.() -> Unit) {
-    val h = currentProcessingHolder?.get() ?: return
+    val h = currentProcessingHolder.get() ?: return
     val p = h.pointer
     if (p >= h.memoTable.size) {
         h.memoTable.add(Unit)

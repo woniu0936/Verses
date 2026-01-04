@@ -95,7 +95,7 @@ The following snippets represent the **ONLY** acceptable coding style. Generated
 *Usage: Concise, readable property access without `binding.` prefix.*
 
 ```kotlin
-recyclerView.composeLinearColumn {
+recyclerView.composeColumn {
     // Type A: Single Header (No data object)
     // Signature: ViewBinding.() -> Unit
     item(ItemHeaderBinding::inflate) {

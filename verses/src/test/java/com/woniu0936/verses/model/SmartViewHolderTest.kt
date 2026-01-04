@@ -16,12 +16,12 @@ class SmartViewHolderTest {
     @Before
     fun setup() {
         holder = SmartViewHolder(mockView)
-        currentProcessingHolder = java.lang.ref.WeakReference(holder)
+        currentProcessingHolder.set(holder)
     }
 
     @After
     fun tearDown() {
-        currentProcessingHolder = null
+        currentProcessingHolder.remove()
     }
 
     @Test

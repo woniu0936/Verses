@@ -27,7 +27,7 @@ object VideoCacheManager {
             }
             
             val evictor = LeastRecentlyUsedCacheEvictor(CACHE_SIZE)
-            val databaseProvider = StandaloneDatabaseProvider(context)
+            val databaseProvider = StandaloneDatabaseProvider(context.applicationContext)
             
             SimpleCache(cacheDir, evictor, databaseProvider).also {
                 simpleCache = it

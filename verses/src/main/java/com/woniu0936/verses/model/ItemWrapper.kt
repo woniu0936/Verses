@@ -32,4 +32,25 @@ internal data class ItemWrapper(
     val onClick: (() -> Unit)? = null,
     val onAttach: (() -> Unit)? = null,
     val onDetach: (() -> Unit)? = null
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as ItemWrapper
+        if (id != other.id) return false
+        if (viewType != other.viewType) return false
+        if (data != other.data) return false
+        if (span != other.span) return false
+        if (fullSpan != other.fullSpan) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + viewType
+        result = 31 * result + data.hashCode()
+        result = 31 * result + span
+        result = 31 * result + fullSpan.hashCode()
+        return result
+    }
+}

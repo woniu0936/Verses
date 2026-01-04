@@ -284,8 +284,8 @@ internal fun RecyclerView.getOrCreateAdapter(
     this.layoutManager = newLM
     this.adapter = newAdapter
     
-    // Automatically inject the global shared pool for transparent performance optimization.
-    this.setRecycledViewPool(VerseAdapter.globalPool)
+    // Automatically inject the context-scoped shared pool for transparent performance optimization.
+    this.setRecycledViewPool(VerseAdapter.getPool(context))
     updateDecoration(hS, vS, hP, vP)
     
     // Disable flickering 'change' animations by default.

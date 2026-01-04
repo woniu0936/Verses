@@ -18,13 +18,13 @@ class VerseAdapterTest {
         val holderB = SmartViewHolder(mockk(relaxed = true))
         
         val bindB: SmartViewHolder.(Any) -> Unit = {
-            assertEquals(holderB, currentProcessingHolder?.get())
+            assertEquals(holderB, currentProcessingHolder.get())
         }
 
         val bindA: SmartViewHolder.(Any) -> Unit = {
-            assertEquals(holderA, currentProcessingHolder?.get())
+            assertEquals(holderA, currentProcessingHolder.get())
             adapter.onBindViewHolder(holderB, 1)
-            assertEquals(holderA, currentProcessingHolder?.get())
+            assertEquals(holderA, currentProcessingHolder.get())
         }
 
         val itemA = ItemWrapper("A", 1, "DataA", 1, false, { mockk() }, bindA)
@@ -34,7 +34,7 @@ class VerseAdapterTest {
         every { adapter.getItem(1) } returns itemB
 
         adapter.onBindViewHolder(holderA, 0)
-        assertNull(currentProcessingHolder)
+        assertNull(currentProcessingHolder.get())
     }
 
     @Test

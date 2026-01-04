@@ -22,30 +22,42 @@ import java.util.concurrent.Executors
  * 3. **Shared Resource Support**: Provides a global pool for nested horizontal list optimization.
  * 4. **Safe Click Handling**: Implements a stateless click system using the modern `bindingAdapter` API.
  */
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asExecutor
+import java.util.WeakHashMap
+
+/**
+ * A high-performance [ListAdapter] that orchestrates the rendering of [ItemWrapper] units.
+ * 
+ * Key responsibilities:
+ * 1. **Global ViewType Management**: Uses a static registry to ensure consistent IDs across instances.
+ * 2. **Efficient ViewHolder Creation**: Maps ViewTypes to factories in O(1) time.
+ * 3. **Shared Resource Support**: Provides a global pool for nested horizontal list optimization.
+ * 4. **Safe Click Handling**: Implements a stateless click system using the modern `bindingAdapter` API.
+ */
 @PublishedApi
 internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
     AsyncDifferConfig.Builder(WrapperDiffCallback)
-        .setBackgroundThreadExecutor(diffExecutor)
+        .setBackgroundThreadExecutor(Dispatchers.Default.asExecutor())
         .build()
 ) {
     companion object {
-        private val diffExecutor = Executors.newFixedThreadPool(2)
         private val globalViewTypeCache = ConcurrentHashMap<Any, Int>()
         private val globalTypeToFactory = ConcurrentHashMap<Int, (ViewGroup) -> SmartViewHolder>()
+        private val contextPools = WeakHashMap<android.content.Context, RecyclerView.RecycledViewPool>()
 
         /**
-         * A shared [RecyclerView.RecycledViewPool] used automatically by the library to optimize
-         * nested structures and cross-page navigation.
+         * Retrieves or creates a [RecyclerView.RecycledViewPool] scoped to the given [context].
+         * This prevents memory leaks and ensures correct theme/styling for recycled views.
          */
-        val globalPool = RecyclerView.RecycledViewPool()
+        fun getPool(context: android.content.Context): RecyclerView.RecycledViewPool {
+            return synchronized(contextPools) {
+                contextPools.getOrPut(context) { RecyclerView.RecycledViewPool() }
+            }
+        }
 
         /**
          * Assigns or retrieves a unique, stable ViewType ID for a given layout key.
-         * Stability is critical for safe sharing of [globalPool].
-         * 
-         * Inspired by Epoxy's approach: We use the hashCode as the primary ID
-         * but implement linear probing to resolve rare collisions, ensuring
-         * absolute uniqueness in the global registry.
          */
         fun getGlobalViewType(key: Any, factory: (ViewGroup) -> SmartViewHolder): Int {
             return globalViewTypeCache[key] ?: synchronized(globalTypeToFactory) {
@@ -77,7 +89,7 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
         }
 
         /**
-         * Explicitly clears all global registries and the shared ViewPool.
+         * Explicitly clears all global registries and the shared ViewPools.
          * 
          * Call this when the app is undergoing a major state change (e.g., user logout, 
          * dynamic theme switch) to release all static references to view factories 
@@ -86,7 +98,9 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
         fun clearRegistry() {
             globalViewTypeCache.clear()
             globalTypeToFactory.clear()
-            globalPool.clear()
+            synchronized(contextPools) {
+                contextPools.clear()
+            }
         }
     }
 
@@ -129,9 +143,10 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
     override fun onBindViewHolder(holder: SmartViewHolder, position: Int) {
         val item = getItem(position)
         
-        // 1. Set global reference for 'bind' extensions (using WeakReference)
-        val previousHolderRef = currentProcessingHolder
-        currentProcessingHolder = java.lang.ref.WeakReference(holder)
+        // 1. Set thread-local reference for 'bind' extensions
+        // Save previous holder to support re-entrancy (nested binding)
+        val previousHolder = currentProcessingHolder.get()
+        currentProcessingHolder.set(holder)
         
         try {
             // 2. Setup the stateful node with a STABLE ID and the latest data reference
@@ -157,8 +172,12 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
             // 6. Automated Guard (Debug Only)
             holder.validate()
         } finally {
-            // 7. Critical: Restore previous context instead of blindly nulling it out
-            currentProcessingHolder = previousHolderRef
+            // 7. Restore previous context
+            if (previousHolder != null) {
+                currentProcessingHolder.set(previousHolder)
+            } else {
+                currentProcessingHolder.remove()
+            }
         }
     }
 
@@ -220,19 +239,11 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
 
         @android.annotation.SuppressLint("DiffUtilEquals")
         override fun areContentsTheSame(oldItem: ItemWrapper, newItem: ItemWrapper): Boolean {
-            // 1. Compare Business Data
-            if (oldItem.data != newItem.data) return false
-            
-            // 2. Compare Layout Metadata (Crucial for Grid/Staggered updates)
-            if (oldItem.span != newItem.span) return false
-            if (oldItem.fullSpan != newItem.fullSpan) return false
-            if (oldItem.viewType != newItem.viewType) return false
-            
-            // 3. Ignore 'onClick', 'onAttach', 'onDetach' (Behavior)
-            // Even if the lambda reference changes (which happens on every recompose),
-            // we return true to prevent UI flashing. The Proxy Listener ensures
-            // the latest lambda is executed dynamically.
-            return true
+            // By utilizing ItemWrapper's custom equals(), we ensure that:
+            // 1. Data and Layout metadata are accurately compared.
+            // 2. Unstable function properties (lambdas) are safely ignored.
+            // 3. New properties added to ItemWrapper in the future are automatically handled.
+            return oldItem == newItem
         }
     }
 }

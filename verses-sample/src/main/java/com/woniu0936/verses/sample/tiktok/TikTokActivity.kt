@@ -25,11 +25,12 @@ import com.woniu0936.verses.sample.databinding.ItemTiktokVideoBinding
 import com.woniu0936.verses.sample.tiktok.model.VideoItem
 import com.woniu0936.verses.sample.tiktok.viewmodel.TikTokViewModel
 import kotlinx.coroutines.launch
-import java.util.WeakHashMap
 
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+
+import java.lang.ref.WeakReference
 
 class TikTokActivity : AppCompatActivity() {
 
@@ -39,8 +40,8 @@ class TikTokActivity : AppCompatActivity() {
     // 1. One Global Player Instance (Optimization)
     private var exoPlayer: ExoPlayer? = null
     
-    // 2. The Bridge: Maps Data ID -> Active View
-    private val viewCache = WeakHashMap<String, ItemTiktokVideoBinding>()
+    // 2. The Bridge: Maps Data ID -> Active View (Held weakly to prevent leaks)
+    private val viewCache = mutableMapOf<String, WeakReference<ItemTiktokVideoBinding>>()
     
     // 3. Track Active Video for UI updates (Loading)
     private var currentVideoId: String? = null
@@ -81,7 +82,7 @@ class TikTokActivity : AppCompatActivity() {
                 playWhenReady = true
                 addListener(object : Player.Listener {
                     override fun onPlaybackStateChanged(playbackState: Int) {
-                        val binding = viewCache[currentVideoId] ?: return
+                        val binding = viewCache[currentVideoId]?.get() ?: return
                         
                         when (playbackState) {
                             Player.STATE_BUFFERING -> {
@@ -125,10 +126,15 @@ class TikTokActivity : AppCompatActivity() {
                 inflate = ItemTiktokVideoBinding::inflate,
                 key = { it.id },
                 onAttach = { video -> playVideo(video) },
-                onDetach = { video -> stopVideo(video) }
+                onDetach = { video -> 
+                    stopVideo(video)
+                    // We DO NOT remove from viewCache here.
+                    // When scrolling back, RecyclerView might re-attach a cached view 
+                    // without triggering onBind, so we need the old entry to find the PlayerView.
+                }
             ) { video ->
                 // Register view in cache for player switching
-                viewCache[video.id] = this
+                viewCache[video.id] = WeakReference(this)
                 
                 // Normal UI Binding
                 tvTitle.text = video.title
@@ -152,7 +158,7 @@ class TikTokActivity : AppCompatActivity() {
 
     private fun playVideo(video: VideoItem) {
         val player = exoPlayer ?: return
-        val currentViewBinding = viewCache[video.id] ?: return
+        val currentViewBinding = viewCache[video.id]?.get() ?: return
         
         currentVideoId = video.id
         currentViewBinding.ivCover.isVisible = true
@@ -167,7 +173,7 @@ class TikTokActivity : AppCompatActivity() {
     }
 
     private fun stopVideo(video: VideoItem) {
-        val currentViewBinding = viewCache[video.id] ?: return
+        val currentViewBinding = viewCache[video.id]?.get() ?: return
         currentViewBinding.playerView.player = null
     }
 
