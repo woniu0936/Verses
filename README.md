@@ -42,11 +42,10 @@ Verses provides a unified DSL to handle all your list requirements.
 
 ### 1. The "Kitchen Sink" Example (Comprehensive)
 ```kotlin
-recyclerView.composeGrid(
+recyclerView.composeVerticalGrid(
     spanCount = 2,
     spacing = 16.dp,             // Internal item spacing
-    contentPadding = 20.dp,      // Outer list padding
-    orientation = RecyclerView.VERTICAL
+    contentPadding = 20.dp       // Outer list padding
 ) {
     // A. Single ViewBinding Item (Full Span)
     item(ItemHeaderBinding::inflate, fullSpan = true) {
@@ -64,10 +63,10 @@ recyclerView.composeGrid(
         items = userList,
         inflate = ItemUserBinding::inflate,
         key = { it.id },
-        span = 1,
-        onClick = { user -> toast("Clicked ${user.name}") }
+        span = 1
     ) { user ->
         tvName.text = user.name
+        root.setOnClickListener { toast("Clicked ${user.name}") }
     }
 
     // D. Multi-Type rendering with logic
@@ -87,7 +86,7 @@ recyclerView.composeGrid(
 
     // E. Horizontal Nested List (Automatic Pool Optimization)
     item(ItemHorizontalListBinding::inflate, fullSpan = true) {
-        rvNested.composeLinearRow(spacing = 8.dp) {
+        rvNested.composeRow(spacing = 8.dp) {
             items(categories, ItemCategoryBinding::inflate) { cat ->
                 tvCategory.text = cat.name
             }
@@ -96,14 +95,18 @@ recyclerView.composeGrid(
 }
 ```
 
-### 2. Available Entry Points
-| Method | Description |
-| :--- | :--- |
-| `composeLinearColumn` | Standard vertical list |
-| `composeLinearRow` | Standard horizontal list |
-| `composeGrid` | Grid layout with span support |
-| `composeStaggered` | Staggered grid (Waterfall) |
-| `compose` | Base builder for any LayoutManager |
+### 2. API Naming Mapping (The Naming Mapping)
+
+We have aligned our API naming 1:1 with Jetpack Compose (removing the "Lazy" prefix) to minimize cognitive load.
+
+| Layout Type | Orientation | **Verse API** | **Jetpack Compose Equivalent** | Android Native Implementation |
+| :--- | :--- | :--- | :--- | :--- |
+| **Linear** | Vertical | **`composeColumn`** | `LazyColumn` | LinearLayoutManager (Vertical) |
+| **Linear** | Horizontal | **`composeRow`** | `LazyRow` | LinearLayoutManager (Horizontal) |
+| **Grid** | Vertical | **`composeVerticalGrid`** | `LazyVerticalGrid` | GridLayoutManager (Vertical) |
+| **Grid** | Horizontal | **`composeHorizontalGrid`** | `LazyHorizontalGrid` | GridLayoutManager (Horizontal) |
+| **Staggered** | Vertical | **`composeVerticalStaggeredGrid`** | `LazyVerticalStaggeredGrid` | StaggeredGridLayoutManager (Vertical) |
+| **Staggered** | Horizontal | **`composeHorizontalStaggeredGrid`** | `LazyHorizontalStaggeredGrid` | StaggeredGridLayoutManager (Horizontal) |
 
 ### 3. Global Lifecycle & Resource Management
 Verses automatically cleans up when the View is detached or the Activity is destroyed. To manually wipe all caches (e.g., on Logout):

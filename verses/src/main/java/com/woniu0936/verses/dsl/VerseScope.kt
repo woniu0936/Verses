@@ -9,50 +9,36 @@ import com.woniu0936.verses.core.VerseAdapter
 import com.woniu0936.verses.model.*
 
 /**
- * Receiver scope for the Verses DSL.
- * 
- * Provides an expressive API for building heterogeneous lists. This scope acts as a 
- * temporary buffer that collects [ItemWrapper] units before they are submitted 
- * to the underlying [VerseAdapter].
+ * The core DSL scope for building RecyclerView content declaratively.
  *
- * @property adapter The associated adapter instance for ViewType generation.
+ * This scope provides methods to define items, lists, and control flow structures.
+ * It utilizes [reified] generics to ensure ViewType safety automatically.
  */
 @VerseDsl
 class VerseScope @PublishedApi internal constructor(
     @PublishedApi internal val adapter: VerseAdapter
 ) {
-    /**
-     * Buffer holding the newly constructed wrappers for the current DSL execution cycle.
-     */
+
     @PublishedApi
     internal val newWrappers = mutableListOf<ItemWrapper>()
-    
-    /**
-     * Temporary storage for the current data item during control flow iterations.
-     */
-    @PublishedApi
-    internal var currentData: Any = Unit
-    
-    /**
-     * Temporary storage for the current stable ID during control flow iterations.
-     */
-    @PublishedApi
-    internal var currentId: Any? = null
 
-    // =======================================================
-    //  Part 1: ViewBinding Support
-    // =======================================================
+    // Context variables for Advanced Mode (items + render)
+    @PublishedApi internal var currentData: Any? = null
+    @PublishedApi internal var currentId: Any? = null
+
+    // ============================================================================================
+    //  Group 1: Standard List (1:1 Mapping)
+    // ============================================================================================
 
     /**
-     * Declares a list of items using ViewBinding for layout and binding.
-     * 
-     * @param items The list of business data objects.
-     * @param inflate The ViewBinding inflate function (e.g., `ItemUserBinding::inflate`).
-     * @param key Optional unique key for stable DiffUtil identity. Defaults to item index.
-     * @param span Grid span size (default 1).
-     * @param fullSpan Whether to occupy full width in a grid or staggered layout.
-     * @param onClick Strongly-typed click callback.
-     * @param onBind The binding block where `this` refers to the [ViewBinding].
+     * Renders a list of items using [ViewBinding].
+     *
+     * @param items The data source list.
+     * @param inflate The ViewBinding inflater reference (e.g., ItemUserBinding::inflate).
+     * @param key A function to extract a stable ID for DiffUtil. Defaults to list index (not recommended for mutable lists).
+     * @param span The number of columns this item occupies in a Grid layout. Default is 1.
+     * @param fullSpan Whether this item should span the full width in Staggered layouts. Default is false.
+     * @param onBind The binding logic block.
      */
     inline fun <T : Any, reified VB : ViewBinding> items(
         items: List<T>,
@@ -60,14 +46,12 @@ class VerseScope @PublishedApi internal constructor(
         noinline key: ((T) -> Any)? = null,
         span: Int = 1,
         fullSpan: Boolean = false,
-        noinline onClick: ((T) -> Unit)? = null,
         noinline onBind: VB.(T) -> Unit
     ) {
         val stableKey = VB::class.java
-        // Hint: In a future version, we could pre-allocate newWrappers if total count is known.
         items.forEachIndexed { index, item ->
             internalRender(
-                factory = { p ->
+                factory = { p -> 
                     val binding = inflate(LayoutInflater.from(p.context), p, false)
                     SmartViewHolder(binding.root, binding)
                 },
@@ -76,48 +60,20 @@ class VerseScope @PublishedApi internal constructor(
                 data = item,
                 id = key?.invoke(item) ?: index,
                 span = span,
-                fullSpan = fullSpan,
-                onClick = onClick?.let { { it(item) } }
+                fullSpan = fullSpan
             )
         }
     }
 
     /**
-     * Declares a single item (e.g., Header, Footer) using ViewBinding.
-     */
-    inline fun <reified VB : ViewBinding> item(
-        noinline inflate: Inflate<VB>,
-        data: Any = Unit,
-        key: Any? = null,
-        span: Int = 1,
-        fullSpan: Boolean = true,
-        noinline onClick: ((Any) -> Unit)? = null,
-        noinline onBind: VB.() -> Unit = {}
-    ) {
-        val stableKey = VB::class.java
-        internalRender(
-            factory = { p ->
-                val binding = inflate(LayoutInflater.from(p.context), p, false)
-                SmartViewHolder(binding.root, binding)
-            },
-            bind = { h -> (h.binding as VB).onBind() },
-            key = stableKey,
-            data = data,
-            id = key ?: "single_vb_${stableKey.name}",
-            span = span,
-            fullSpan = fullSpan,
-            onClick = onClick?.let { { it(data) } }
-        )
-    }
-
-    // =======================================================
-    //  Part 2: Custom View Support (Pure Programmatic)
-    // =======================================================
-
-    /**
-     * Declares a list of items using programmatically created Views (no XML).
-     * 
-     * @param create Function to instantiate the View (e.g., `{ context -> TextView(context) }`).
+     * Renders a list of items using a Custom [View].
+     *
+     * @param items The data source list.
+     * @param create A factory function to create the View (e.g., ::MyView or { TextView(it) }).
+     * @param key A function to extract a stable ID for DiffUtil.
+     * @param span The number of columns this item occupies in a Grid layout.
+     * @param fullSpan Whether this item should span the full width.
+     * @param onBind The binding logic block.
      */
     inline fun <T : Any, reified V : View> items(
         items: List<T>,
@@ -125,7 +81,6 @@ class VerseScope @PublishedApi internal constructor(
         noinline key: ((T) -> Any)? = null,
         span: Int = 1,
         fullSpan: Boolean = false,
-        noinline onClick: ((T) -> Unit)? = null,
         noinline onBind: V.(T) -> Unit
     ) {
         val stableKey = V::class.java
@@ -137,22 +92,64 @@ class VerseScope @PublishedApi internal constructor(
                 data = item,
                 id = key?.invoke(item) ?: index,
                 span = span,
-                fullSpan = fullSpan,
-                onClick = onClick?.let { { it(item) } }
+                fullSpan = fullSpan
             )
         }
     }
 
+    // ============================================================================================
+    //  Group 2: Single Item (Header / Footer / Static)
+    // ============================================================================================
+
     /**
-     * Declares a single custom View item.
+     * Renders a single item using [ViewBinding].
+     *
+     * @param inflate The ViewBinding inflater reference.
+     * @param data The data dependency. **Crucial**: If UI depends on external state, pass it here to trigger DiffUtil updates.
+     * @param key A stable ID for DiffUtil. Defaults to a hash of the inflater.
+     * @param span The span size. Default is 1.
+     * @param fullSpan Whether to span full width. Default is true for single items.
+     * @param onBind The binding logic block.
      */
-    inline fun <reified V : View> item(
-        noinline create: ViewCreator<V>,
-        data: Any = Unit,
+    inline fun <reified VB : ViewBinding> item(
+        noinline inflate: Inflate<VB>,
+        data: Any? = Unit,
         key: Any? = null,
         span: Int = 1,
         fullSpan: Boolean = true,
-        noinline onClick: ((Any) -> Unit)? = null,
+        noinline onBind: VB.() -> Unit = {}
+    ) {
+        val stableKey = VB::class.java
+        internalRender(
+            factory = { p -> 
+                val binding = inflate(LayoutInflater.from(p.context), p, false)
+                SmartViewHolder(binding.root, binding)
+            },
+            bind = { h -> (h.binding as VB).onBind() },
+            key = stableKey,
+            data = data ?: Unit,
+            id = key ?: "single_vb_${stableKey.name}",
+            span = span,
+            fullSpan = fullSpan
+        )
+    }
+
+    /**
+     * Renders a single item using a Custom [View].
+     *
+     * @param create A factory function to create the View.
+     * @param data The data dependency.
+     * @param key A stable ID for DiffUtil.
+     * @param span The span size.
+     * @param fullSpan Whether to span full width. Default is true.
+     * @param onBind The binding logic block.
+     */
+    inline fun <reified V : View> item(
+        noinline create: ViewCreator<V>,
+        data: Any? = Unit,
+        key: Any? = null,
+        span: Int = 1,
+        fullSpan: Boolean = true,
         noinline onBind: V.() -> Unit = {}
     ) {
         val stableKey = V::class.java
@@ -160,22 +157,24 @@ class VerseScope @PublishedApi internal constructor(
             factory = { p -> createSafeViewHolder(p, create) },
             bind = { h -> (h.view as V).onBind() },
             key = stableKey,
-            data = data,
+            data = data ?: Unit,
             id = key ?: "single_view_${stableKey.name}",
             span = span,
-            fullSpan = fullSpan,
-            onClick = onClick?.let { { it(data) } }
+            fullSpan = fullSpan
         )
     }
 
-    // =======================================================
-    //  Part 3: Advanced Mode (Control Flow)
-    // =======================================================
+    // ============================================================================================
+    //  Group 3: Advanced Control Flow (Iterator + Render)
+    // ============================================================================================
 
     /**
-     * Opens a control flow block for conditional rendering within a list.
-     * 
-     * Inside [block], use `render()` to specify different layouts for different data conditions.
+     * Starts an iteration scope for advanced scenarios (e.g., mixed types, if/else logic).
+     * Must be used in conjunction with [render].
+     *
+     * @param items The data source list.
+     * @param key A function to extract a stable ID.
+     * @param block The control flow block where you call [render].
      */
     fun <T : Any> items(
         items: List<T>,
@@ -190,21 +189,26 @@ class VerseScope @PublishedApi internal constructor(
     }
 
     /**
-     * Renders a layout instruction for the current item in a loop.
-     * Used inside [items] block.
+     * Renders a UI unit within an advanced [items] block using [ViewBinding].
+     *
+     * @param inflate The ViewBinding inflater.
+     * @param contentType An optional explicit key for ViewType pooling. Use only if needed (e.g., same binding, different pools).
+     * @param span The span size.
+     * @param fullSpan Whether to span full width.
+     * @param onBind The binding logic.
      */
     inline fun <reified VB : ViewBinding> render(
         noinline inflate: Inflate<VB>,
         contentType: Any? = null,
         span: Int = 1,
         fullSpan: Boolean = false,
-        noinline onClick: ((Any) -> Unit)? = null,
         noinline onBind: VB.() -> Unit
     ) {
         val stableKey = contentType ?: VB::class.java
-        val data = currentData
+        val data = currentData ?: Unit
+        
         internalRender(
-            factory = { p ->
+            factory = { p -> 
                 val binding = inflate(LayoutInflater.from(p.context), p, false)
                 SmartViewHolder(binding.root, binding)
             },
@@ -213,24 +217,29 @@ class VerseScope @PublishedApi internal constructor(
             data = data,
             id = currentId ?: System.identityHashCode(data),
             span = span,
-            fullSpan = fullSpan,
-            onClick = onClick?.let { { it(data) } }
+            fullSpan = fullSpan
         )
     }
 
     /**
-     * Renders a custom View instruction for the current item in a loop.
+     * Renders a UI unit within an advanced [items] block using a Custom [View].
+     *
+     * @param create The View creator.
+     * @param contentType An optional explicit key for ViewType pooling.
+     * @param span The span size.
+     * @param fullSpan Whether to span full width.
+     * @param onBind The binding logic.
      */
     inline fun <reified V : View> render(
         noinline create: ViewCreator<V>,
         contentType: Any? = null,
         span: Int = 1,
         fullSpan: Boolean = false,
-        noinline onClick: ((Any) -> Unit)? = null,
         noinline onBind: V.() -> Unit
     ) {
         val stableKey = contentType ?: V::class.java
-        val data = currentData
+        val data = currentData ?: Unit
+
         internalRender(
             factory = { p -> createSafeViewHolder(p, create) },
             bind = { h -> (h.view as V).onBind() },
@@ -238,14 +247,13 @@ class VerseScope @PublishedApi internal constructor(
             data = data,
             id = currentId ?: System.identityHashCode(data),
             span = span,
-            fullSpan = fullSpan,
-            onClick = onClick?.let { { it(data) } }
+            fullSpan = fullSpan
         )
     }
 
-    // =======================================================
-    //  Internal Helpers
-    // =======================================================
+    // ============================================================================================
+    //  Internal Implementation (Private)
+    // ============================================================================================
 
     @PublishedApi
     internal fun <V : View> createSafeViewHolder(parent: ViewGroup, create: ViewCreator<V>): SmartViewHolder {
@@ -269,10 +277,9 @@ class VerseScope @PublishedApi internal constructor(
         data: Any,
         id: Any,
         span: Int,
-        fullSpan: Boolean,
-        onClick: (() -> Unit)? = null
+        fullSpan: Boolean
     ) {
-        val viewType = VerseAdapter.getGlobalViewType(key, factory)
+        val viewType = adapter.getOrCreateViewType(key, factory)
         newWrappers.add(ItemWrapper(
             id = id,
             viewType = viewType,
@@ -280,8 +287,7 @@ class VerseScope @PublishedApi internal constructor(
             span = span,
             fullSpan = fullSpan,
             factory = factory,
-            bind = bind,
-            onClick = onClick
+            bind = bind
         ))
     }
 }

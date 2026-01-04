@@ -11,8 +11,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import coil.load
-import com.woniu0936.verses.ext.composeGrid
-import com.woniu0936.verses.ext.composeLinearRow
+import com.woniu0936.verses.ext.composeVerticalGrid
+import com.woniu0936.verses.ext.composeRow
 import com.woniu0936.verses.sample.databinding.*
 import com.woniu0936.verses.sample.model.HomeState
 import com.woniu0936.verses.sample.viewmodel.MainViewModel
@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
     private fun render(state: HomeState) {
         if (state.isLoading) return
         // 🚀 Using Verses with built-in spacing and automatic lifecycle disposal
-        binding.recyclerView.composeGrid(
+        binding.recyclerView.composeVerticalGrid(
             spanCount = 3,
             spacing = 16,        // Global item gap
             contentPadding = 8   // Edge padding
@@ -63,15 +63,15 @@ class MainActivity : AppCompatActivity() {
 
             // 2. Featured Banners
             item(ItemHorizontalListBinding::inflate, data = state.banners, key = "banners_container") {
-                rvHorizontal.composeLinearRow(spacing = 12) {
+                rvHorizontal.composeRow(spacing = 12) {
                     items(
                         items = state.banners,
                         inflate = ItemBannerBinding::inflate,
-                        key = { it.id },
-                        onClick = { banner ->
+                        key = { it.id }
+                    ) { banner ->
+                        root.setOnClickListener {
                             Toast.makeText(this@MainActivity, "Clicked Banner: ${banner.title}", Toast.LENGTH_SHORT).show()
                         }
-                    ) { banner ->
                         tvTitle.text = banner.title
                         tvSubtitle.text = banner.subtitle
                         ivBanner.load(banner.imageUrl)
@@ -81,7 +81,7 @@ class MainActivity : AppCompatActivity() {
 
             // 3. Categories
             item(ItemHorizontalListBinding::inflate, data = state.categories, key = "categories_container") {
-                rvHorizontal.composeLinearRow(spacing = 8) {
+                rvHorizontal.composeRow(spacing = 8) {
                     items(
                         items = state.categories,
                         inflate = ItemCategoryBinding::inflate,
@@ -101,11 +101,11 @@ class MainActivity : AppCompatActivity() {
                     items = state.gridApps,
                     inflate = ItemAppGridBinding::inflate,
                     key = { "grid_${it.id}" },
-                    span = 1,
-                    onClick = { app ->
+                    span = 1
+                ) { app ->
+                    root.setOnClickListener {
                         Toast.makeText(this@MainActivity, "Clicked Grid App: ${app.name}", Toast.LENGTH_SHORT).show()
                     }
-                ) { app ->
                     tvAppName.text = app.name
                     tvRating.text = app.rating.toString()
                     ratingBar.rating = app.rating
@@ -122,14 +122,14 @@ class MainActivity : AppCompatActivity() {
                     tvSectionTitle.text = section.title
                 }
                 item(ItemHorizontalListBinding::inflate, data = section.apps, fullSpan = true, key = "list_${section.id}") {
-                    rvHorizontal.composeLinearRow(spacing = 8) {
+                    rvHorizontal.composeRow(spacing = 8) {
                         items(
                             items = section.apps,
-                            inflate = ItemAppBinding::inflate,
-                            onClick = { app ->
+                            inflate = ItemAppBinding::inflate
+                        ) { app ->
+                            root.setOnClickListener {
                                 Toast.makeText(this@MainActivity, "Clicked App: ${app.name}", Toast.LENGTH_SHORT).show()
                             }
-                        ) { app ->
                             tvAppName.text = app.name
                             tvRating.text = app.rating.toString()
                             ratingBar.rating = app.rating

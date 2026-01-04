@@ -91,6 +91,13 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
     override fun getItemViewType(position: Int): Int = getItem(position).viewType
 
     /**
+     * Delegates to the global registry to get a stable ViewType.
+     */
+    fun getOrCreateViewType(key: Any, factory: (ViewGroup) -> SmartViewHolder): Int {
+        return getGlobalViewType(key, factory)
+    }
+
+    /**
      * Submits a new list to be diffed, and displayed.
      */
     fun submit(list: List<ItemWrapper>, commitCallback: (() -> Unit)? = null) {
@@ -99,28 +106,11 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SmartViewHolder {
         val factory = getGlobalFactory(viewType)
-        val holder = factory(parent)
-        
-        // High-performance Click Listener:
-        // Using a stateless listener capture to prevent memory leaks and redundant object creation.
-        holder.itemView.setOnClickListener {
-            val currentAdapter = holder.bindingAdapter as? VerseAdapter ?: return@setOnClickListener
-            val pos = holder.bindingAdapterPosition
-            if (pos != RecyclerView.NO_POSITION) {
-                currentAdapter.getItem(pos).onClick?.invoke()
-            }
-        }
-        return holder
+        return factory(parent)
     }
 
     override fun onBindViewHolder(holder: SmartViewHolder, position: Int) {
         val item = getItem(position)
-        
-        // Update interactive state efficiently
-        val isClickable = item.onClick != null
-        if (holder.itemView.isClickable != isClickable) {
-            holder.itemView.isClickable = isClickable
-        }
         
         // Handle StaggeredGrid full-span items
         val params = holder.itemView.layoutParams

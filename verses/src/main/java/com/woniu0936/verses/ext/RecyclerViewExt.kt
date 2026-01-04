@@ -45,9 +45,9 @@ fun RecyclerView.compose(
 }
 
 /**
- * Convenience DSL for vertical column lists.
+ * Convenience DSL for vertical column lists (LazyColumn).
  */
-fun RecyclerView.composeLinearColumn(
+fun RecyclerView.composeColumn(
     reverseLayout: Boolean = false,
     spacing: Int = 0,
     contentPadding: Int = 0,
@@ -57,9 +57,9 @@ fun RecyclerView.composeLinearColumn(
 ) = compose(RecyclerView.VERTICAL, reverseLayout, spacing, contentPadding, horizontalPadding, verticalPadding, block)
 
 /**
- * Convenience DSL for horizontal row lists.
+ * Convenience DSL for horizontal row lists (LazyRow).
  */
-fun RecyclerView.composeLinearRow(
+fun RecyclerView.composeRow(
     reverseLayout: Boolean = false,
     spacing: Int = 0,
     contentPadding: Int = 0,
@@ -69,18 +69,10 @@ fun RecyclerView.composeLinearRow(
 ) = compose(RecyclerView.HORIZONTAL, reverseLayout, spacing, contentPadding, horizontalPadding, verticalPadding, block)
 
 /**
- * Entry point for building a grid [RecyclerView] layout.
- * 
- * Automatically handles [GridLayoutManager.SpanSizeLookup] to support [ItemWrapper.fullSpan].
- *
- * @param spanCount Number of columns.
- * @param spacing Shorthand for both horizontal and vertical item gaps.
- * @param horizontalSpacing Overrides column gap if provided.
- * @param verticalSpacing Overrides row gap if provided.
+ * Entry point for vertical grid layouts (LazyVerticalGrid).
  */
-fun RecyclerView.composeGrid(
+fun RecyclerView.composeVerticalGrid(
     spanCount: Int,
-    orientation: Int = RecyclerView.VERTICAL,
     reverseLayout: Boolean = false,
     spacing: Int = 0,
     horizontalSpacing: Int? = null,
@@ -88,6 +80,123 @@ fun RecyclerView.composeGrid(
     contentPadding: Int = 0,
     horizontalPadding: Int? = null,
     verticalPadding: Int? = null,
+    block: VerseScope.() -> Unit
+) {
+    internalComposeGrid(
+        spanCount = spanCount,
+        orientation = RecyclerView.VERTICAL,
+        reverseLayout = reverseLayout,
+        spacing = spacing,
+        horizontalSpacing = horizontalSpacing,
+        verticalSpacing = verticalSpacing,
+        contentPadding = contentPadding,
+        horizontalPadding = horizontalPadding,
+        verticalPadding = verticalPadding,
+        block = block
+    )
+}
+
+/**
+ * Entry point for horizontal grid layouts (LazyHorizontalGrid).
+ */
+fun RecyclerView.composeHorizontalGrid(
+    spanCount: Int,
+    reverseLayout: Boolean = false,
+    spacing: Int = 0,
+    horizontalSpacing: Int? = null,
+    verticalSpacing: Int? = null,
+    contentPadding: Int = 0,
+    horizontalPadding: Int? = null,
+    verticalPadding: Int? = null,
+    block: VerseScope.() -> Unit
+) {
+    internalComposeGrid(
+        spanCount = spanCount,
+        orientation = RecyclerView.HORIZONTAL,
+        reverseLayout = reverseLayout,
+        spacing = spacing,
+        horizontalSpacing = horizontalSpacing,
+        verticalSpacing = verticalSpacing,
+        contentPadding = contentPadding,
+        horizontalPadding = horizontalPadding,
+        verticalPadding = verticalPadding,
+        block = block
+    )
+}
+
+/**
+ * Entry point for vertical staggered grid layouts (LazyVerticalStaggeredGrid).
+ */
+fun RecyclerView.composeVerticalStaggeredGrid(
+    spanCount: Int,
+    reverseLayout: Boolean = false,
+    spacing: Int = 0,
+    horizontalSpacing: Int? = null,
+    verticalSpacing: Int? = null,
+    contentPadding: Int = 0,
+    horizontalPadding: Int? = null,
+    verticalPadding: Int? = null,
+    gapStrategy: Int = StaggeredGridLayoutManager.GAP_HANDLING_NONE,
+    block: VerseScope.() -> Unit
+) {
+    internalComposeStaggered(
+        spanCount = spanCount,
+        orientation = RecyclerView.VERTICAL,
+        reverseLayout = reverseLayout,
+        spacing = spacing,
+        horizontalSpacing = horizontalSpacing,
+        verticalSpacing = verticalSpacing,
+        contentPadding = contentPadding,
+        horizontalPadding = horizontalPadding,
+        verticalPadding = verticalPadding,
+        gapStrategy = gapStrategy,
+        block = block
+    )
+}
+
+/**
+ * Entry point for horizontal staggered grid layouts (LazyHorizontalStaggeredGrid).
+ */
+fun RecyclerView.composeHorizontalStaggeredGrid(
+    spanCount: Int,
+    reverseLayout: Boolean = false,
+    spacing: Int = 0,
+    horizontalSpacing: Int? = null,
+    verticalSpacing: Int? = null,
+    contentPadding: Int = 0,
+    horizontalPadding: Int? = null,
+    verticalPadding: Int? = null,
+    gapStrategy: Int = StaggeredGridLayoutManager.GAP_HANDLING_NONE,
+    block: VerseScope.() -> Unit
+) {
+    internalComposeStaggered(
+        spanCount = spanCount,
+        orientation = RecyclerView.HORIZONTAL,
+        reverseLayout = reverseLayout,
+        spacing = spacing,
+        horizontalSpacing = horizontalSpacing,
+        verticalSpacing = verticalSpacing,
+        contentPadding = contentPadding,
+        horizontalPadding = horizontalPadding,
+        verticalPadding = verticalPadding,
+        gapStrategy = gapStrategy,
+        block = block
+    )
+}
+
+// Private Helpers
+
+@PublishedApi
+internal fun RecyclerView.internalComposeGrid(
+    spanCount: Int,
+    orientation: Int,
+    reverseLayout: Boolean,
+    spacing: Int,
+    horizontalSpacing: Int?,
+    verticalSpacing: Int?,
+    contentPadding: Int,
+    horizontalPadding: Int?,
+    verticalPadding: Int?,
     block: VerseScope.() -> Unit
 ) {
     val hS = horizontalSpacing ?: spacing
@@ -99,7 +208,7 @@ fun RecyclerView.composeGrid(
         GridLayoutManager(context, spanCount, orientation, reverseLayout).apply {
             spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
                 override fun getSpanSize(position: Int): Int {
-                    val currentAdapter = this@composeGrid.adapter as? VerseAdapter
+                    val currentAdapter = this@internalComposeGrid.adapter as? VerseAdapter
                     return currentAdapter?.getSpanSize(position, spanCount) ?: 1
                 }
             }
@@ -115,20 +224,18 @@ fun RecyclerView.composeGrid(
     submit(adapter, block)
 }
 
-/**
- * Entry point for staggered grid [RecyclerView] layouts.
- */
-fun RecyclerView.composeStaggered(
+@PublishedApi
+internal fun RecyclerView.internalComposeStaggered(
     spanCount: Int,
-    orientation: Int = RecyclerView.VERTICAL,
-    reverseLayout: Boolean = false,
-    spacing: Int = 0,
-    horizontalSpacing: Int? = null,
-    verticalSpacing: Int? = null,
-    contentPadding: Int = 0,
-    horizontalPadding: Int? = null,
-    verticalPadding: Int? = null,
-    gapStrategy: Int = StaggeredGridLayoutManager.GAP_HANDLING_NONE,
+    orientation: Int,
+    reverseLayout: Boolean,
+    spacing: Int,
+    horizontalSpacing: Int?,
+    verticalSpacing: Int?,
+    contentPadding: Int,
+    horizontalPadding: Int?,
+    verticalPadding: Int?,
+    gapStrategy: Int,
     block: VerseScope.() -> Unit
 ) {
     val hS = horizontalSpacing ?: spacing
@@ -152,16 +259,8 @@ fun RecyclerView.composeStaggered(
     submit(adapter, block)
 }
 
-// Private Helpers
-
 /**
  * Reconciles the [RecyclerView]'s adapter and layout manager state.
- *
- * If a [VerseAdapter] already exists and the layout manager type matches, it updates
- * existing decorations. Otherwise, it performs a full setup including:
- * 1. Global ViewPool injection for cross-instance optimization.
- * 2. Automatic lifecycle-aware disposal to prevent memory leaks.
- * 3. Default animation tuning (disabling change animations).
  */
 @PublishedApi
 internal fun RecyclerView.getOrCreateAdapter(
@@ -192,9 +291,7 @@ internal fun RecyclerView.getOrCreateAdapter(
     // Disable flickering 'change' animations by default.
     (itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
     
-    // Industrial-Grade Lifecycle & Attachment Safety:
-    // We ensure the adapter is cleared when either the Lifecycle is destroyed 
-    // OR the View is detached from the window, providing double protection against leaks.
+    // Industrial-Grade Lifecycle & Attachment Safety
     val cleanup = {
         this.adapter = null
         this.setRecycledViewPool(null) // Disconnect from global pool
@@ -214,8 +311,6 @@ internal fun RecyclerView.getOrCreateAdapter(
         override fun onViewDetachedFromWindow(v: android.view.View) {
             this@getOrCreateAdapter.removeOnAttachStateChangeListener(this)
             lifecycle?.removeObserver(observer)
-            // Note: We don't call cleanup() here because a View can be detached/reattached (e.g. Fragment).
-            // But we remove the observer to prevent it from piling up if compose() is called again.
         }
     })
     
@@ -224,9 +319,6 @@ internal fun RecyclerView.getOrCreateAdapter(
 
 /**
  * Manages the singleton [VerseSpacingDecoration] for the [RecyclerView].
- *
- * This function is idempotent; it removes existing decorations before adding a new one
- * to ensure that spacing does not accumulate when `compose` is called multiple times.
  */
 @PublishedApi
 internal fun RecyclerView.updateDecoration(hS: Int, vS: Int, hP: Int, vP: Int) {
@@ -242,9 +334,6 @@ internal fun RecyclerView.updateDecoration(hS: Int, vS: Int, hP: Int, vP: Int) {
 
 /**
  * Orchestrates the DSL execution and item submission.
- *
- * This function creates a transient [VerseScope] and submits the collected [ItemWrapper]
- * list to the adapter.
  */
 @PublishedApi
 internal inline fun submit(adapter: VerseAdapter, block: VerseScope.() -> Unit) {
