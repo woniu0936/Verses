@@ -28,6 +28,31 @@ jobs:
         run: |
           echo "$GPG_SECRET_KEY_RING_FILE_BASE64" | base64 --decode > secring.gpg
 
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Verses ${{ github.ref_name }}
+          generate_release_notes: true
+          make_latest: true
+          allowUpdates: true
+          fail_on_unmatched_files: false
+          prerelease: ${{ contains(github.ref, '-') }}
+          body: |
+            ## 🌌 Verses ${{ github.ref_name }} is here!
+            
+            Minimalist, high-performance declarative UI building for Modern Kotlin.
+            
+            ### 📖 Documentation
+            Explore the full API and best practices in our [Official Documentation](https://woniu0936.github.io/Verses/).
+            
+            ---
+            *For a full list of changes, please see the **Changelog** below.*
+          files: |
+            verses/build/outputs/aar/*.aar
+            verses-docs-*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Publish to Maven Central
         env:
           MC_USER: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
@@ -43,38 +68,3 @@ jobs:
             -Psigning.keyId="$GPG_KEY_ID" \
             -Psigning.password="$GPG_PWD" \
             -Psigning.secretKeyRingFile="$GPG_FILE"
-
-      - name: Generate Documentation
-        run: ./gradlew :verses:dokkaGenerateHtml
-
-      - name: Package Documentation
-        run: |
-          cd verses/build/dokka
-          zip -r ../../../verses-docs-${{ github.ref_name }}.zip .
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: Verses ${{ github.ref_name }}
-          generate_release_notes: true
-          make_latest: true
-          prerelease: ${{ contains(github.ref, '-') }}
-          body: |
-            ## 🌌 Verses ${{ github.ref_name }} is here!
-            
-            Minimalist, high-performance declarative UI building for Modern Kotlin. This release includes the latest stability improvements and optimized rendering logic.
-            
-            ### 📦 Artifacts
-            - **`verses-*.aar`**: Android Library Binary.
-            - **`verses-docs-*.zip`**: Full Dokka HTML API Reference.
-            
-            ### 📖 Documentation
-            Explore the full API and best practices in our [Official Documentation](https://woniu0936.github.io/Verses/).
-            
-            ---
-            *For a full list of changes, please see the **Changelog** below.*
-          files: |
-            verses/build/outputs/aar/*.aar
-            verses-docs-*.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -112,4 +112,22 @@ echo "📤 Pushing to GitHub..."
 git push origin main
 git push origin "$TAG_NAME"
 
+# 5. Create GitHub Release via CLI (if available)
+if command -v gh &> /dev/null; then
+    echo "🚀 Creating GitHub Release via CLI..."
+    PRERELEASE_FLAG=""
+    if [[ "$VERSION" == *"-"* ]]; then
+        PRERELEASE_FLAG="--prerelease"
+    fi
+    
+    gh release create "$TAG_NAME" \
+        --title "Verses $TAG_NAME" \
+        --generate-notes \
+        $PRERELEASE_FLAG \
+        --latest
+    echo "✅ GitHub Release created successfully."
+else
+    echo "ℹ️  GitHub CLI (gh) not found. Relying on GitHub Actions to create the release page."
+fi
+
 echo "✅ Success! Tag $TAG_NAME and changes have been pushed."
