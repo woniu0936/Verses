@@ -1,103 +1,64 @@
 package com.woniu0936.verses.core
 
 import android.view.View
-import android.view.ViewGroup
-import androidx.recyclerview.widget.RecyclerView
+import com.woniu0936.verses.model.ItemWrapper
 import com.woniu0936.verses.model.SmartViewHolder
+import com.woniu0936.verses.model.currentProcessingHolder
 import io.mockk.*
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class VerseAdapterTest {
 
-    private val adapter = VerseAdapter()
-
     @Test
-    fun `getOrCreateViewType registers factory and returns stable ID`() {
-        val key = "TestKey"
-        val mockView = mockk<View>(relaxed = true)
-        val mockViewHolder = SmartViewHolder(mockView)
-        val mockParent = mockk<ViewGroup>()
-        val factory: (ViewGroup) -> SmartViewHolder = { mockViewHolder }
-
-        val typeId = VerseAdapter.getGlobalViewType(key, factory)
-        val secondTypeId = VerseAdapter.getGlobalViewType(key, factory)
-
-        assertEquals(typeId, secondTypeId)
+    fun `onBindViewHolder manages global reference with re-entrancy support`() {
+        val adapter = spyk(VerseAdapter())
+        val holderA = SmartViewHolder(mockk(relaxed = true))
+        val holderB = SmartViewHolder(mockk(relaxed = true))
         
-        val createdHolder = adapter.onCreateViewHolder(mockParent, typeId)
-        assertEquals(mockViewHolder, createdHolder)
-    }
-
-    @Test
-    fun `getGlobalViewType handles hashCode collisions with linear probing`() {
-        // Create two different keys with the same hashCode
-        class CollisionKey(val id: String) {
-            override fun hashCode(): Int = 42
-            override fun equals(other: Any?): Boolean = (other as? CollisionKey)?.id == id
+        val bindB: SmartViewHolder.(Any) -> Unit = {
+            assertEquals(holderB, currentProcessingHolder?.get())
         }
 
-        val key1 = CollisionKey("A")
-        val key2 = CollisionKey("B")
-        val factory: (ViewGroup) -> SmartViewHolder = { mockk() }
+        val bindA: SmartViewHolder.(Any) -> Unit = {
+            assertEquals(holderA, currentProcessingHolder?.get())
+            adapter.onBindViewHolder(holderB, 1)
+            assertEquals(holderA, currentProcessingHolder?.get())
+        }
 
-        val type1 = VerseAdapter.getGlobalViewType(key1, factory)
-        val type2 = VerseAdapter.getGlobalViewType(key2, factory)
+        val itemA = ItemWrapper("A", 1, "DataA", 1, false, { mockk() }, bindA)
+        val itemB = ItemWrapper("B", 1, "DataB", 1, false, { mockk() }, bindB)
 
-        // They must have different types despite same hashCode
-        assert(type1 != type2)
-        
-        // Retrieval must be stable
-        assertEquals(type1, VerseAdapter.getGlobalViewType(key1, factory))
-        assertEquals(type2, VerseAdapter.getGlobalViewType(key2, factory))
+        every { adapter.getItem(0) } returns itemA
+        every { adapter.getItem(1) } returns itemB
+
+        adapter.onBindViewHolder(holderA, 0)
+        assertNull(currentProcessingHolder)
     }
 
     @Test
-    fun `ViewType is deterministic across different adapter instances`() {
-        val key = "GlobalKey"
-        val factory: (ViewGroup) -> SmartViewHolder = { mockk() }
-        
-        val adapter1 = VerseAdapter()
-        val adapter2 = VerseAdapter()
-        
-        val type1 = VerseAdapter.getGlobalViewType(key, factory)
-        val type2 = VerseAdapter.getGlobalViewType(key, factory)
-        
-        assertEquals(type1, type2)
-    }
+    fun `onBindViewHolder correctly updates isClickable based on item onClick`() {
+        val adapter = spyk(VerseAdapter())
+        val mockView = mockk<View>()
+        val isClickableSlot = slot<Boolean>()
+        every { mockView.isClickable } returns false
+        every { mockView.isClickable = capture(isClickableSlot) } just Runs
+        every { mockView.layoutParams } returns mockk()
 
-    @Test
-    fun `onViewRecycled clears nested adapters recursively`() {
-        val rootLayout = mockk<ViewGroup>(relaxed = true)
-        val midLayout = mockk<ViewGroup>(relaxed = true)
-        val nestedRV = mockk<RecyclerView>(relaxed = true)
+        val holder = SmartViewHolder(mockView)
         
-        // Mock hierarchy: rootLayout -> midLayout -> nestedRV
-        every { rootLayout.childCount } returns 1
-        every { rootLayout.getChildAt(0) } returns midLayout
+        val itemWithClick = ItemWrapper("1", 1, "D", 1, false, { mockk() }, { }, onClick = { })
+        every { adapter.getItem(0) } returns itemWithClick
         
-        every { midLayout.childCount } returns 1
-        every { midLayout.getChildAt(0) } returns nestedRV
-        
-        val holder = SmartViewHolder(rootLayout)
-        
-        adapter.onViewRecycled(holder)
+        adapter.onBindViewHolder(holder, 0)
+        assertEquals(true, isClickableSlot.captured)
 
-        // Verify that the deep nested RV had its adapter cleared
-        verify { nestedRV.adapter = null }
-    }
-
-    @Test
-    fun `clearRegistry empties all global caches`() {
-        val key = "TestKey"
-        val factory: (ViewGroup) -> SmartViewHolder = { mockk() }
+        val itemNoClick = ItemWrapper("2", 1, "D", 1, false, { mockk() }, { }, onClick = null)
+        every { adapter.getItem(0) } returns itemNoClick
+        every { mockView.isClickable } returns true
         
-        VerseAdapter.getGlobalViewType(key, factory)
-        
-        VerseAdapter.clearRegistry()
-        
-        // After clearing, getting the same key should ideally not find it in the internal cache
-        val newType = VerseAdapter.getGlobalViewType(key, factory)
-        assert(newType != 0)
+        adapter.onBindViewHolder(holder, 0)
+        assertEquals(false, isClickableSlot.captured)
     }
 }

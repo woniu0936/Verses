@@ -12,20 +12,144 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.viewbinding.ViewBinding
-import com.woniu0936.verses.core.VerseAdapter
-import com.woniu0936.verses.ext.*
+import com.woniu0936.verses.model.bind
+import com.woniu0936.verses.model.once
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Integration tests to verify that the DSL correctly configures real [RecyclerView] and [RecyclerView.LayoutManager] instances.
  */
 @RunWith(AndroidJUnit4::class)
 class VerseIntegrationTest {
+// ... existing setup ...
+
+    /**
+     * Verifies that the 'once' block and 'itemData()' work correctly together,
+     * specifically ensuring that asynchronous click listeners get fresh data.
+     */
+    @Test
+    fun testOnceBlockAndItemDataSafety() {
+        val clickResults = mutableListOf<String>()
+        val data = "Initial"
+
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            recyclerView.compose {
+                item(::testInflate, data = data, key = "SINGLE") {
+                    once {
+                        root.setOnClickListener {
+                            // Use member itemData() to fetch current data
+                            clickResults.add(itemData<String>())
+                        }
+                    }
+                }
+            }
+        }
+        Thread.sleep(100)
+
+        // 1. First click: should see "Initial"
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            recyclerView.findViewHolderForAdapterPosition(0)?.itemView?.performClick()
+        }
+        assertEquals("Initial", clickResults.last())
+
+        // 2. Update data: ID remains "SINGLE"
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            recyclerView.compose {
+                item(::testInflate, data = "Updated", key = "SINGLE") {
+                    // once {} should NOT run again, but listener is already set
+                }
+            }
+        }
+        Thread.sleep(100)
+
+        // 3. Second click: should see "Updated" (proving itemData() is fresh)
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            recyclerView.findViewHolderForAdapterPosition(0)?.itemView?.performClick()
+        }
+        assertEquals("Updated", clickResults.last())
+    }
+
+    /**
+     * Verifies that the original 'onClick' parameter still works correctly.
+     */
+    @Test
+    fun testLegacyOnClickParameter() {
+        val clickResults = mutableListOf<String>()
+        val items = listOf("A", "B")
+
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            recyclerView.compose {
+                items(items, ::testInflate, onClick = { clickResults.add(it) }) {
+                    textView.text = it
+                }
+            }
+        }
+        Thread.sleep(100)
+
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            recyclerView.findViewHolderForAdapterPosition(1)?.itemView?.performClick()
+        }
+        assertEquals("B", clickResults.last())
+    }
+
+    /**
+     * Verifies that the 'bind' anchor correctly skips updates when values are the same.
+     */
+    @Test
+    fun testBindAnchorOnlyUpdatesOnChanges() {
+        val bindCounter = AtomicInteger(0)
+        val data = "Stable Data"
+
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            // Initial Bind
+            recyclerView.compose {
+                item(::testInflate, data = data) {
+                    textView.bind(data) {
+                        text = it
+                        bindCounter.incrementAndGet()
+                    }
+                }
+            }
+        }
+        Thread.sleep(100)
+        assertEquals(1, bindCounter.get())
+
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            // Re-Bind with same data
+            recyclerView.compose {
+                item(::testInflate, data = data) {
+                    textView.bind(data) {
+                        text = it
+                        bindCounter.incrementAndGet()
+                    }
+                }
+            }
+        }
+        Thread.sleep(100)
+        // Should STILL be 1 because bind() skipped the second call
+        assertEquals(1, bindCounter.get())
+
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            // Re-Bind with DIFFERENT data
+            recyclerView.compose {
+                item(::testInflate, data = "New Data") {
+                    textView.bind("New Data") {
+                        text = it
+                        bindCounter.incrementAndGet()
+                    }
+                }
+            }
+        }
+        Thread.sleep(100)
+        // Should be 2 now
+        assertEquals(2, bindCounter.get())
+    }
 
     private lateinit var context: Context
     private lateinit var recyclerView: RecyclerView

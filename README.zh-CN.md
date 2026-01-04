@@ -40,13 +40,12 @@ dependencies {
 
 Verses 提供统一的 DSL 来覆盖所有列表场景。
 
-### 1. "全家桶" 示例 (功能演示)
+### 1. "全家桶" 示例
 ```kotlin
-recyclerView.composeGrid(
+recyclerView.composeVerticalGrid(
     spanCount = 2,
     spacing = 16.dp,             // 内部间距
-    contentPadding = 20.dp,      // 外部边距
-    orientation = RecyclerView.VERTICAL
+    contentPadding = 20.dp       // 外部边距
 ) {
     // A. 单个 ViewBinding 项目 (占满全行)
     item(ItemHeaderBinding::inflate, fullSpan = true) {
@@ -64,10 +63,10 @@ recyclerView.composeGrid(
         items = userList,
         inflate = ItemUserBinding::inflate,
         key = { it.id },
-        span = 1,
-        onClick = { user -> toast("点击了 ${user.name}") }
+        span = 1
     ) { user ->
         tvName.text = user.name
+        root.setOnClickListener { toast("点击了 ${user.name}") }
     }
 
     // D. 带业务逻辑的多类型渲染
@@ -87,7 +86,7 @@ recyclerView.composeGrid(
 
     // E. 嵌套横向列表 (自动关联全局复用池)
     item(ItemHorizontalListBinding::inflate, fullSpan = true) {
-        rvNested.composeLinearRow(spacing = 8.dp) {
+        rvNested.composeRow(spacing = 8.dp) {
             items(categories, ItemCategoryBinding::inflate) { cat ->
                 tvCategory.text = cat.name
             }
@@ -96,14 +95,16 @@ recyclerView.composeGrid(
 }
 ```
 
-### 2. 可用入口方法
-| 方法名 | 描述 |
-| :--- | :--- |
-| `composeLinearColumn` | 标准竖向线性列表 |
-| `composeLinearRow` | 标准横向线性列表 |
-| `composeGrid` | 网格布局，支持跨列设置 |
-| `composeStaggered` | 瀑布流布局 |
-| `compose` | 基础构建器，可自定义 LayoutManager |
+### 2. API 命名映射 (与 Compose 对标)
+
+我们采用了与 Jetpack Compose 1:1 对标的命名，大幅降低学习成本。
+
+| 布局类型 | 方向 | **Verses API** | **Jetpack Compose 对等项** |
+| :--- | :--- | :--- | :--- |
+| **线性** | 竖向 | **`composeColumn`** | `LazyColumn` |
+| **线性** | 横向 | **`composeRow`** | `LazyRow` |
+| **网格** | 竖向 | **`composeVerticalGrid`** | `LazyVerticalGrid` |
+| **网格** | 横向 | **`composeHorizontalGrid`** | `LazyHorizontalGrid` |
 
 ### 3. 全局生命周期与资源管理
 Verses 会在 View 分离或 Activity 销毁时自动清理。如需手动重置全局缓存（如退出登录时）：

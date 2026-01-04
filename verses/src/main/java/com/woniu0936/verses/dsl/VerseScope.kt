@@ -32,16 +32,6 @@ class VerseScope @PublishedApi internal constructor(
 
     /**
      * Renders a list of items using [ViewBinding].
-     *
-     * @param items The data source list.
-     * @param inflate The ViewBinding inflater reference (e.g., ItemUserBinding::inflate).
-     * @param key A function to extract a stable ID for DiffUtil. Defaults to list index (not recommended for mutable lists).
-     * @param span The number of columns this item occupies in a Grid layout. Default is 1.
-     * @param fullSpan Whether this item should span the full width in Staggered layouts. Default is false.
-     * @param onClick Optional click listener for the item root view. Handled efficiently via Proxy Listener.
-     * @param onAttach Called when the view is attached to the window (enters screen).
-     * @param onDetach Called when the view is detached from the window (leaves screen).
-     * @param onBind The binding logic block.
      */
     inline fun <T : Any, reified VB : ViewBinding> items(
         items: List<T>,
@@ -52,7 +42,7 @@ class VerseScope @PublishedApi internal constructor(
         noinline onClick: ((T) -> Unit)? = null,
         noinline onAttach: ((T) -> Unit)? = null,
         noinline onDetach: ((T) -> Unit)? = null,
-        noinline onBind: VB.(T) -> Unit
+        crossinline onBind: VB.(T) -> Unit
     ) {
         val stableKey = VB::class.java
         items.forEachIndexed { index, item ->
@@ -61,7 +51,11 @@ class VerseScope @PublishedApi internal constructor(
                     val binding = inflate(LayoutInflater.from(p.context), p, false)
                     SmartViewHolder(binding.root, binding)
                 },
-                bind = { h -> (h.binding as VB).onBind(item) },
+                bind = { data ->
+                    // Type safety is guaranteed by the reified generic VB and items data source T
+                    @Suppress("UNCHECKED_CAST")
+                    (binding as VB).onBind(data as T)
+                },
                 key = stableKey,
                 data = item,
                 id = key?.invoke(item) ?: index,
@@ -76,16 +70,6 @@ class VerseScope @PublishedApi internal constructor(
 
     /**
      * Renders a list of items using a Custom [View].
-     *
-     * @param items The data source list.
-     * @param create A factory function to create the View (e.g., ::MyView or { TextView(it) }).
-     * @param key A function to extract a stable ID for DiffUtil.
-     * @param span The number of columns this item occupies in a Grid layout.
-     * @param fullSpan Whether this item should span the full width.
-     * @param onClick Optional click listener for the item root view.
-     * @param onAttach Called when the view is attached to the window.
-     * @param onDetach Called when the view is detached from the window.
-     * @param onBind The binding logic block.
      */
     inline fun <T : Any, reified V : View> items(
         items: List<T>,
@@ -96,13 +80,17 @@ class VerseScope @PublishedApi internal constructor(
         noinline onClick: ((T) -> Unit)? = null,
         noinline onAttach: ((T) -> Unit)? = null,
         noinline onDetach: ((T) -> Unit)? = null,
-        noinline onBind: V.(T) -> Unit
+        crossinline onBind: V.(T) -> Unit
     ) {
         val stableKey = V::class.java
         items.forEachIndexed { index, item ->
             internalRender(
                 factory = { p -> createSafeViewHolder(p, create) },
-                bind = { h -> (h.view as V).onBind(item) },
+                bind = { data ->
+                    // Type safety is guaranteed by reified V and items data source T
+                    @Suppress("UNCHECKED_CAST")
+                    (view as V).onBind(data as T)
+                },
                 key = stableKey,
                 data = item,
                 id = key?.invoke(item) ?: index,
@@ -121,16 +109,6 @@ class VerseScope @PublishedApi internal constructor(
 
     /**
      * Renders a single item using [ViewBinding].
-     *
-     * @param inflate The ViewBinding inflater reference.
-     * @param data The data dependency. **Crucial**: If UI depends on external state, pass it here to trigger DiffUtil updates.
-     * @param key A stable ID for DiffUtil. Defaults to a hash of the inflater.
-     * @param span The span size. Default is 1.
-     * @param fullSpan Whether to span full width. Default is true for single items.
-     * @param onClick Optional click listener for the item root view.
-     * @param onAttach Called when the view is attached to the window.
-     * @param onDetach Called when the view is detached from the window.
-     * @param onBind The binding logic block.
      */
     inline fun <reified VB : ViewBinding> item(
         noinline inflate: Inflate<VB>,
@@ -141,7 +119,7 @@ class VerseScope @PublishedApi internal constructor(
         noinline onClick: (() -> Unit)? = null,
         noinline onAttach: (() -> Unit)? = null,
         noinline onDetach: (() -> Unit)? = null,
-        noinline onBind: VB.() -> Unit = {}
+        crossinline onBind: VB.() -> Unit = {}
     ) {
         val stableKey = VB::class.java
         internalRender(
@@ -149,7 +127,10 @@ class VerseScope @PublishedApi internal constructor(
                 val binding = inflate(LayoutInflater.from(p.context), p, false)
                 SmartViewHolder(binding.root, binding)
             },
-            bind = { h -> (h.binding as VB).onBind() },
+            bind = { 
+                @Suppress("UNCHECKED_CAST")
+                (binding as VB).onBind()
+            },
             key = stableKey,
             data = data ?: Unit,
             id = key ?: "single_vb_${stableKey.name}",
@@ -163,16 +144,6 @@ class VerseScope @PublishedApi internal constructor(
 
     /**
      * Renders a single item using a Custom [View].
-     *
-     * @param create A factory function to create the View.
-     * @param data The data dependency.
-     * @param key A stable ID for DiffUtil.
-     * @param span The span size.
-     * @param fullSpan Whether to span full width. Default is true.
-     * @param onClick Optional click listener for the item root view.
-     * @param onAttach Called when the view is attached to the window.
-     * @param onDetach Called when the view is detached from the window.
-     * @param onBind The binding logic block.
      */
     inline fun <reified V : View> item(
         noinline create: ViewCreator<V>,
@@ -183,12 +154,15 @@ class VerseScope @PublishedApi internal constructor(
         noinline onClick: (() -> Unit)? = null,
         noinline onAttach: (() -> Unit)? = null,
         noinline onDetach: (() -> Unit)? = null,
-        noinline onBind: V.() -> Unit = {}
+        crossinline onBind: V.() -> Unit = {}
     ) {
         val stableKey = V::class.java
         internalRender(
             factory = { p -> createSafeViewHolder(p, create) },
-            bind = { h -> (h.view as V).onBind() },
+            bind = { 
+                @Suppress("UNCHECKED_CAST")
+                (view as V).onBind()
+            },
             key = stableKey,
             data = data ?: Unit,
             id = key ?: "single_view_${stableKey.name}",
@@ -205,12 +179,7 @@ class VerseScope @PublishedApi internal constructor(
     // ============================================================================================
 
     /**
-     * Starts an iteration scope for advanced scenarios (e.g., mixed types, if/else logic).
-     * Must be used in conjunction with [render].
-     *
-     * @param items The data source list.
-     * @param key A function to extract a stable ID.
-     * @param block The control flow block where you call [render].
+     * Starts an iteration scope for advanced scenarios.
      */
     fun <T : Any> items(
         items: List<T>,
@@ -226,15 +195,6 @@ class VerseScope @PublishedApi internal constructor(
 
     /**
      * Renders a UI unit within an advanced [items] block using [ViewBinding].
-     *
-     * @param inflate The ViewBinding inflater.
-     * @param contentType An optional explicit key for ViewType pooling. Use only if needed (e.g., same binding, different pools).
-     * @param span The span size.
-     * @param fullSpan Whether to span full width.
-     * @param onClick Optional click listener.
-     * @param onAttach Called when the view is attached to the window.
-     * @param onDetach Called when the view is detached from the window.
-     * @param onBind The binding logic.
      */
     inline fun <reified VB : ViewBinding> render(
         noinline inflate: Inflate<VB>,
@@ -244,7 +204,7 @@ class VerseScope @PublishedApi internal constructor(
         noinline onClick: (() -> Unit)? = null,
         noinline onAttach: (() -> Unit)? = null,
         noinline onDetach: (() -> Unit)? = null,
-        noinline onBind: VB.() -> Unit
+        crossinline onBind: VB.() -> Unit
     ) {
         val stableKey = contentType ?: VB::class.java
         val data = currentData ?: Unit
@@ -254,7 +214,10 @@ class VerseScope @PublishedApi internal constructor(
                 val binding = inflate(LayoutInflater.from(p.context), p, false)
                 SmartViewHolder(binding.root, binding)
             },
-            bind = { h -> (h.binding as VB).onBind() },
+            bind = { 
+                @Suppress("UNCHECKED_CAST")
+                (binding as VB).onBind()
+            },
             key = stableKey,
             data = data,
             id = currentId ?: System.identityHashCode(data),
@@ -268,15 +231,6 @@ class VerseScope @PublishedApi internal constructor(
 
     /**
      * Renders a UI unit within an advanced [items] block using a Custom [View].
-     *
-     * @param create The View creator.
-     * @param contentType An optional explicit key for ViewType pooling.
-     * @param span The span size.
-     * @param fullSpan Whether to span full width.
-     * @param onClick Optional click listener.
-     * @param onAttach Called when the view is attached to the window.
-     * @param onDetach Called when the view is detached from the window.
-     * @param onBind The binding logic.
      */
     inline fun <reified V : View> render(
         noinline create: ViewCreator<V>,
@@ -286,14 +240,17 @@ class VerseScope @PublishedApi internal constructor(
         noinline onClick: (() -> Unit)? = null,
         noinline onAttach: (() -> Unit)? = null,
         noinline onDetach: (() -> Unit)? = null,
-        noinline onBind: V.() -> Unit
+        crossinline onBind: V.() -> Unit
     ) {
         val stableKey = contentType ?: V::class.java
         val data = currentData ?: Unit
 
         internalRender(
             factory = { p -> createSafeViewHolder(p, create) },
-            bind = { h -> (h.view as V).onBind() },
+            bind = { 
+                @Suppress("UNCHECKED_CAST")
+                (view as V).onBind()
+            },
             key = stableKey,
             data = data,
             id = currentId ?: System.identityHashCode(data),
@@ -326,7 +283,7 @@ class VerseScope @PublishedApi internal constructor(
     @PublishedApi
     internal fun internalRender(
         factory: (ViewGroup) -> SmartViewHolder,
-        bind: (SmartViewHolder) -> Unit,
+        bind: SmartViewHolder.(Any) -> Unit,
         key: Any,
         data: Any,
         id: Any,

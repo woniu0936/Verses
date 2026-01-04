@@ -1,6 +1,7 @@
 package com.woniu0936.verses.core
 
 import android.view.ViewGroup
+import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.AsyncDifferConfig
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -8,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.woniu0936.verses.model.ItemWrapper
 import com.woniu0936.verses.model.SmartViewHolder
+import com.woniu0936.verses.model.currentProcessingHolder
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
@@ -127,20 +129,37 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
     override fun onBindViewHolder(holder: SmartViewHolder, position: Int) {
         val item = getItem(position)
         
-        // Efficiently toggle clickable state without resetting the listener
-        val isClickable = item.onClick != null
-        if (holder.itemView.isClickable != isClickable) {
-            holder.itemView.isClickable = isClickable
-        }
+        // 1. Set global reference for 'bind' extensions (using WeakReference)
+        val previousHolderRef = currentProcessingHolder
+        currentProcessingHolder = java.lang.ref.WeakReference(holder)
         
-        // Handle StaggeredGrid full-span items
-        val params = holder.itemView.layoutParams
-        if (params is StaggeredGridLayoutManager.LayoutParams) {
-            if (params.isFullSpan != item.fullSpan) {
-                params.isFullSpan = item.fullSpan
+        try {
+            // 2. Setup the stateful node with a STABLE ID and the latest data reference
+            holder.prepare(item.id, item.data)
+            
+            // 3. Handle StaggeredGrid full-span items
+            val params = holder.itemView.layoutParams
+            if (params is StaggeredGridLayoutManager.LayoutParams) {
+                if (params.isFullSpan != item.fullSpan) {
+                    params.isFullSpan = item.fullSpan
+                }
             }
+            
+            // 4. Trigger the scoped binding logic
+            item.bind(holder, item.data)
+            
+            // 5. Update interactive state (Restore convenience onClick support)
+            val isClickable = item.onClick != null
+            if (holder.itemView.isClickable != isClickable) {
+                holder.itemView.isClickable = isClickable
+            }
+            
+            // 6. Automated Guard (Debug Only)
+            holder.validate()
+        } finally {
+            // 7. Critical: Restore previous context instead of blindly nulling it out
+            currentProcessingHolder = previousHolderRef
         }
-        item.bind(holder)
     }
 
     override fun onViewAttachedToWindow(holder: SmartViewHolder) {
@@ -187,6 +206,9 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
         val item = getItem(position)
         return if (item.fullSpan) totalSpan else item.span
     }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
+    public override fun getItem(position: Int): ItemWrapper = super.getItem(position)
 
     /**
      * Optimized diffing logic for [ItemWrapper] units.

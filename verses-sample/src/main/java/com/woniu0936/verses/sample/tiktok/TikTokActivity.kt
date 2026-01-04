@@ -6,8 +6,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -120,6 +118,7 @@ class TikTokActivity : AppCompatActivity() {
     }
 
     private fun render(videos: List<VideoItem>) {
+        // 🚀 Verses DSL: Full Screen Video List
         binding.recyclerView.composeColumn {
             items(
                 items = videos,
@@ -128,18 +127,17 @@ class TikTokActivity : AppCompatActivity() {
                 onAttach = { video -> playVideo(video) },
                 onDetach = { video -> stopVideo(video) }
             ) { video ->
+                // Register view in cache for player switching
                 viewCache[video.id] = this
                 
+                // Normal UI Binding
                 tvTitle.text = video.title
                 tvDescription.text = video.description
                 tvLikes.text = formatNumber(video.likes)
                 tvComments.text = formatNumber(video.comments)
                 ivCover.load(video.coverUrl)
-                ivCover.isVisible = true // Always show cover on bind
+                ivCover.isVisible = true
                 pbBuffering.isVisible = false
-                
-                // DO NOT set player to null here, it causes black flicker.
-                // The onAttach logic will handle player switching.
             }
         }
     }
@@ -157,11 +155,7 @@ class TikTokActivity : AppCompatActivity() {
         val currentViewBinding = viewCache[video.id] ?: return
         
         currentVideoId = video.id
-        
-        // Before we do anything, make sure cover is visible
         currentViewBinding.ivCover.isVisible = true
-        
-        // Link player to the new view
         currentViewBinding.playerView.player = player
         
         val mediaItem = MediaItem.fromUri(Uri.parse(video.videoUrl))
@@ -174,7 +168,6 @@ class TikTokActivity : AppCompatActivity() {
 
     private fun stopVideo(video: VideoItem) {
         val currentViewBinding = viewCache[video.id] ?: return
-        // Detach player from the view that is leaving the screen
         currentViewBinding.playerView.player = null
     }
 

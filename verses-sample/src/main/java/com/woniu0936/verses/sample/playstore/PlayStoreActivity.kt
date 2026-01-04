@@ -1,6 +1,5 @@
 package com.woniu0936.verses.sample.playstore
 
-import android.R
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -12,16 +11,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import coil.load
-import com.woniu0936.verses.ext.composeRow
 import com.woniu0936.verses.ext.composeVerticalGrid
-import com.woniu0936.verses.sample.databinding.ActivityPlayStoreBinding
-import com.woniu0936.verses.sample.databinding.ItemAppBinding
-import com.woniu0936.verses.sample.databinding.ItemAppGridBinding
-import com.woniu0936.verses.sample.databinding.ItemBannerBinding
-import com.woniu0936.verses.sample.databinding.ItemCategoryBinding
-import com.woniu0936.verses.sample.databinding.ItemHorizontalListBinding
-import com.woniu0936.verses.sample.databinding.ItemSearchBarBinding
-import com.woniu0936.verses.sample.databinding.ItemSectionHeaderBinding
+import com.woniu0936.verses.ext.composeRow
+import com.woniu0936.verses.sample.databinding.*
 import com.woniu0936.verses.sample.playstore.model.HomeState
 import com.woniu0936.verses.sample.playstore.viewmodel.PlayStoreViewModel
 import kotlinx.coroutines.launch
@@ -40,9 +32,6 @@ class PlayStoreActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-        binding.fabShuffle.setOnClickListener {
-            viewModel.shuffleData()
-        }
         observeState()
     }
 
@@ -58,11 +47,10 @@ class PlayStoreActivity : AppCompatActivity() {
 
     private fun render(state: HomeState) {
         if (state.isLoading) return
-        // 🚀 Using Verses with built-in spacing and automatic lifecycle disposal
         binding.recyclerView.composeVerticalGrid(
             spanCount = 3,
-            spacing = 16,        // Global item gap
-            contentPadding = 8   // Edge padding
+            spacing = 16,
+            contentPadding = 8
         ) {
             // 1. Search Bar
             item(ItemSearchBarBinding::inflate, fullSpan = true) {
@@ -119,7 +107,7 @@ class PlayStoreActivity : AppCompatActivity() {
                     ratingBar.rating = app.rating
                     ivIcon.load(app.iconUrl) {
                         crossfade(true)
-                        placeholder(R.drawable.ic_menu_report_image)
+                        placeholder(android.R.drawable.ic_menu_report_image)
                     }
                 }
             }
@@ -143,7 +131,7 @@ class PlayStoreActivity : AppCompatActivity() {
                             ratingBar.rating = app.rating
                             ivIcon.load(app.iconUrl) {
                                 crossfade(true)
-                                placeholder(R.drawable.ic_menu_report_image)
+                                placeholder(android.R.drawable.ic_menu_report_image)
                             }
                         }
                     }
