@@ -32,7 +32,7 @@
 
 ```kotlin
 dependencies {
-    implementation("io.github.woniu0936:verses:1.0.0-beta02")
+    implementation("io.github.woniu0936:verses:1.0.0-beta03")
 }
 ```
 
