@@ -182,9 +182,19 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
 
         @android.annotation.SuppressLint("DiffUtilEquals")
         override fun areContentsTheSame(oldItem: ItemWrapper, newItem: ItemWrapper): Boolean {
-            // We compare the raw data objects. Users are encouraged to use data classes 
-            // for their models to ensure efficient and correct diffing.
-            return oldItem.data == newItem.data
+            // 1. Compare Business Data
+            if (oldItem.data != newItem.data) return false
+            
+            // 2. Compare Layout Metadata (Crucial for Grid/Staggered updates)
+            if (oldItem.span != newItem.span) return false
+            if (oldItem.fullSpan != newItem.fullSpan) return false
+            if (oldItem.viewType != newItem.viewType) return false
+            
+            // 3. Ignore 'onClick' (Behavior)
+            // Even if the lambda reference changes (which happens on every recompose),
+            // we return true to prevent UI flashing. The Proxy Listener ensures
+            // the latest lambda is executed dynamically.
+            return true
         }
     }
 }
