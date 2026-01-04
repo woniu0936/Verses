@@ -143,6 +143,22 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
         item.bind(holder)
     }
 
+    override fun onViewAttachedToWindow(holder: SmartViewHolder) {
+        super.onViewAttachedToWindow(holder)
+        val pos = holder.bindingAdapterPosition
+        if (pos != RecyclerView.NO_POSITION) {
+            getItem(pos).onAttach?.invoke()
+        }
+    }
+
+    override fun onViewDetachedFromWindow(holder: SmartViewHolder) {
+        super.onViewDetachedFromWindow(holder)
+        val pos = holder.bindingAdapterPosition
+        if (pos != RecyclerView.NO_POSITION) {
+            getItem(pos).onDetach?.invoke()
+        }
+    }
+
     override fun onViewRecycled(holder: SmartViewHolder) {
         super.onViewRecycled(holder)
         // Auto-clean nested adapters to prevent 'ghosting' visual artifacts.
@@ -190,7 +206,7 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
             if (oldItem.fullSpan != newItem.fullSpan) return false
             if (oldItem.viewType != newItem.viewType) return false
             
-            // 3. Ignore 'onClick' (Behavior)
+            // 3. Ignore 'onClick', 'onAttach', 'onDetach' (Behavior)
             // Even if the lambda reference changes (which happens on every recompose),
             // we return true to prevent UI flashing. The Proxy Listener ensures
             // the latest lambda is executed dynamically.

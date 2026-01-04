@@ -39,6 +39,8 @@ class VerseScope @PublishedApi internal constructor(
      * @param span The number of columns this item occupies in a Grid layout. Default is 1.
      * @param fullSpan Whether this item should span the full width in Staggered layouts. Default is false.
      * @param onClick Optional click listener for the item root view. Handled efficiently via Proxy Listener.
+     * @param onAttach Called when the view is attached to the window (enters screen).
+     * @param onDetach Called when the view is detached from the window (leaves screen).
      * @param onBind The binding logic block.
      */
     inline fun <T : Any, reified VB : ViewBinding> items(
@@ -48,6 +50,8 @@ class VerseScope @PublishedApi internal constructor(
         span: Int = 1,
         fullSpan: Boolean = false,
         noinline onClick: ((T) -> Unit)? = null,
+        noinline onAttach: ((T) -> Unit)? = null,
+        noinline onDetach: ((T) -> Unit)? = null,
         noinline onBind: VB.(T) -> Unit
     ) {
         val stableKey = VB::class.java
@@ -63,7 +67,9 @@ class VerseScope @PublishedApi internal constructor(
                 id = key?.invoke(item) ?: index,
                 span = span,
                 fullSpan = fullSpan,
-                onClick = onClick?.let { { it(item) } }
+                onClick = onClick?.let { { it(item) } },
+                onAttach = onAttach?.let { { it(item) } },
+                onDetach = onDetach?.let { { it(item) } }
             )
         }
     }
@@ -77,6 +83,8 @@ class VerseScope @PublishedApi internal constructor(
      * @param span The number of columns this item occupies in a Grid layout.
      * @param fullSpan Whether this item should span the full width.
      * @param onClick Optional click listener for the item root view.
+     * @param onAttach Called when the view is attached to the window.
+     * @param onDetach Called when the view is detached from the window.
      * @param onBind The binding logic block.
      */
     inline fun <T : Any, reified V : View> items(
@@ -86,6 +94,8 @@ class VerseScope @PublishedApi internal constructor(
         span: Int = 1,
         fullSpan: Boolean = false,
         noinline onClick: ((T) -> Unit)? = null,
+        noinline onAttach: ((T) -> Unit)? = null,
+        noinline onDetach: ((T) -> Unit)? = null,
         noinline onBind: V.(T) -> Unit
     ) {
         val stableKey = V::class.java
@@ -98,7 +108,9 @@ class VerseScope @PublishedApi internal constructor(
                 id = key?.invoke(item) ?: index,
                 span = span,
                 fullSpan = fullSpan,
-                onClick = onClick?.let { { it(item) } }
+                onClick = onClick?.let { { it(item) } },
+                onAttach = onAttach?.let { { it(item) } },
+                onDetach = onDetach?.let { { it(item) } }
             )
         }
     }
@@ -116,6 +128,8 @@ class VerseScope @PublishedApi internal constructor(
      * @param span The span size. Default is 1.
      * @param fullSpan Whether to span full width. Default is true for single items.
      * @param onClick Optional click listener for the item root view.
+     * @param onAttach Called when the view is attached to the window.
+     * @param onDetach Called when the view is detached from the window.
      * @param onBind The binding logic block.
      */
     inline fun <reified VB : ViewBinding> item(
@@ -125,6 +139,8 @@ class VerseScope @PublishedApi internal constructor(
         span: Int = 1,
         fullSpan: Boolean = true,
         noinline onClick: (() -> Unit)? = null,
+        noinline onAttach: (() -> Unit)? = null,
+        noinline onDetach: (() -> Unit)? = null,
         noinline onBind: VB.() -> Unit = {}
     ) {
         val stableKey = VB::class.java
@@ -139,7 +155,9 @@ class VerseScope @PublishedApi internal constructor(
             id = key ?: "single_vb_${stableKey.name}",
             span = span,
             fullSpan = fullSpan,
-            onClick = onClick
+            onClick = onClick,
+            onAttach = onAttach,
+            onDetach = onDetach
         )
     }
 
@@ -152,6 +170,8 @@ class VerseScope @PublishedApi internal constructor(
      * @param span The span size.
      * @param fullSpan Whether to span full width. Default is true.
      * @param onClick Optional click listener for the item root view.
+     * @param onAttach Called when the view is attached to the window.
+     * @param onDetach Called when the view is detached from the window.
      * @param onBind The binding logic block.
      */
     inline fun <reified V : View> item(
@@ -161,6 +181,8 @@ class VerseScope @PublishedApi internal constructor(
         span: Int = 1,
         fullSpan: Boolean = true,
         noinline onClick: (() -> Unit)? = null,
+        noinline onAttach: (() -> Unit)? = null,
+        noinline onDetach: (() -> Unit)? = null,
         noinline onBind: V.() -> Unit = {}
     ) {
         val stableKey = V::class.java
@@ -172,7 +194,9 @@ class VerseScope @PublishedApi internal constructor(
             id = key ?: "single_view_${stableKey.name}",
             span = span,
             fullSpan = fullSpan,
-            onClick = onClick
+            onClick = onClick,
+            onAttach = onAttach,
+            onDetach = onDetach
         )
     }
 
@@ -208,6 +232,8 @@ class VerseScope @PublishedApi internal constructor(
      * @param span The span size.
      * @param fullSpan Whether to span full width.
      * @param onClick Optional click listener.
+     * @param onAttach Called when the view is attached to the window.
+     * @param onDetach Called when the view is detached from the window.
      * @param onBind The binding logic.
      */
     inline fun <reified VB : ViewBinding> render(
@@ -216,6 +242,8 @@ class VerseScope @PublishedApi internal constructor(
         span: Int = 1,
         fullSpan: Boolean = false,
         noinline onClick: (() -> Unit)? = null,
+        noinline onAttach: (() -> Unit)? = null,
+        noinline onDetach: (() -> Unit)? = null,
         noinline onBind: VB.() -> Unit
     ) {
         val stableKey = contentType ?: VB::class.java
@@ -232,7 +260,9 @@ class VerseScope @PublishedApi internal constructor(
             id = currentId ?: System.identityHashCode(data),
             span = span,
             fullSpan = fullSpan,
-            onClick = onClick
+            onClick = onClick,
+            onAttach = onAttach,
+            onDetach = onDetach
         )
     }
 
@@ -244,6 +274,8 @@ class VerseScope @PublishedApi internal constructor(
      * @param span The span size.
      * @param fullSpan Whether to span full width.
      * @param onClick Optional click listener.
+     * @param onAttach Called when the view is attached to the window.
+     * @param onDetach Called when the view is detached from the window.
      * @param onBind The binding logic.
      */
     inline fun <reified V : View> render(
@@ -252,6 +284,8 @@ class VerseScope @PublishedApi internal constructor(
         span: Int = 1,
         fullSpan: Boolean = false,
         noinline onClick: (() -> Unit)? = null,
+        noinline onAttach: (() -> Unit)? = null,
+        noinline onDetach: (() -> Unit)? = null,
         noinline onBind: V.() -> Unit
     ) {
         val stableKey = contentType ?: V::class.java
@@ -265,7 +299,9 @@ class VerseScope @PublishedApi internal constructor(
             id = currentId ?: System.identityHashCode(data),
             span = span,
             fullSpan = fullSpan,
-            onClick = onClick
+            onClick = onClick,
+            onAttach = onAttach,
+            onDetach = onDetach
         )
     }
 
@@ -296,7 +332,9 @@ class VerseScope @PublishedApi internal constructor(
         id: Any,
         span: Int,
         fullSpan: Boolean,
-        onClick: (() -> Unit)?
+        onClick: (() -> Unit)?,
+        onAttach: (() -> Unit)?,
+        onDetach: (() -> Unit)?
     ) {
         val viewType = adapter.getOrCreateViewType(key, factory)
         newWrappers.add(ItemWrapper(
@@ -307,7 +345,9 @@ class VerseScope @PublishedApi internal constructor(
             fullSpan = fullSpan,
             factory = factory,
             bind = bind,
-            onClick = onClick
+            onClick = onClick,
+            onAttach = onAttach,
+            onDetach = onDetach
         ))
     }
 }

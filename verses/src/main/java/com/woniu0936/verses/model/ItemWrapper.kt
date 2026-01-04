@@ -62,5 +62,7 @@ internal data class ItemWrapper(
     val fullSpan: Boolean,
     val factory: (ViewGroup) -> SmartViewHolder,
     val bind: (SmartViewHolder) -> Unit,
-    val onClick: (() -> Unit)? = null
+    val onClick: (() -> Unit)? = null,
+    val onAttach: (() -> Unit)? = null,
+    val onDetach: (() -> Unit)? = null
 )
