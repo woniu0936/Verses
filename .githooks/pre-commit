@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Pre-commit hook to run apiCheck on staged changes only.
+
+STASH_NAME="pre-commit-api-check-$(date +%s)"
+
+# Get count of unstaged changes (excluding staged ones)
+# 'git diff' shows unstaged changes.
+HAS_UNSTAGED=$(git diff --name-only | wc -l)
+# 'git ls-files --others --exclude-standard' shows untracked files.
+HAS_UNTRACKED=$(git ls-files --others --exclude-standard | wc -l)
+
+if [ $HAS_UNSTAGED -ne 0 ] || [ $HAS_UNTRACKED -ne 0 ]; then
+    echo "📦 Temporary stashing unstaged changes ($HAS_UNSTAGED files, $HAS_UNTRACKED untracked)..."
+    git stash push --keep-index --include-untracked --message "$STASH_NAME" --quiet
+    STASHED=true
+else
+    STASHED=false
+fi
+
+echo "🔍 Running API Compatibility Check..."
+# Using root apiCheck task
+./gradlew apiCheck --quiet
+RESULT=$?
+
+if [ "$STASHED" = true ]; then
+    echo "↺ Restoring unstaged changes..."
+    if git stash list | head -n 1 | grep -q "$STASH_NAME"; then
+        git stash pop --quiet
+    else
+        echo "⚠️ Warning: Could not find stash to restore."
+    fi
+fi
+
+if [ $RESULT -ne 0 ]; then
+    echo ""
+    echo "❌ API Check Failed!"
+    echo "The staged changes modify the public API in a way that is incompatible or requires an API dump update."
+    echo "If these changes are intentional, run: ./gradlew apiDump"
+    echo "Then stage the updated .api files and try committing again."
+    echo ""
+    exit 1
+fi
+
+echo "✅ API Check Passed."
+exit 0
