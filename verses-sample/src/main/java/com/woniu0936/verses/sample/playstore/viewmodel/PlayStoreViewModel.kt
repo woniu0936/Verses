@@ -1,14 +1,18 @@
-package com.woniu0936.verses.sample.viewmodel
+package com.woniu0936.verses.sample.playstore.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.woniu0936.verses.sample.model.*
+import com.woniu0936.verses.sample.playstore.model.AppModel
+import com.woniu0936.verses.sample.playstore.model.BannerModel
+import com.woniu0936.verses.sample.playstore.model.CategoryModel
+import com.woniu0936.verses.sample.playstore.model.HomeState
+import com.woniu0936.verses.sample.playstore.model.SectionModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class MainViewModel : ViewModel() {
+class PlayStoreViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeState(isLoading = true))
     val uiState: StateFlow<HomeState> = _uiState
@@ -56,7 +60,7 @@ class MainViewModel : ViewModel() {
     fun shuffleData() {
         val currentState = _uiState.value
         if (currentState.isLoading) return
-        
+
         _uiState.value = currentState.copy(
             sections = currentState.sections.shuffled().map { it.copy(apps = it.apps.shuffled()) },
             gridApps = currentState.gridApps.shuffled()

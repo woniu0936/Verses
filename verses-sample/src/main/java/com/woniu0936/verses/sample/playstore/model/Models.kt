@@ -1,4 +1,4 @@
-package com.woniu0936.verses.sample.model
+package com.woniu0936.verses.sample.playstore.model
 
 data class AppModel(
     val id: String,

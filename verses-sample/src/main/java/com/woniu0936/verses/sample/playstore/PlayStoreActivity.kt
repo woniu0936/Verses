@@ -1,5 +1,6 @@
-package com.woniu0936.verses.sample
+package com.woniu0936.verses.sample.playstore
 
+import android.R
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -11,21 +12,28 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import coil.load
-import com.woniu0936.verses.ext.composeVerticalGrid
 import com.woniu0936.verses.ext.composeRow
-import com.woniu0936.verses.sample.databinding.*
-import com.woniu0936.verses.sample.model.HomeState
-import com.woniu0936.verses.sample.viewmodel.MainViewModel
+import com.woniu0936.verses.ext.composeVerticalGrid
+import com.woniu0936.verses.sample.databinding.ActivityPlayStoreBinding
+import com.woniu0936.verses.sample.databinding.ItemAppBinding
+import com.woniu0936.verses.sample.databinding.ItemAppGridBinding
+import com.woniu0936.verses.sample.databinding.ItemBannerBinding
+import com.woniu0936.verses.sample.databinding.ItemCategoryBinding
+import com.woniu0936.verses.sample.databinding.ItemHorizontalListBinding
+import com.woniu0936.verses.sample.databinding.ItemSearchBarBinding
+import com.woniu0936.verses.sample.databinding.ItemSectionHeaderBinding
+import com.woniu0936.verses.sample.playstore.model.HomeState
+import com.woniu0936.verses.sample.playstore.viewmodel.PlayStoreViewModel
 import kotlinx.coroutines.launch
 
-class MainActivity : AppCompatActivity() {
-    private val viewModel: MainViewModel by viewModels()
-    private lateinit var binding: ActivityMainBinding
+class PlayStoreActivity : AppCompatActivity() {
+    private val viewModel: PlayStoreViewModel by viewModels()
+    private lateinit var binding: ActivityPlayStoreBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        binding = ActivityMainBinding.inflate(layoutInflater)
+        binding = ActivityPlayStoreBinding.inflate(layoutInflater)
         setContentView(binding.root)
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -69,7 +77,7 @@ class MainActivity : AppCompatActivity() {
                         inflate = ItemBannerBinding::inflate,
                         key = { it.id },
                         onClick = { banner ->
-                            Toast.makeText(this@MainActivity, "Clicked Banner: ${banner.title}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@PlayStoreActivity, "Clicked Banner: ${banner.title}", Toast.LENGTH_SHORT).show()
                         }
                     ) { banner ->
                         tvTitle.text = banner.title
@@ -103,7 +111,7 @@ class MainActivity : AppCompatActivity() {
                     key = { "grid_${it.id}" },
                     span = 1,
                     onClick = { app ->
-                        Toast.makeText(this@MainActivity, "Clicked Grid App: ${app.name}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@PlayStoreActivity, "Clicked Grid App: ${app.name}", Toast.LENGTH_SHORT).show()
                     }
                 ) { app ->
                     tvAppName.text = app.name
@@ -111,7 +119,7 @@ class MainActivity : AppCompatActivity() {
                     ratingBar.rating = app.rating
                     ivIcon.load(app.iconUrl) {
                         crossfade(true)
-                        placeholder(android.R.drawable.ic_menu_report_image)
+                        placeholder(R.drawable.ic_menu_report_image)
                     }
                 }
             }
@@ -127,7 +135,7 @@ class MainActivity : AppCompatActivity() {
                             items = section.apps,
                             inflate = ItemAppBinding::inflate,
                             onClick = { app ->
-                                Toast.makeText(this@MainActivity, "Clicked App: ${app.name}", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this@PlayStoreActivity, "Clicked App: ${app.name}", Toast.LENGTH_SHORT).show()
                             }
                         ) { app ->
                             tvAppName.text = app.name
@@ -135,7 +143,7 @@ class MainActivity : AppCompatActivity() {
                             ratingBar.rating = app.rating
                             ivIcon.load(app.iconUrl) {
                                 crossfade(true)
-                                placeholder(android.R.drawable.ic_menu_report_image)
+                                placeholder(R.drawable.ic_menu_report_image)
                             }
                         }
                     }
