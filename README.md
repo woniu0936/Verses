@@ -103,14 +103,14 @@ recyclerView.composeVerticalGrid(
 
 We have aligned our API naming with Jetpack Compose (removing the "Lazy" prefix) to minimize cognitive load.
 
-| Layout Type | Orientation | **Verse API** | **Jetpack Compose Equivalent** | Native RecyclerView Implementation |
-| :--- | :--- | :--- | :--- | :--- |
-| **Linear** | Vertical | **`composeColumn`** | `LazyColumn` | LinearLayoutManager (Vertical) |
-| **Linear** | Horizontal | **`composeRow`** | `LazyRow` | LinearLayoutManager (Horizontal) |
-| **Grid** | Vertical | **`composeVerticalGrid`** | `LazyVerticalGrid` | GridLayoutManager (Vertical) |
-| **Grid** | Horizontal | **`composeHorizontalGrid`** | `LazyHorizontalGrid` | GridLayoutManager (Horizontal) |
-| **Staggered** | Vertical | **`composeVerticalStaggeredGrid`** | `LazyVerticalStaggeredGrid` | StaggeredGridLayoutManager (Vertical) |
-| **Staggered** | Horizontal | **`composeHorizontalStaggeredGrid`** | `LazyHorizontalStaggeredGrid` | StaggeredGridLayoutManager (Horizontal) |
+| Native RecyclerView | Orientation | **Verse API** | **Jetpack Compose Equivalent** |
+| :--- | :--- | :--- | :--- |
+| `Linear (LinearLayoutManager)` | Vertical | **`composeColumn`** | `LazyColumn` |
+| `Linear (LinearLayoutManager)` | Horizontal | **`composeRow`** | `LazyRow` |
+| `Grid (GridLayoutManager)` | Vertical | **`composeVerticalGrid`** | `LazyVerticalGrid` |
+| `Grid (GridLayoutManager)` | Horizontal | **`composeHorizontalGrid`** | `LazyHorizontalGrid` |
+| `Staggered (StaggeredGridLayoutManager)` | Vertical | **`composeVerticalStaggeredGrid`** | `LazyVerticalStaggeredGrid` |
+| `Staggered (StaggeredGridLayoutManager)` | Horizontal | **`composeHorizontalStaggeredGrid`** | `LazyHorizontalStaggeredGrid` |
 
 ### 3. Global Lifecycle & Resource Management
 Verses automatically cleans up when the View is detached or the Activity is destroyed. To manually wipe all registries (e.g., on Logout):
