@@ -1,5 +1,7 @@
 # 🌌 Verses
 
+中文 | [English](README.md)
+
 **Verses** 是一个为 Android RecyclerView 打造的极简、工业级声明式 UI 引擎。它将 Jetpack Compose DSL 的表达力带到了成熟稳定的 RecyclerView 领域，让你能以减少 80% 代码量的代价，构建出复杂且高性能的列表。
 
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.woniu0936/verses)](https://search.maven.org/artifact/io.github.woniu0936/verses)
