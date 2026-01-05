@@ -23,14 +23,10 @@ public final class com/woniu0936/verses/core/VerseAdapter : androidx/recyclervie
 	public fun onViewDetachedFromWindow (Lcom/woniu0936/verses/model/SmartViewHolder;)V
 	public synthetic fun onViewRecycled (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public fun onViewRecycled (Lcom/woniu0936/verses/model/SmartViewHolder;)V
-	public final fun submit (Ljava/util/List;Lkotlin/jvm/functions/Function0;)V
-	public static synthetic fun submit$default (Lcom/woniu0936/verses/core/VerseAdapter;Ljava/util/List;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
 }
 
 public final class com/woniu0936/verses/core/VerseAdapter$Companion {
 	public final fun clearRegistry ()V
-	public final fun getGlobalFactory (I)Lkotlin/jvm/functions/Function1;
-	public final fun getGlobalViewType (Ljava/lang/Object;Lkotlin/jvm/functions/Function1;)I
 	public final fun getPool (Landroid/content/Context;)Landroidx/recyclerview/widget/RecyclerView$RecycledViewPool;
 }
 

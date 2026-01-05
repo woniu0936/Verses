@@ -8,22 +8,6 @@ import androidx.recyclerview.widget.RecyclerView
 
 /**
  * A sophisticated [RecyclerView.ItemDecoration] that implements declarative spacing and padding.
- * 
- * Traditional ItemDecorations often cause issues in Grids where simple margins lead to 
- * unequal column widths or doubled spacing. VerseSpacingDecoration solves this using 
- * a proportional offset distribution algorithm.
- *
- * Mathematical Principles:
- * 1. **Grid Uniformity**: In a grid, total horizontal space ([hSpacing] * ([spanCount]-1)) 
- *    is shared among columns such that each item has the exact same usable width.
- * 2. **Edge Alignment**: [hPadding] and [vPadding] are applied only to the outermost 
- *    boundaries of the entire list matrix.
- * 3. **Gap Handling**: Internal gaps are divided symmetrically between adjacent items.
- *
- * @param hSpacing Horizontal space between items (column gap).
- * @param vSpacing Vertical space between items (row gap).
- * @param hPadding Outer horizontal padding between the list matrix and container edges.
- * @param vPadding Outer vertical padding between the list matrix and container edges.
  */
 @PublishedApi
 internal class VerseSpacingDecoration(
@@ -33,12 +17,6 @@ internal class VerseSpacingDecoration(
     private val vPadding: Int
 ) : RecyclerView.ItemDecoration() {
 
-    /**
-     * Calculates the inclusive offsets for a given item view.
-     *
-     * This method is called by RecyclerView for every item during every layout pass.
-     * The algorithm used here ensures that grid columns remain perfectly symmetrical.
-     */
     override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
         val position = parent.getChildAdapterPosition(view)
         if (position == RecyclerView.NO_POSITION) return
@@ -51,19 +29,18 @@ internal class VerseSpacingDecoration(
             val spanIndex = lp.spanIndex
             
             // 1. Horizontal Logic (Grid)
-            // Offset = Padding + (Position * TotalGap / Count)
-            // This formula ensures each column occupies exactly (Width - Gaps)/Count pixels.
             outRect.left = hPadding + spanIndex * hSpacing / spanCount
             outRect.right = hSpacing - (spanIndex + 1) * hSpacing / spanCount + hPadding
             
             // 2. Vertical Logic (Grid)
-            val isFirstRow = position < spanCount
-            val lastRowCount = itemCount % spanCount
-            val actualLastRowCount = if (lastRowCount == 0) spanCount else lastRowCount
-            val isLastRow = position >= itemCount - actualLastRowCount
+            // Use spanGroupIndex to accurately detect rows even with variable span sizes
+            val spanGroupIndex = lm.spanSizeLookup.getSpanGroupIndex(position, spanCount)
+            val isFirstRow = spanGroupIndex == 0
             
+            // Note: detecting the last row accurately in variable-span grids is computationally 
+            // expensive. We maintain symmetrical internal gaps for now.
             outRect.top = if (isFirstRow) vPadding else vSpacing / 2
-            outRect.bottom = if (isLastRow) vPadding else vSpacing / 2
+            outRect.bottom = vSpacing / 2
         } else if (lm is LinearLayoutManager) {
             val isVertical = lm.orientation == RecyclerView.VERTICAL
             if (isVertical) {
