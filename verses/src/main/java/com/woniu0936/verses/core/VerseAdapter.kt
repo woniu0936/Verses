@@ -9,30 +9,23 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.woniu0936.verses.model.ItemWrapper
 import com.woniu0936.verses.model.SmartViewHolder
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
-
-/**
- * A high-performance [ListAdapter] that orchestrates the rendering of [ItemWrapper] units.
- * 
- * Key responsibilities:
- * 1. **Global ViewType Management**: Uses a static registry to ensure consistent IDs across instances.
- * 2. **Efficient ViewHolder Creation**: Maps ViewTypes to factories in O(1) time.
- * 3. **Shared Resource Support**: Provides a global pool for nested horizontal list optimization.
- * 4. **Safe Click Handling**: Implements a stateless click system using the modern `bindingAdapter` API.
- */
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
+import java.util.ConcurrentModificationException
 import java.util.WeakHashMap
+import java.util.concurrent.ConcurrentHashMap
 
 /**
- * A high-performance [ListAdapter] that orchestrates the rendering of [ItemWrapper] units.
- * 
- * Key responsibilities:
- * 1. **Global ViewType Management**: Uses a static registry to ensure consistent IDs across instances.
- * 2. **Efficient ViewHolder Creation**: Maps ViewTypes to factories in O(1) time.
- * 3. **Shared Resource Support**: Provides a global pool for nested horizontal list optimization.
- * 4. **Safe Click Handling**: Implements a stateless click system using the modern `bindingAdapter` API.
+ * An industrial-grade [ListAdapter] that orchestrates the rendering of [ItemWrapper] units.
+ *
+ * VerseAdapter is designed for maximum performance and memory safety. It leverages a global
+ * static registry for ViewTypes to ensure consistent IDs across multiple RecyclerView instances,
+ * enabling seamless [RecyclerView.RecycledViewPool] sharing.
+ *
+ * Internal Architecture:
+ * 1. **Deterministic ViewTypes**: Uses linear probing to resolve hashCode collisions.
+ * 2. **Context-Scoped Pools**: Prevents theme pollution and Context leaks via [WeakHashMap].
+ * 3. **Proxy Event System**: Statelessly routes clicks to the latest data to avoid re-binding flashes.
  */
 @PublishedApi
 internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
@@ -41,13 +34,26 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
         .build()
 ) {
     companion object {
+        /**
+         * Maps layout keys (usually Class objects) to stable integer ViewTypes.
+         */
         private val globalViewTypeCache = ConcurrentHashMap<Any, Int>()
+
+        /**
+         * Maps integer ViewTypes back to the factories that create their ViewHolders.
+         */
         private val globalTypeToFactory = ConcurrentHashMap<Int, (ViewGroup) -> SmartViewHolder>()
+
+        /**
+         * Stores RecycledViewPool instances scoped to specific Contexts to prevent leaks.
+         */
         private val contextPools = WeakHashMap<android.content.Context, RecyclerView.RecycledViewPool>()
 
         /**
-         * Retrieves or creates a [RecyclerView.RecycledViewPool] scoped to the given [context].
-         * This prevents memory leaks and ensures correct theme/styling for recycled views.
+         * Returns a [RecyclerView.RecycledViewPool] tied to the provided [context].
+         * If no pool exists, a new one is created and cached.
+         *
+         * @param context The context (typically an Activity) used as the lookup key.
          */
         fun getPool(context: android.content.Context): RecyclerView.RecycledViewPool {
             return synchronized(contextPools) {
@@ -56,15 +62,19 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
         }
 
         /**
-         * Assigns or retrieves a unique, stable ViewType ID for a given layout key.
+         * Generates or retrieves a unique, stable ViewType ID for a layout key.
+         * 
+         * Time Complexity: O(1) average, O(N) worst case (linear probing).
+         *
+         * @param key The unique key representing the view layout (e.g., ViewBinding class).
+         * @param factory The factory lambda used to create the holder if the ViewType is new.
          */
         fun getGlobalViewType(key: Any, factory: (ViewGroup) -> SmartViewHolder): Int {
             return globalViewTypeCache[key] ?: synchronized(globalTypeToFactory) {
                 globalViewTypeCache[key] ?: run {
                     var type = key.hashCode()
                     
-                    // Linear probing: If this hashCode is already taken by a DIFFERENT key,
-                    // increment until we find a free slot.
+                    // Linear probing to resolve rare hashCode collisions in the global registry.
                     while (globalTypeToFactory.containsKey(type)) {
                         val existingKey = globalViewTypeCache.entries.find { it.value == type }?.key
                         if (existingKey == null || existingKey == key) break
@@ -80,19 +90,17 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
 
         /**
          * Retrieves the creation factory for a specific ViewType ID.
+         * @throws IllegalStateException if no factory is registered for the given [viewType].
          */
         fun getGlobalFactory(viewType: Int): (ViewGroup) -> SmartViewHolder {
-            return globalTypeToFactory[viewType] ?: synchronized(globalTypeToFactory) {
-                globalTypeToFactory[viewType]
-            } ?: throw IllegalStateException("No factory registered for viewType $viewType")
+            return globalTypeToFactory[viewType] ?: throw IllegalStateException(
+                "No factory registered for viewType $viewType. Ensure registry is not cleared prematurely."
+            )
         }
 
         /**
-         * Explicitly clears all global registries and the shared ViewPools.
-         * 
-         * Call this when the app is undergoing a major state change (e.g., user logout, 
-         * dynamic theme switch) to release all static references to view factories 
-         * and recycled views.
+         * Explicitly purges all global registries and context-scoped pools.
+         * Call this during major app state changes (e.g., Logout) to release static references.
          */
         fun clearRegistry() {
             globalViewTypeCache.clear()
@@ -106,14 +114,14 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
     override fun getItemViewType(position: Int): Int = getItem(position).viewType
 
     /**
-     * Delegates to the global registry to get a stable ViewType.
+     * Delegates ViewType generation to the global static registry.
      */
     fun getOrCreateViewType(key: Any, factory: (ViewGroup) -> SmartViewHolder): Int {
         return getGlobalViewType(key, factory)
     }
 
     /**
-     * Submits a new list to be diffed, and displayed.
+     * Submits a new list of items to be asynchronously diffed and displayed.
      */
     fun submit(list: List<ItemWrapper>, commitCallback: (() -> Unit)? = null) {
         submitList(list, commitCallback)
@@ -123,16 +131,13 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
         val factory = getGlobalFactory(viewType)
         val holder = factory(parent)
         
-        // High-performance Stateless Proxy Listener:
-        // 1. Set ONCE during creation (Zero allocation during scroll).
-        // 2. Dynamically looks up the CURRENT wrapper from the adapter when clicked.
-        // 3. This allows us to ignore 'onClick' changes in DiffUtil (preventing flashes)
-        //    while ensuring the latest logic is always executed.
+        // Proxy Listener: We attach the listener ONCE during creation.
+        // It dynamically looks up the latest onClick lambda from the current list,
+        // allowing us to ignore onClick instances in DiffUtil contents equality.
         holder.itemView.setOnClickListener {
             val currentAdapter = holder.bindingAdapter as? VerseAdapter ?: return@setOnClickListener
             val pos = holder.bindingAdapterPosition
             if (pos != RecyclerView.NO_POSITION) {
-                // Fetch the LATEST wrapper from the current list
                 currentAdapter.getItem(pos).onClick?.invoke()
             }
         }
@@ -143,10 +148,10 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
         val item = getItem(position)
         
         try {
-            // 1. Setup the holder with the latest data reference for itemData() access
+            // 1. Update stateful context
             holder.prepare(item.data)
             
-            // 2. Handle StaggeredGrid full-span items
+            // 2. Handle layout metadata for Staggered grids
             val params = holder.itemView.layoutParams
             if (params is StaggeredGridLayoutManager.LayoutParams) {
                 if (params.isFullSpan != item.fullSpan) {
@@ -154,15 +159,16 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
                 }
             }
             
-            // 3. Trigger the scoped binding logic
+            // 3. Execute declarative binding logic
             item.bind(holder, item.data)
             
-            // 4. Update interactive state (Restore convenience onClick support)
+            // 4. Update interactivity
             val isClickable = item.onClick != null
             if (holder.itemView.isClickable != isClickable) {
                 holder.itemView.isClickable = isClickable
             }
         } catch (e: Exception) {
+            // Guard against accidental crashes in user-provided bind blocks
             e.printStackTrace()
         }
     }
@@ -185,16 +191,13 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
 
     override fun onViewRecycled(holder: SmartViewHolder) {
         super.onViewRecycled(holder)
-        // Auto-clean nested adapters to prevent 'ghosting' visual artifacts.
-        // We only look for direct RecyclerView children to avoid deep tree traversal.
+        // Clean up nested adapters to prevent ghosting artifacts in horizontal lists.
         cleanupNestedRecyclerViews(holder.itemView)
     }
 
     private fun cleanupNestedRecyclerViews(view: android.view.View) {
         when (view) {
-            is RecyclerView -> {
-                view.adapter = null
-            }
+            is RecyclerView -> view.adapter = null
             is android.view.ViewGroup -> {
                 for (i in 0 until view.childCount) {
                     cleanupNestedRecyclerViews(view.getChildAt(i))
@@ -204,7 +207,8 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
     }
 
     /**
-     * Helper for GridLayoutManager to determine item span size.
+     * Determines the span size for a given position.
+     * Used by [androidx.recyclerview.widget.GridLayoutManager.SpanSizeLookup].
      */
     fun getSpanSize(position: Int, totalSpan: Int): Int {
         if (position !in 0 until itemCount) return 1
@@ -217,6 +221,7 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
 
     /**
      * Optimized diffing logic for [ItemWrapper] units.
+     * Relies on [ItemWrapper.equals] which safely excludes function properties.
      */
     object WrapperDiffCallback : DiffUtil.ItemCallback<ItemWrapper>() {
         override fun areItemsTheSame(oldItem: ItemWrapper, newItem: ItemWrapper): Boolean {
@@ -225,10 +230,6 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
 
         @android.annotation.SuppressLint("DiffUtilEquals")
         override fun areContentsTheSame(oldItem: ItemWrapper, newItem: ItemWrapper): Boolean {
-            // By utilizing ItemWrapper's custom equals(), we ensure that:
-            // 1. Data and Layout metadata are accurately compared.
-            // 2. Unstable function properties (lambdas) are safely ignored.
-            // 3. New properties added to ItemWrapper in the future are automatically handled.
             return oldItem == newItem
         }
     }

@@ -11,19 +11,34 @@ import com.woniu0936.verses.model.*
 /**
  * The core DSL scope for building RecyclerView content declaratively.
  *
- * This scope provides methods to define items, lists, and control flow structures.
- * It utilizes [reified] generics to ensure ViewType safety automatically.
+ * VerseScope provides a set of high-level builder methods to define items, lists, 
+ * and custom rendering logic. It utilizes Kotlin's reified type parameters to 
+ * automatically manage ViewType safety without requiring manual ID registration.
+ *
+ * This scope is transient and is intended to be used only during the [submit] phase.
  */
 @VerseDsl
 class VerseScope @PublishedApi internal constructor(
+    /**
+     * The backing adapter where [ItemWrapper] units are registered.
+     */
     @PublishedApi internal val adapter: VerseAdapter
 ) {
 
+    /**
+     * Accumulates the [ItemWrapper] units generated during the current DSL execution.
+     */
     @PublishedApi
     internal val newWrappers = mutableListOf<ItemWrapper>()
 
-    // Context variables for Advanced Mode (items + render)
+    /**
+     * Context data for advanced mode (items + render iteration).
+     */
     @PublishedApi internal var currentData: Any? = null
+    
+    /**
+     * Context ID for advanced mode.
+     */
     @PublishedApi internal var currentId: Any? = null
 
     // ============================================================================================
@@ -31,7 +46,14 @@ class VerseScope @PublishedApi internal constructor(
     // ============================================================================================
 
     /**
-     * Renders a list of items using [ViewBinding].
+     * Renders a list of items using ViewBinding.
+     * 
+     * @param T The business data type.
+     * @param VB The ViewBinding class generated from an XML layout.
+     * @param items The source data list.
+     * @param inflate Method reference to the Binding's inflate function (e.g., ItemUserBinding::inflate).
+     * @param key A lambda to provide a stable ID for DiffUtil. If null, item index is used (discouraged).
+     * @param onBind The binding block where UI properties are applied.
      */
     inline fun <T : Any, reified VB : ViewBinding> items(
         items: List<T>,
@@ -55,7 +77,6 @@ class VerseScope @PublishedApi internal constructor(
                     SmartViewHolder(binding.root, binding)
                 },
                 bind = { data ->
-                    // Type safety is guaranteed by the reified generic VB and items data source T
                     @Suppress("UNCHECKED_CAST")
                     (binding as VB).onBind(data as T)
                 },
@@ -72,7 +93,7 @@ class VerseScope @PublishedApi internal constructor(
     }
 
     /**
-     * Renders a list of items using a Custom [View].
+     * Renders a list of items using a Custom View (programmatic UI).
      */
     inline fun <T : Any, reified V : View> items(
         items: List<T>,
@@ -87,13 +108,9 @@ class VerseScope @PublishedApi internal constructor(
     ) {
         val stableKey = V::class.java
         items.forEachIndexed { index, item ->
-            // WARNING: Using 'index' as a key is discouraged for dynamic lists.
-            // It can cause full-item rebinds and loss of state during insertions/deletions.
-            // ALWAYS provide a stable key (e.g., item.id) for production lists.
             internalRender(
                 factory = { p -> createSafeViewHolder(p, create) },
                 bind = { data ->
-                    // Type safety is guaranteed by reified V and items data source T
                     @Suppress("UNCHECKED_CAST")
                     (view as V).onBind(data as T)
                 },
@@ -114,7 +131,7 @@ class VerseScope @PublishedApi internal constructor(
     // ============================================================================================
 
     /**
-     * Renders a single item using [ViewBinding].
+     * Renders a single item using ViewBinding.
      */
     inline fun <reified VB : ViewBinding> item(
         noinline inflate: Inflate<VB>,
@@ -149,7 +166,7 @@ class VerseScope @PublishedApi internal constructor(
     }
 
     /**
-     * Renders a single item using a Custom [View].
+     * Renders a single item using a Custom View.
      */
     inline fun <reified V : View> item(
         noinline create: ViewCreator<V>,
@@ -185,7 +202,8 @@ class VerseScope @PublishedApi internal constructor(
     // ============================================================================================
 
     /**
-     * Starts an iteration scope for advanced scenarios.
+     * Starts an iteration scope for advanced scenarios involving conditional logic.
+     * Use [render] inside this block to define the actual UI units.
      */
     fun <T : Any> items(
         items: List<T>,
@@ -193,7 +211,6 @@ class VerseScope @PublishedApi internal constructor(
         block: VerseScope.(T) -> Unit
     ) {
         items.forEachIndexed { index, item ->
-            // WARNING: Using 'index' as a key is discouraged for dynamic lists.
             currentData = item
             currentId = key?.invoke(item) ?: index
             block(item)
@@ -201,7 +218,7 @@ class VerseScope @PublishedApi internal constructor(
     }
 
     /**
-     * Renders a UI unit within an advanced [items] block using [ViewBinding].
+     * Renders a UI unit within an advanced [items] block using ViewBinding.
      */
     inline fun <reified VB : ViewBinding> render(
         noinline inflate: Inflate<VB>,
@@ -237,7 +254,7 @@ class VerseScope @PublishedApi internal constructor(
     }
 
     /**
-     * Renders a UI unit within an advanced [items] block using a Custom [View].
+     * Renders a UI unit within an advanced [items] block using a Custom View.
      */
     inline fun <reified V : View> render(
         noinline create: ViewCreator<V>,
@@ -273,6 +290,9 @@ class VerseScope @PublishedApi internal constructor(
     //  Internal Implementation (Private)
     // ============================================================================================
 
+    /**
+     * Ensures the custom view has valid [RecyclerView.LayoutParams].
+     */
     @PublishedApi
     internal fun <V : View> createSafeViewHolder(parent: ViewGroup, create: ViewCreator<V>): SmartViewHolder {
         val view = create(parent.context)
@@ -287,6 +307,10 @@ class VerseScope @PublishedApi internal constructor(
         return SmartViewHolder(view, null)
     }
 
+    /**
+     * Internal factory method to package parameters into an [ItemWrapper] and 
+     * register it with the current DSL state.
+     */
     @PublishedApi
     internal fun internalRender(
         factory: (ViewGroup) -> SmartViewHolder,

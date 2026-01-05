@@ -3,22 +3,27 @@ package com.woniu0936.verses.model
 import android.view.ViewGroup
 
 /**
- * The fundamental rendering unit of Verses.
- * 
- * Encapsulates the identity, data, and presentation logic for a single item in the list.
- * By flattening the complex Adapter/ViewHolder pattern into this simple data class, 
- * the library can perform optimized [androidx.recyclerview.widget.DiffUtil] calculations.
+ * The fundamental atomic rendering unit of Verses.
  *
- * @property id Stable identifier for DiffUtil (calculated from provided keys or item index).
- * @property viewType The unique integer ID assigned by the global registry for view recycling.
- * @property data The raw business data associated with this item.
- * @property span The number of columns this item occupies in a grid layout (default is 1).
- * @property fullSpan Whether this item should ignore [span] and occupy the full width of the list.
- * @property factory Lambda that creates the [SmartViewHolder] when needed by the RecyclerView.
- * @property bind Lambda that applies [data] to the View or ViewBinding.
- * @property onClick High-performance, stateless click callback.
- * @property onAttach Triggered when view enters the screen.
- * @property onDetach Triggered when view leaves the screen.
+ * ItemWrapper encapsulates the identity, data, and presentation logic for a single item 
+ * in the list. By flattening the complex Adapter/ViewHolder relationship into this immutable 
+ * data structure, the library can perform optimized [androidx.recyclerview.widget.DiffUtil] 
+ * calculations on a background thread.
+ *
+ * @property id A unique identifier used by [androidx.recyclerview.widget.DiffUtil.ItemCallback.areItemsTheSame]. 
+ *              Must be stable across render cycles to avoid unnecessary view recreations.
+ * @property viewType An integer ID assigned by the global registry. Used by RecyclerView 
+ *                    to identify the layout and reuse ViewHolders.
+ * @property data The raw business data object. Used for content equality checks.
+ * @property span The column span count for this item in a [androidx.recyclerview.widget.GridLayoutManager].
+ * @property fullSpan If true, this item will occupy the entire width of the grid, ignoring [span].
+ * @property factory A lambda used to instantiate the [SmartViewHolder]. Executed during 
+ *                   [androidx.recyclerview.widget.RecyclerView.Adapter.onCreateViewHolder].
+ * @property bind A lambda that applies [data] to the view. Executed during 
+ *                 [androidx.recyclerview.widget.RecyclerView.Adapter.onBindViewHolder].
+ * @property onClick Stateless click callback invoked via a proxy listener to prevent memory leaks.
+ * @property onAttach Triggered when the view enters the screen (onViewAttachedToWindow).
+ * @property onDetach Triggered when the view leaves the screen (onViewDetachedFromWindow).
  */
 @PublishedApi
 internal data class ItemWrapper(
@@ -33,6 +38,13 @@ internal data class ItemWrapper(
     val onAttach: (() -> Unit)? = null,
     val onDetach: (() -> Unit)? = null
 ) {
+    /**
+     * Standard equality implementation that excludes function properties.
+     * 
+     * Since [factory], [bind], and [onClick] are typically re-instantiated on every
+     * DSL execution, including them in equality would cause [DiffUtil] to detect 
+     * changes on every frame, leading to UI flickering.
+     */
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -45,6 +57,9 @@ internal data class ItemWrapper(
         return true
     }
 
+    /**
+     * Consistent with [equals], ignoring lambda instances to preserve DiffUtil stability.
+     */
     override fun hashCode(): Int {
         var result = id.hashCode()
         result = 31 * result + viewType

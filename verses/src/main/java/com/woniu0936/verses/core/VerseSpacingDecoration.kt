@@ -9,13 +9,21 @@ import androidx.recyclerview.widget.RecyclerView
 /**
  * A sophisticated [RecyclerView.ItemDecoration] that implements declarative spacing and padding.
  * 
- * Unlike standard margins, this decoration uses a proportional offset distribution algorithm 
- * to ensure that all columns in a grid have equal width and that edge spacing does not double up.
+ * Traditional ItemDecorations often cause issues in Grids where simple margins lead to 
+ * unequal column widths or doubled spacing. VerseSpacingDecoration solves this using 
+ * a proportional offset distribution algorithm.
+ *
+ * Mathematical Principles:
+ * 1. **Grid Uniformity**: In a grid, total horizontal space ([hSpacing] * ([spanCount]-1)) 
+ *    is shared among columns such that each item has the exact same usable width.
+ * 2. **Edge Alignment**: [hPadding] and [vPadding] are applied only to the outermost 
+ *    boundaries of the entire list matrix.
+ * 3. **Gap Handling**: Internal gaps are divided symmetrically between adjacent items.
  *
  * @param hSpacing Horizontal space between items (column gap).
  * @param vSpacing Vertical space between items (row gap).
- * @param hPadding Outer horizontal padding between the list matrix and the container edges.
- * @param vPadding Outer vertical padding between the list matrix and the container edges.
+ * @param hPadding Outer horizontal padding between the list matrix and container edges.
+ * @param vPadding Outer vertical padding between the list matrix and container edges.
  */
 @PublishedApi
 internal class VerseSpacingDecoration(
@@ -25,10 +33,16 @@ internal class VerseSpacingDecoration(
     private val vPadding: Int
 ) : RecyclerView.ItemDecoration() {
 
+    /**
+     * Calculates the inclusive offsets for a given item view.
+     *
+     * This method is called by RecyclerView for every item during every layout pass.
+     * The algorithm used here ensures that grid columns remain perfectly symmetrical.
+     */
     override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
         val position = parent.getChildAdapterPosition(view)
         if (position == RecyclerView.NO_POSITION) return
-        val lm = parent.layoutManager
+        val lm = parent.layoutManager ?: return
         val itemCount = state.itemCount
 
         if (lm is GridLayoutManager) {
@@ -37,7 +51,8 @@ internal class VerseSpacingDecoration(
             val spanIndex = lp.spanIndex
             
             // 1. Horizontal Logic (Grid)
-            // Distribute the total spacing across all spans to maintain uniform column width
+            // Offset = Padding + (Position * TotalGap / Count)
+            // This formula ensures each column occupies exactly (Width - Gaps)/Count pixels.
             outRect.left = hPadding + spanIndex * hSpacing / spanCount
             outRect.right = hSpacing - (spanIndex + 1) * hSpacing / spanCount + hPadding
             
