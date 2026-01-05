@@ -22,17 +22,17 @@
 
 ## 💎 Why Verses?
 
-- **🚀 Performance Peak**: Built on `ListAdapter` and `AsyncListDiffer` with a dedicated background thread pool.
-- **🛡️ Industrial-Grade Safety**: Deterministic ViewTypes (Linear Probing) and dual-layer memory leak prevention.
-- **✨ Compose-like Syntax**: Write UI, not boilerplate. No more `Adapter` or `ViewHolder`.
-- **🧩 Extreme Flexibility**: Supports `ViewBinding`, programmatic `Custom Views`, and mixed-type logic.
-- **📦 Transparent Optimization**: Auto-injects global resource pools and optimizes item animations.
+- **🚀 Performance Peak**: Built on `ListAdapter` and `AsyncListDiffer` with optimized background diffing.
+- **🛡️ Industrial-Grade Safety**: Instance-local factories and thread-safe ViewType generation to prevent Context leaks.
+- **✨ Compose-like Syntax**: Write UI, not boilerplate. No more manual `Adapter` or `ViewHolder` subclasses.
+- **🧩 Extreme Flexibility**: Native support for `ViewBinding`, programmatic `Custom Views`, and `contentType` styling.
+- **📦 Transparent Optimization**: Context-scoped shared pools for efficient view recycling across fragments/activities.
 
 ## 📦 Installation
 
 ```kotlin
 dependencies {
-    implementation("io.github.woniu0936:verses:1.0.0-beta03")
+    implementation("io.github.woniu0936:verses:1.0.0")
 }
 ```
 
@@ -75,18 +75,20 @@ recyclerView.composeVerticalGrid(
             is Banner -> render(ItemBannerBinding::inflate, fullSpan = true) {
                 ivBanner.load(feed.url)
             }
+            // Use 'contentType' to differentiate styles for the same Binding class
+            is Ad -> render(ItemPostBinding::inflate, contentType = "ad_style") {
+                tvContent.text = "Sponsored: ${feed.text}"
+                root.setBackgroundColor(Color.YELLOW)
+            }
             is Post -> render(ItemPostBinding::inflate) {
                 tvContent.text = feed.text
-            }
-            is Video -> render(create = { context -> VideoPlayerView(context) }) {
-                play(feed.videoUrl)
             }
         }
     }
 
     // E. Horizontal Nested List (Automatic Pool Optimization)
     item(ItemHorizontalListBinding::inflate, fullSpan = true) {
-        rvNested.composeRow(spacing = 8.dp) {
+        rvNested.composeRow(spacing = 8.dp, horizontalPadding = 16.dp) {
             items(categories, ItemCategoryBinding::inflate) { cat ->
                 tvCategory.text = cat.name
             }
@@ -109,10 +111,13 @@ We have aligned our API naming 1:1 with Jetpack Compose (removing the "Lazy" pre
 | **Staggered** | Horizontal | **`composeHorizontalStaggeredGrid`** | `LazyHorizontalStaggeredGrid` | StaggeredGridLayoutManager (Horizontal) |
 
 ### 3. Global Lifecycle & Resource Management
-Verses automatically cleans up when the View is detached or the Activity is destroyed. To manually wipe all caches (e.g., on Logout):
+Verses automatically cleans up when the View is detached or the Activity is destroyed. To manually wipe all registries (e.g., on Logout):
 ```kotlin
 VerseAdapter.clearRegistry()
 ```
+
+### ⚠️ Performance Note
+The `onBind` and `onClick` logic updates rely on `data` changes. If your `data`'s `equals` returns true, the UI will not re-bind. Use `data.copy()` if you need to force a refresh.
 
 License
 -------

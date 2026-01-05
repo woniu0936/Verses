@@ -23,16 +23,16 @@
 ## 💎 为什么选择 Verses？
 
 - **🚀 性能巅峰**：基于 `ListAdapter` 配合专用后台线程池，处理万级数据依然丝滑。
-- **🛡️ 工业级安全**：确定性 ViewType 生成（线性探测）+ 双层内存泄漏防护。
-- **✨ 类 Compose 语法**：只写 UI，不写样板。彻底告别 `Adapter` 和 `ViewHolder`。
-- **🧩 极高灵活性**：原生支持 `ViewBinding`、纯代码 `自定义 View` 以及复杂的多类型混合逻辑。
-- **📦 隐式优化**：自动注入全局资源复用池，内置优化的刷新动画。
+- **🛡️ 工业级安全**：实例级工厂（Instance-local factories）与线程安全的 ViewType 生成，彻底杜绝 Context 泄漏。
+- **✨ 类 Compose 语法**：只写 UI，不写样板。彻底告别手动编写 `Adapter` 或 `ViewHolder` 子类。
+- **🧩 极高灵活性**：原生支持 `ViewBinding`、`自定义 View` 以及通过 `contentType` 区分的多样式逻辑。
+- **📦 隐式优化**：Context 隔离的全局资源复用池，在多 Fragment/Activity 间自动优化内存性能。
 
 ## 📦 安装
 
 ```kotlin
 dependencies {
-    implementation("io.github.woniu0936:verses:1.0.0-beta03")
+    implementation("io.github.woniu0936:verses:1.0.0")
 }
 ```
 
@@ -75,18 +75,20 @@ recyclerView.composeVerticalGrid(
             is Banner -> render(ItemBannerBinding::inflate, fullSpan = true) {
                 ivBanner.load(feed.url)
             }
+            // 使用 'contentType' 区分同一 Binding 类的不同样式，防止缓存冲突
+            is Ad -> render(ItemPostBinding::inflate, contentType = "ad_style") {
+                tvContent.text = "赞助商: ${feed.text}"
+                root.setBackgroundColor(Color.YELLOW)
+            }
             is Post -> render(ItemPostBinding::inflate) {
                 tvContent.text = feed.text
-            }
-            is Video -> render(create = { context -> VideoPlayerView(context) }) {
-                play(feed.videoUrl)
             }
         }
     }
 
-    // E. 嵌套横向列表 (自动关联全局复用池)
+    // E. 嵌套横向列表 (自动关联 Context 级复用池)
     item(ItemHorizontalListBinding::inflate, fullSpan = true) {
-        rvNested.composeRow(spacing = 8.dp) {
+        rvNested.composeRow(spacing = 8.dp, horizontalPadding = 16.dp) {
             items(categories, ItemCategoryBinding::inflate) { cat ->
                 tvCategory.text = cat.name
             }
@@ -105,12 +107,17 @@ recyclerView.composeVerticalGrid(
 | **线性** | 横向 | **`composeRow`** | `LazyRow` |
 | **网格** | 竖向 | **`composeVerticalGrid`** | `LazyVerticalGrid` |
 | **网格** | 横向 | **`composeHorizontalGrid`** | `LazyHorizontalGrid` |
+| **瀑布流** | 竖向 | **`composeVerticalStaggeredGrid`** | `LazyVerticalStaggeredGrid` |
+| **瀑布流** | 横向 | **`composeHorizontalStaggeredGrid`** | `LazyHorizontalStaggeredGrid` |
 
 ### 3. 全局生命周期与资源管理
-Verses 会在 View 分离或 Activity 销毁时自动清理。如需手动重置全局缓存（如退出登录时）：
+Verses 会在 View 分离或 Activity 销毁时自动清理。如需手动重置全局注册表（如退出登录时）：
 ```kotlin
 VerseAdapter.clearRegistry()
 ```
+
+### ⚠️ 性能与更新说明
+`onBind` 和 `onClick` 逻辑的更新完全依赖于 `data` 的变化。如果 `data` 的 `equals` 返回 true，UI 将不会触发重新绑定。若需强制刷新，请使用 `data.copy()`。
 
 开源协议
 -------
