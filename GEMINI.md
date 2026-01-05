@@ -31,7 +31,6 @@ To maintain a high quality floor, Gemini must leverage these specific features:
 ### 3. Performance & Contracts
 - **Inline Functions**: Use `inline` for all DSL entry points to reduce allocation overhead of high-order functions.
 - **Kotlin Contracts**: Use `contract { ... }` where necessary to help the compiler understand custom validation logic (e.g., smart casts after render calls).
-- **Atomic Operations**: Use `AtomicInteger` or specialized concurrent structures for ViewType generation to ensure thread safety without heavy locking.
 
 ## 🧱 Tech Stack
 - **JDK**: 17 (Targeting modern JVM performance).

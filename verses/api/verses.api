@@ -120,22 +120,8 @@ public final class com/woniu0936/verses/model/SmartViewHolder : androidx/recycle
 	public fun <init> (Landroid/view/View;Landroidx/viewbinding/ViewBinding;)V
 	public synthetic fun <init> (Landroid/view/View;Landroidx/viewbinding/ViewBinding;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getBinding ()Landroidx/viewbinding/ViewBinding;
-	public final fun getCurrentData ()Ljava/lang/Object;
-	public final fun getMemoTable ()Ljava/util/List;
-	public final fun getPointer ()I
 	public final fun getView ()Landroid/view/View;
 	public final fun itemData ()Ljava/lang/Object;
-	public final fun prepare (Ljava/lang/Object;Ljava/lang/Object;)V
-	public final fun setCurrentData (Ljava/lang/Object;)V
-	public final fun setPointer (I)V
-	public final fun validate ()V
-}
-
-public final class com/woniu0936/verses/model/SmartViewHolderKt {
-	public static final fun bind (Landroid/view/View;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function4;)V
-	public static final fun bind (Landroid/view/View;Ljava/lang/Object;Ljava/lang/Object;Lkotlin/jvm/functions/Function3;)V
-	public static final fun bind (Landroid/view/View;Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)V
-	public static final fun getCurrentProcessingHolder ()Ljava/lang/ThreadLocal;
-	public static final fun once (Lkotlin/jvm/functions/Function1;)V
+	public final fun prepare (Ljava/lang/Object;)V
 }
 

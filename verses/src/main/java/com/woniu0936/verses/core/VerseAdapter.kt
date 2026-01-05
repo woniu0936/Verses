@@ -9,7 +9,6 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.woniu0936.verses.model.ItemWrapper
 import com.woniu0936.verses.model.SmartViewHolder
-import com.woniu0936.verses.model.currentProcessingHolder
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
@@ -143,16 +142,11 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
     override fun onBindViewHolder(holder: SmartViewHolder, position: Int) {
         val item = getItem(position)
         
-        // 1. Set thread-local reference for 'bind' extensions
-        // Save previous holder to support re-entrancy (nested binding)
-        val previousHolder = currentProcessingHolder.get()
-        currentProcessingHolder.set(holder)
-        
         try {
-            // 2. Setup the stateful node with a STABLE ID and the latest data reference
-            holder.prepare(item.id, item.data)
+            // 1. Setup the holder with the latest data reference for itemData() access
+            holder.prepare(item.data)
             
-            // 3. Handle StaggeredGrid full-span items
+            // 2. Handle StaggeredGrid full-span items
             val params = holder.itemView.layoutParams
             if (params is StaggeredGridLayoutManager.LayoutParams) {
                 if (params.isFullSpan != item.fullSpan) {
@@ -160,24 +154,16 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
                 }
             }
             
-            // 4. Trigger the scoped binding logic
+            // 3. Trigger the scoped binding logic
             item.bind(holder, item.data)
             
-            // 5. Update interactive state (Restore convenience onClick support)
+            // 4. Update interactive state (Restore convenience onClick support)
             val isClickable = item.onClick != null
             if (holder.itemView.isClickable != isClickable) {
                 holder.itemView.isClickable = isClickable
             }
-            
-            // 6. Automated Guard (Debug Only)
-            holder.validate()
-        } finally {
-            // 7. Restore previous context
-            if (previousHolder != null) {
-                currentProcessingHolder.set(previousHolder)
-            } else {
-                currentProcessingHolder.remove()
-            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 

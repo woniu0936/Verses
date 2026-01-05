@@ -70,54 +70,6 @@ class VerseIntegrationTest {
     }
 
     /**
-     * Verifies that the 'once' block and 'itemData()' work correctly together,
-     * specifically ensuring that asynchronous click listeners get fresh data.
-     */
-    @Test
-    fun testOnceBlockAndItemDataSafety() {
-        val clickResults = mutableListOf<String>()
-        val data = "Initial"
-
-        InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            recyclerView.compose {
-                item(::testInflate, data = data, key = "SINGLE") {
-                    once {
-                        root.setOnClickListener {
-                            // Use member itemData() to fetch current data
-                            clickResults.add(itemData<String>())
-                        }
-                    }
-                }
-            }
-        }
-        Thread.sleep(500)
-        triggerLayout()
-
-        // 1. First click: should see "Initial"
-        InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            recyclerView.findViewHolderForAdapterPosition(0)?.itemView?.performClick()
-        }
-        assertEquals("Initial", clickResults.last())
-
-        // 2. Update data: ID remains "SINGLE"
-        InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            recyclerView.compose {
-                item(::testInflate, data = "Updated", key = "SINGLE") {
-                    // once {} should NOT run again, but listener is already set
-                }
-            }
-        }
-        Thread.sleep(500)
-        triggerLayout()
-
-        // 3. Second click: should see "Updated" (proving itemData() is fresh)
-        InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            recyclerView.findViewHolderForAdapterPosition(0)?.itemView?.performClick()
-        }
-        assertEquals("Updated", clickResults.last())
-    }
-
-    /**
      * Verifies that the original 'onClick' parameter still works correctly.
      */
     @Test
@@ -139,62 +91,6 @@ class VerseIntegrationTest {
             recyclerView.findViewHolderForAdapterPosition(1)?.itemView?.performClick()
         }
         assertEquals("B", clickResults.last())
-    }
-
-    /**
-     * Verifies that the 'bind' anchor correctly skips updates when values are the same.
-     */
-    @Test
-    fun testBindAnchorOnlyUpdatesOnChanges() {
-        val bindCounter = AtomicInteger(0)
-        val data = "Stable Data"
-
-        InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            // Initial Bind
-            recyclerView.compose {
-                item(::testInflate, data = data) {
-                    textView.bind(data) {
-                        text = it
-                        bindCounter.incrementAndGet()
-                    }
-                }
-            }
-        }
-        Thread.sleep(500)
-        triggerLayout()
-        assertEquals(1, bindCounter.get())
-
-        InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            // Re-Bind with same data
-            recyclerView.compose {
-                item(::testInflate, data = data) {
-                    textView.bind(data) {
-                        text = it
-                        bindCounter.incrementAndGet()
-                    }
-                }
-            }
-        }
-        Thread.sleep(500)
-        triggerLayout()
-        // Should STILL be 1 because bind() skipped the second call
-        assertEquals(1, bindCounter.get())
-
-        InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            // Re-Bind with DIFFERENT data
-            recyclerView.compose {
-                item(::testInflate, data = "New Data") {
-                    textView.bind("New Data") {
-                        text = it
-                        bindCounter.incrementAndGet()
-                    }
-                }
-            }
-        }
-        Thread.sleep(500)
-        triggerLayout()
-        // Should be 2 now
-        assertEquals(2, bindCounter.get())
     }
 
     /**
