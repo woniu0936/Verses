@@ -103,14 +103,14 @@ recyclerView.composeVerticalGrid(
 
 我们采用了与 Jetpack Compose 1:1 对标的命名，大幅降低学习成本。
 
-| 布局类型 | 方向 | **Verses API** | **Jetpack Compose 对等项** |
-| :--- | :--- | :--- | :--- |
-| **线性** | 竖向 | **`composeColumn`** | `LazyColumn` |
-| **线性** | 横向 | **`composeRow`** | `LazyRow` |
-| **网格** | 竖向 | **`composeVerticalGrid`** | `LazyVerticalGrid` |
-| **网格** | 横向 | **`composeHorizontalGrid`** | `LazyHorizontalGrid` |
-| **瀑布流** | 竖向 | **`composeVerticalStaggeredGrid`** | `LazyVerticalStaggeredGrid` |
-| **瀑布流** | 横向 | **`composeHorizontalStaggeredGrid`** | `LazyHorizontalStaggeredGrid` |
+| 布局类型 | 方向 | **Verses API** | **Jetpack Compose 对等项** | 原生 RecyclerView 实现 |
+| :--- | :--- | :--- | :--- | :--- |
+| **线性** | 竖向 | **`composeColumn`** | `LazyColumn` | LinearLayoutManager (Vertical) |
+| **线性** | 横向 | **`composeRow`** | `LazyRow` | LinearLayoutManager (Horizontal) |
+| **网格** | 竖向 | **`composeVerticalGrid`** | `LazyVerticalGrid` | GridLayoutManager (Vertical) |
+| **网格** | 横向 | **`composeHorizontalGrid`** | `LazyHorizontalGrid` | GridLayoutManager (Horizontal) |
+| **瀑布流** | 竖向 | **`composeVerticalStaggeredGrid`** | `LazyVerticalStaggeredGrid` | StaggeredGridLayoutManager (Vertical) |
+| **瀑布流** | 横向 | **`composeHorizontalStaggeredGrid`** | `LazyHorizontalStaggeredGrid` | StaggeredGridLayoutManager (Horizontal) |
 
 ### 3. 全局生命周期与资源管理
 Verses 会在 View 分离或 Activity 销毁时自动清理。如需手动重置全局注册表（如退出登录时）：

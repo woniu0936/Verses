@@ -101,9 +101,9 @@ recyclerView.composeVerticalGrid(
 
 ### 2. API Naming Mapping (The Naming Mapping)
 
-We have aligned our API naming 1:1 with Jetpack Compose (removing the "Lazy" prefix) to minimize cognitive load.
+We have aligned our API naming with Jetpack Compose (removing the "Lazy" prefix) to minimize cognitive load.
 
-| Layout Type | Orientation | **Verse API** | **Jetpack Compose Equivalent** | Android Native Implementation |
+| Layout Type | Orientation | **Verse API** | **Jetpack Compose Equivalent** | Native RecyclerView Implementation |
 | :--- | :--- | :--- | :--- | :--- |
 | **Linear** | Vertical | **`composeColumn`** | `LazyColumn` | LinearLayoutManager (Vertical) |
 | **Linear** | Horizontal | **`composeRow`** | `LazyRow` | LinearLayoutManager (Horizontal) |
