@@ -6,50 +6,67 @@ import androidx.core.content.FileProvider
 import java.io.File
 
 /**
- * Global configuration entry point for the Verses library.
+ * Functional interface for global error handling in Verses.
+ */
+fun interface VersesErrorHandler {
+    /**
+     * Triggered when an internal error occurs.
+     * @param throwable The actual exception.
+     * @param message A descriptive diagnostic message.
+     */
+    fun onError(throwable: Throwable, message: String)
+}
+
+/**
+ * Immutable configuration for the Verses library.
+ * Use [VersesConfig.Builder] to create an instance.
+ */
+class VersesConfig private constructor(
+    val isDebug: Boolean,
+    val logTag: String,
+    val isLogToFile: Boolean,
+    val errorHandler: VersesErrorHandler?
+) {
+    class Builder {
+        private var isDebug: Boolean = false
+        private var logTag: String = "Verses"
+        private var isLogToFile: Boolean = false
+        private var errorHandler: VersesErrorHandler? = null
+
+        fun debug(enabled: Boolean) = apply { this.isDebug = enabled }
+        fun logTag(tag: String) = apply { this.logTag = tag }
+        fun logToFile(enabled: Boolean) = apply { this.isLogToFile = enabled }
+        fun onError(handler: VersesErrorHandler) = apply { this.errorHandler = handler }
+
+        fun build() = VersesConfig(isDebug, logTag, isLogToFile, errorHandler)
+    }
+}
+
+/**
+ * Global entry point for Verses library management and diagnostic tools.
  */
 object Verses {
-    /**
-     * Set to true to enable detailed internal logging for debugging purposes.
-     * Default is false.
-     */
-    @JvmStatic
-    var isDebug: Boolean = false
-
-    /**
-     * Custom tag used for all Verses log output.
-     */
-    @JvmStatic
-    var logTag: String = "Verses"
-
-    /**
-     * Whether to write logs to a local file. 
-     * Requires [init] to be called first to establish the file path.
-     * Only recommended for [isDebug] mode.
-     */
-    @JvmStatic
-    var isLogToFile: Boolean = false
-
-    /**
-     * Global error callback for production monitoring.
-     * 
-     * Use this to bridge Verses internal errors to your crash reporting tool 
-     * like Sentry, Bugly, or Firebase Crashlytics.
-     * 
-     * Signature: (Throwable, String) -> Unit where String is a descriptive message.
-     */
-    @JvmStatic
-    var onError: ((Throwable, String) -> Unit)? = null
+    private var config: VersesConfig = VersesConfig.Builder().build()
 
     @PublishedApi
     internal var logFilePath: String? = null
 
     /**
-     * Initializes the Verses environment. 
-     * Mandatory if [isLogToFile] is enabled or if using [getLogFile].
+     * Initializes Verses with the provided configuration.
+     * Primarily for Java users or explicit configuration.
      */
     @JvmStatic
-    fun init(context: Context) {
+    fun initialize(context: Context, config: VersesConfig) {
+        this.config = config
+        setupFileLogging(context)
+    }
+
+    /**
+     * Internal access to the current configuration.
+     */
+    internal fun getConfig(): VersesConfig = config
+
+    private fun setupFileLogging(context: Context) {
         val dir = context.getExternalFilesDir("verses_logs") ?: context.filesDir
         if (!dir.exists()) dir.mkdirs()
         logFilePath = File(dir, "verses_diagnostic.log").absolutePath
@@ -63,9 +80,6 @@ object Verses {
 
     /**
      * Utility to create a share intent for the log file.
-     * 
-     * Note: You must define a FileProvider in your Manifest with authority:
-     * "${context.packageName}.verses.fileprovider"
      */
     @JvmStatic
     fun getShareLogIntent(context: Context): Intent? {
@@ -84,4 +98,22 @@ object Verses {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
     }
+}
+
+/**
+ * Kotlin idiomatic DSL for initializing Verses.
+ * 
+ * Usage:
+ * ```kotlin
+ * Verses.initialize(context) {
+ *     debug(true)
+ *     logToFile(true)
+ *     onError { throwable, message -> ... }
+ * }
+ * ```
+ */
+inline fun Verses.initialize(context: Context, crossinline block: VersesConfig.Builder.() -> Unit) {
+    val builder = VersesConfig.Builder()
+    builder.block()
+    initialize(context, builder.build())
 }

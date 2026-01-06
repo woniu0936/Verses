@@ -14,37 +14,40 @@ internal object VersesLogger {
     private val dateFormat by lazy { SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault()) }
 
     fun d(message: String) {
-        if (Verses.isDebug) {
-            Log.d(Verses.logTag, message)
-            if (Verses.isLogToFile) writeToFile("DEBUG", message)
+        val config = Verses.getConfig()
+        if (config.isDebug) {
+            Log.d(config.logTag, message)
+            if (config.isLogToFile) writeToFile("DEBUG", message)
         }
     }
 
     fun i(message: String) {
-        if (Verses.isDebug) {
-            Log.i(Verses.logTag, message)
-            if (Verses.isLogToFile) writeToFile("INFO ", message)
+        val config = Verses.getConfig()
+        if (config.isDebug) {
+            Log.i(config.logTag, message)
+            if (config.isLogToFile) writeToFile("INFO ", message)
         }
     }
 
     fun w(message: String) {
-        if (Verses.isDebug) {
-            Log.w(Verses.logTag, message)
-            if (Verses.isLogToFile) writeToFile("WARN ", message)
+        val config = Verses.getConfig()
+        if (config.isDebug) {
+            Log.w(config.logTag, message)
+            if (config.isLogToFile) writeToFile("WARN ", message)
         }
     }
 
     fun e(message: String, throwable: Throwable? = null) {
-        // Always log to console in Debug, but also respect production onError
-        Log.e(Verses.logTag, message, throwable)
+        val config = Verses.getConfig()
+        Log.e(config.logTag, message, throwable)
         
-        if (Verses.isDebug && Verses.isLogToFile) {
+        if (config.isDebug && config.isLogToFile) {
             writeToFile("ERROR", "$message | ${throwable?.message}")
         }
 
         // Production telemetry: Send to global error handler
         throwable?.let {
-            Verses.onError?.invoke(it, message)
+            config.errorHandler?.onError(it, message)
         }
     }
 
@@ -52,10 +55,11 @@ internal object VersesLogger {
      * Specialized logging for lifecycle events.
      */
     fun lifecycle(event: String, details: String) {
-        if (Verses.isDebug) {
+        val config = Verses.getConfig()
+        if (config.isDebug) {
             val msg = "🔄 [Lifecycle] $event >> $details"
-            Log.d(Verses.logTag, msg)
-            if (Verses.isLogToFile) writeToFile("LIFE ", msg)
+            Log.d(config.logTag, msg)
+            if (config.isLogToFile) writeToFile("LIFE ", msg)
         }
     }
 
@@ -63,10 +67,11 @@ internal object VersesLogger {
      * Specialized logging for diff results.
      */
     fun diff(details: String) {
-        if (Verses.isDebug) {
+        val config = Verses.getConfig()
+        if (config.isDebug) {
             val msg = "⚖️ [Diff] $details"
-            Log.d(Verses.logTag, msg)
-            if (Verses.isLogToFile) writeToFile("DIFF ", msg)
+            Log.d(config.logTag, msg)
+            if (config.isLogToFile) writeToFile("DIFF ", msg)
         }
     }
 

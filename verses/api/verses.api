@@ -47,17 +47,34 @@ public final class com/woniu0936/verses/core/Verses {
 	public static final field INSTANCE Lcom/woniu0936/verses/core/Verses;
 	public static final fun getLogFile ()Ljava/io/File;
 	public final fun getLogFilePath ()Ljava/lang/String;
-	public static final fun getLogTag ()Ljava/lang/String;
-	public static final fun getOnError ()Lkotlin/jvm/functions/Function2;
 	public static final fun getShareLogIntent (Landroid/content/Context;)Landroid/content/Intent;
-	public static final fun init (Landroid/content/Context;)V
-	public static final fun isDebug ()Z
-	public static final fun isLogToFile ()Z
-	public static final fun setDebug (Z)V
+	public static final fun initialize (Landroid/content/Context;Lcom/woniu0936/verses/core/VersesConfig;)V
 	public final fun setLogFilePath (Ljava/lang/String;)V
-	public static final fun setLogTag (Ljava/lang/String;)V
-	public static final fun setLogToFile (Z)V
-	public static final fun setOnError (Lkotlin/jvm/functions/Function2;)V
+}
+
+public final class com/woniu0936/verses/core/VersesConfig {
+	public synthetic fun <init> (ZLjava/lang/String;ZLcom/woniu0936/verses/core/VersesErrorHandler;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getErrorHandler ()Lcom/woniu0936/verses/core/VersesErrorHandler;
+	public final fun getLogTag ()Ljava/lang/String;
+	public final fun isDebug ()Z
+	public final fun isLogToFile ()Z
+}
+
+public final class com/woniu0936/verses/core/VersesConfig$Builder {
+	public fun <init> ()V
+	public final fun build ()Lcom/woniu0936/verses/core/VersesConfig;
+	public final fun debug (Z)Lcom/woniu0936/verses/core/VersesConfig$Builder;
+	public final fun logTag (Ljava/lang/String;)Lcom/woniu0936/verses/core/VersesConfig$Builder;
+	public final fun logToFile (Z)Lcom/woniu0936/verses/core/VersesConfig$Builder;
+	public final fun onError (Lcom/woniu0936/verses/core/VersesErrorHandler;)Lcom/woniu0936/verses/core/VersesConfig$Builder;
+}
+
+public abstract interface class com/woniu0936/verses/core/VersesErrorHandler {
+	public abstract fun onError (Ljava/lang/Throwable;Ljava/lang/String;)V
+}
+
+public final class com/woniu0936/verses/core/VersesKt {
+	public static final fun initialize (Lcom/woniu0936/verses/core/Verses;Landroid/content/Context;Lkotlin/jvm/functions/Function1;)V
 }
 
 public abstract interface annotation class com/woniu0936/verses/dsl/VerseDsl : java/lang/annotation/Annotation {
