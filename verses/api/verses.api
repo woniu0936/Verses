@@ -45,10 +45,19 @@ public final class com/woniu0936/verses/core/VerseSpacingDecoration : androidx/r
 
 public final class com/woniu0936/verses/core/Verses {
 	public static final field INSTANCE Lcom/woniu0936/verses/core/Verses;
+	public static final fun getLogFile ()Ljava/io/File;
+	public final fun getLogFilePath ()Ljava/lang/String;
 	public static final fun getLogTag ()Ljava/lang/String;
+	public static final fun getOnError ()Lkotlin/jvm/functions/Function2;
+	public static final fun getShareLogIntent (Landroid/content/Context;)Landroid/content/Intent;
+	public static final fun init (Landroid/content/Context;)V
 	public static final fun isDebug ()Z
+	public static final fun isLogToFile ()Z
 	public static final fun setDebug (Z)V
+	public final fun setLogFilePath (Ljava/lang/String;)V
 	public static final fun setLogTag (Ljava/lang/String;)V
+	public static final fun setLogToFile (Z)V
+	public static final fun setOnError (Lkotlin/jvm/functions/Function2;)V
 }
 
 public abstract interface annotation class com/woniu0936/verses/dsl/VerseDsl : java/lang/annotation/Annotation {
