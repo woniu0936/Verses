@@ -1,32 +1,46 @@
 ---
-name: Bug Report
-about: Create a report to help us improve
+name: 🐛 Bug Report
+about: Create a report to help us improve Verses
 title: "[BUG] "
 labels: bug
 assignees: ''
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+### ⚠️ Pre-Flight Checklist
+- [ ] I have searched existing issues to ensure this is not a duplicate.
+- [ ] I am using the latest version of Verses.
+- [ ] I have tried cleaning the project (`./gradlew clean`).
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. DSL definition '...'
-2. Data setup '...'
-3. Scroll to '...'
+### 💻 Environment Information
+- **Verses Version:** [e.g. 1.0.0]
+- **Android OS Version:** [e.g. Android 13]
+- **Device / Emulator:** [e.g. Pixel 6 Pro]
+- **Kotlin Version:** [e.g. 1.9.0]
+
+### 🧨 Stack Trace / Crash Log
+*Please paste the full stack trace inside the code block below. Do not use screenshots for logs.*
+```text
+java.lang.Exception: ...
+```
+
+### 🔍 Minimal Reproducible Code
+*Please provide the specific `compose` block or setup code that causes the issue.*
+```kotlin
+// Your Verse DSL code here
+recyclerView.composeColumn {
+    item(...) { ... }
+}
+```
+
+### 📝 Description & Steps to Reproduce
+1. Go to '...'
+2. Click on '...'
+3. Scroll down to '...'
 4. See error
 
-**Expected behavior**
+### 预期结果 (Expected Behavior)
 A clear and concise description of what you expected to happen.
 
-**Screenshots**
+### 📸 Screenshots / Video
 If applicable, add screenshots to help explain your problem.
-
-**Environment:**
- - Verses Version: [e.g. 1.0.0-alpha6]
- - Device: [e.g. Pixel 6]
- - OS: [e.g. Android 13]
-
-**Additional context**
-Add any other context about the problem here.

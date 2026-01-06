@@ -1,20 +1,28 @@
 ---
-name: Feature Request
-about: Suggest an idea for this project
+name: 💡 Feature Request
+about: Suggest an idea or improvement for Verses
 title: "[FEAT] "
 labels: enhancement
 assignees: ''
 
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+### 🧐 The Problem / Use Case
+*Is your feature request related to a problem? Please describe. (e.g., "I'm always frustrated when I have to manually handle...")*
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+### 🛠 Proposed Solution (API Design)
+*How would you like the code to look? Please provide a pseudo-code example of the DSL syntax.*
+```kotlin
+// Example of how you want to use the new feature
+recyclerView.composeColumn {
+    newFeature(...) { 
+        // ...
+    }
+}
+```
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+### 🔄 Alternatives Considered
+*Have you considered any alternative solutions or workarounds? Why were they not sufficient?*
 
-**Additional context**
-Add any other context or screenshots about the feature request here.
+### 🧩 Additional Context
+*Add any other context, screenshots, or links to similar implementations in other libraries.*
