@@ -107,16 +107,14 @@ recyclerView.composeColumn {
     items(
         items = userList,
         inflate = ItemUserBinding::inflate,
-        key = { it.id } 
+        key = { it.id },
+        onClick = { user ->
+            Toast.makeText(root.context, "Clicked ${user.name}", Toast.LENGTH_SHORT).show()
+        }
     ) { user -> 
         // 'this' is ItemUserBinding, 'user' is the data
         tvName.text = user.name
         tvAge.text = "${user.age} years"
-        
-        // Direct view access
-        root.setOnClickListener { 
-            Toast.makeText(root.context, "Clicked ${user.name}", Toast.LENGTH_SHORT).show()
-        }
     }
 }
 ```

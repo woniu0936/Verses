@@ -65,10 +65,10 @@ recyclerView.composeVerticalGrid(
         items = userList,
         inflate = ItemUserBinding::inflate,
         key = { it.id },
-        span = 1
+        span = 1,
+        onClick = { user -> toast("点击了 ${user.name}") }
     ) { user ->
         tvName.text = user.name
-        root.setOnClickListener { toast("点击了 ${user.name}") }
     }
 
     // D. 带业务逻辑的多类型渲染
@@ -82,7 +82,10 @@ recyclerView.composeVerticalGrid(
                 tvContent.text = "赞助商: ${feed.text}"
                 root.setBackgroundColor(Color.YELLOW)
             }
-            is Post -> render(ItemPostBinding::inflate) {
+            is Post -> render(
+                inflate = ItemPostBinding::inflate,
+                onClick = { toast("动态: ${feed.text}") }
+            ) {
                 tvContent.text = feed.text
             }
         }

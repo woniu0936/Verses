@@ -65,10 +65,10 @@ recyclerView.composeVerticalGrid(
         items = userList,
         inflate = ItemUserBinding::inflate,
         key = { it.id },
-        span = 1
+        span = 1,
+        onClick = { user -> toast("Clicked ${user.name}") }
     ) { user ->
         tvName.text = user.name
-        root.setOnClickListener { toast("Clicked ${user.name}") }
     }
 
     // D. Multi-Type rendering with logic
@@ -82,7 +82,10 @@ recyclerView.composeVerticalGrid(
                 tvContent.text = "Sponsored: ${feed.text}"
                 root.setBackgroundColor(Color.YELLOW)
             }
-            is Post -> render(ItemPostBinding::inflate) {
+            is Post -> render(
+                inflate = ItemPostBinding::inflate,
+                onClick = { toast("Post: ${feed.text}") }
+            ) {
                 tvContent.text = feed.text
             }
         }
