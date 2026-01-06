@@ -78,8 +78,13 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
      * Obtains a global ViewType ID and registers the factory to the local instance.
      */
     fun getOrCreateViewType(key: Any, factory: (ViewGroup) -> SmartViewHolder): Int {
+        var isNew = false
         val viewType = globalViewTypeCache.getOrPut(key) {
+            isNew = true
             nextViewType.getAndIncrement()
+        }
+        if (isNew) {
+            VersesLogger.i("New ViewType generated for key: $key (ID: $viewType). Total types: ${nextViewType.get() - 1}")
         }
         localTypeToFactory[viewType] = factory
         return viewType
@@ -92,8 +97,10 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
                 "This usually happens if the registry was cleared while the RecyclerView was still active."
             )
         
-        VersesLogger.lifecycle("Create", "ViewType: $viewType")
+        val startTime = System.currentTimeMillis()
         val holder = factory(parent)
+        val duration = System.currentTimeMillis() - startTime
+        VersesLogger.perf("CreateViewHolder", duration, "ViewType: $viewType")
         
         holder.itemView.setOnClickListener {
             val currentAdapter = holder.bindingAdapter as? VerseAdapter ?: return@setOnClickListener
@@ -108,7 +115,7 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
 
     override fun onBindViewHolder(holder: SmartViewHolder, position: Int) {
         val item = getItem(position)
-        VersesLogger.lifecycle("Bind", "Pos: $position, ID: ${item.id}, ViewType: ${item.viewType}")
+        val startTime = System.currentTimeMillis()
         
         try {
             holder.prepare(item.data)
@@ -123,6 +130,9 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
             if (holder.itemView.isClickable != isClickable) {
                 holder.itemView.isClickable = isClickable
             }
+            
+            val duration = System.currentTimeMillis() - startTime
+            VersesLogger.perf("BindViewHolder", duration, "Pos: $position, ID: ${item.id}")
         } catch (e: Exception) {
             VersesLogger.e("Fatal error during binding at position $position. Item ID: ${item.id}", e)
             throw e // Re-throw to make it visible during development

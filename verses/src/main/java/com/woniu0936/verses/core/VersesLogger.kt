@@ -75,6 +75,19 @@ internal object VersesLogger {
         }
     }
 
+    /**
+     * Specialized logging for performance tracking.
+     */
+    fun perf(action: String, durationMs: Long, details: String) {
+        val config = Verses.getConfig()
+        if (config.isDebug) {
+            val icon = if (durationMs > 10) "⚠️ [PERF_SLOW]" else "⚡ [PERF]"
+            val msg = "$icon $action took ${durationMs}ms | $details"
+            if (durationMs > 10) Log.w(config.logTag, msg) else Log.d(config.logTag, msg)
+            if (config.isLogToFile) writeToFile("PERF ", msg)
+        }
+    }
+
     private fun writeToFile(level: String, message: String) {
         val path = Verses.logFilePath ?: return
         try {
