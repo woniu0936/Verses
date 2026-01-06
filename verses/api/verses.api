@@ -43,6 +43,14 @@ public final class com/woniu0936/verses/core/VerseSpacingDecoration : androidx/r
 	public fun getItemOffsets (Landroid/graphics/Rect;Landroid/view/View;Landroidx/recyclerview/widget/RecyclerView;Landroidx/recyclerview/widget/RecyclerView$State;)V
 }
 
+public final class com/woniu0936/verses/core/Verses {
+	public static final field INSTANCE Lcom/woniu0936/verses/core/Verses;
+	public static final fun getLogTag ()Ljava/lang/String;
+	public static final fun isDebug ()Z
+	public static final fun setDebug (Z)V
+	public static final fun setLogTag (Ljava/lang/String;)V
+}
+
 public abstract interface annotation class com/woniu0936/verses/dsl/VerseDsl : java/lang/annotation/Annotation {
 }
 

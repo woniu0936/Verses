@@ -87,7 +87,12 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SmartViewHolder {
         val factory = localTypeToFactory[viewType] 
-            ?: throw IllegalStateException("No factory registered for viewType $viewType in this instance.")
+            ?: throw IllegalStateException(
+                "Verses Error: No factory registered for viewType $viewType in this instance. " +
+                "This usually happens if the registry was cleared while the RecyclerView was still active."
+            )
+        
+        VersesLogger.lifecycle("Create", "ViewType: $viewType")
         val holder = factory(parent)
         
         holder.itemView.setOnClickListener {
@@ -103,6 +108,8 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
 
     override fun onBindViewHolder(holder: SmartViewHolder, position: Int) {
         val item = getItem(position)
+        VersesLogger.lifecycle("Bind", "Pos: $position, ID: ${item.id}, ViewType: ${item.viewType}")
+        
         try {
             holder.prepare(item.data)
             val params = holder.itemView.layoutParams
@@ -117,7 +124,8 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
                 holder.itemView.isClickable = isClickable
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            VersesLogger.e("Fatal error during binding at position $position. Item ID: ${item.id}", e)
+            throw e // Re-throw to make it visible during development
         }
     }
 
@@ -125,7 +133,9 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
         super.onViewAttachedToWindow(holder)
         val pos = holder.bindingAdapterPosition
         if (pos != RecyclerView.NO_POSITION && pos < itemCount) {
-            getItem(pos).onAttach?.invoke()
+            val item = getItem(pos)
+            VersesLogger.lifecycle("Attach", "Pos: $pos, ID: ${item.id}")
+            item.onAttach?.invoke()
         }
     }
 
@@ -133,7 +143,9 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
         super.onViewDetachedFromWindow(holder)
         val pos = holder.bindingAdapterPosition
         if (pos != RecyclerView.NO_POSITION && pos < itemCount) {
-            getItem(pos).onDetach?.invoke()
+            val item = getItem(pos)
+            VersesLogger.lifecycle("Detach", "Pos: $pos, ID: ${item.id}")
+            item.onAttach?.invoke()
         }
     }
 
@@ -163,9 +175,21 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
     public override fun getItem(position: Int): ItemWrapper = super.getItem(position)
 
     object WrapperDiffCallback : DiffUtil.ItemCallback<ItemWrapper>() {
-        override fun areItemsTheSame(oldItem: ItemWrapper, newItem: ItemWrapper): Boolean = oldItem.id == newItem.id
+        override fun areItemsTheSame(oldItem: ItemWrapper, newItem: ItemWrapper): Boolean {
+            val same = oldItem.id == newItem.id
+            if (!same) {
+                VersesLogger.diff("ID Change: [${oldItem.id}] -> [${newItem.id}]")
+            }
+            return same
+        }
         
         @android.annotation.SuppressLint("DiffUtilEquals")
-        override fun areContentsTheSame(oldItem: ItemWrapper, newItem: ItemWrapper): Boolean = oldItem == newItem
+        override fun areContentsTheSame(oldItem: ItemWrapper, newItem: ItemWrapper): Boolean {
+            val same = oldItem == newItem
+            if (!same) {
+                VersesLogger.diff("Content Change for ID [${newItem.id}]: Data modified or factory changed.")
+            }
+            return same
+        }
     }
 }
