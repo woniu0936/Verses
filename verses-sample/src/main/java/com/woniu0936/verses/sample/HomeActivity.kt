@@ -9,6 +9,9 @@ import androidx.core.view.WindowInsetsCompat
 import com.woniu0936.verses.sample.databinding.ActivityHomeBinding
 import com.woniu0936.verses.sample.tiktok.TikTokActivity
 import com.woniu0936.verses.sample.playstore.PlayStoreActivity
+import com.woniu0936.verses.core.Verses
+import com.woniu0936.verses.sample.utils.ShareUtils
+import android.widget.Toast
 
 class HomeActivity : AppCompatActivity() {
 
@@ -29,6 +32,14 @@ class HomeActivity : AppCompatActivity() {
 
         binding.btnTikTok.setOnClickListener {
             startActivity(Intent(this, TikTokActivity::class.java))
+        }
+
+        binding.btnShareLog.setOnClickListener {
+            ShareUtils.shareLogFile(this)
+        }
+
+        binding.btnEmailSupport.setOnClickListener {
+            ShareUtils.shareLogViaEmail(this)
         }
     }
 }

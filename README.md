@@ -115,7 +115,48 @@ We have aligned our API naming with Jetpack Compose (removing the "Lazy" prefix)
 | `Staggered (StaggeredGridLayoutManager)` | Vertical | **`composeVerticalStaggeredGrid`** | `LazyVerticalStaggeredGrid` |
 | `Staggered (StaggeredGridLayoutManager)` | Horizontal | **`composeHorizontalStaggeredGrid`** | `LazyHorizontalStaggeredGrid` |
 
-### 3. Global Lifecycle & Resource Management
+### 3. Global Configuration & Diagnostics (Industrial-Grade)
+
+Verses provides a robust diagnostic system to help you debug complex list behaviors and track production errors.
+
+#### A. Initialization (Kotlin DSL)
+Initialize Verses in your `Application` class to enable global features.
+```kotlin
+Verses.initialize(this) {
+    debug(true)           // Enable internal lifecycle/diff logging
+    logTag("MyApp")       // Custom Logcat tag
+    logToFile(true)       // Persistence for diagnostic sharing
+    
+    // Production Error Telemetry
+    onError { throwable, message ->
+        // Bridge to Sentry / Crashlytics
+        FirebaseCrashlytics.getInstance().recordException(throwable)
+    }
+}
+```
+
+#### B. Java Compatibility (Builder Pattern)
+```java
+VersesConfig config = new VersesConfig.Builder()
+    .debug(true)
+    .logToFile(true)
+    .onError((throwable, msg) -> { /* Handle error */ })
+    .build();
+Verses.initialize(context, config);
+```
+
+#### C. Low-Cost Debugging
+When a user reports a bug, you can use the built-in utility to let them share the diagnostic log:
+```kotlin
+// Get the raw intent for maximum customization
+val shareIntent = Verses.getShareLogIntent(context)
+startActivity(Intent.createChooser(shareIntent, "Share Log"))
+
+// OR use the helper provided in verses-sample:
+// ShareUtils.shareLogFile(context)
+```
+
+### 4. Global Lifecycle & Resource Management
 Verses automatically cleans up when the View is detached or the Activity is destroyed. To manually wipe all registries (e.g., on Logout):
 ```kotlin
 VerseAdapter.clearRegistry()

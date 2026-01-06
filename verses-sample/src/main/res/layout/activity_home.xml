@@ -27,7 +27,29 @@
         android:layout_width="match_parent"
         android:layout_height="64dp"
         android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="16dp"
         android:text="TikTok Demo (Media3)"
         android:textSize="18sp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnShareLog"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="16dp"
+        android:text="share diagnostic log"
+        android:textAllCaps="false"
+        android:textSize="18sp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnEmailSupport"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_marginHorizontal="16dp"
+        android:text="email support (bug report)"
+        android:textAllCaps="false"
+        android:textSize="16sp" />
 
 </LinearLayout>

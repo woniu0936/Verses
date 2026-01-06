@@ -115,7 +115,48 @@ recyclerView.composeVerticalGrid(
 | `瀑布流 (StaggeredGridLayoutManager)` | 竖向 | **`composeVerticalStaggeredGrid`** | `LazyVerticalStaggeredGrid` |
 | `瀑布流 (StaggeredGridLayoutManager)` | 横向 | **`composeHorizontalStaggeredGrid`** | `LazyHorizontalStaggeredGrid` |
 
-### 3. 全局生命周期与资源管理
+### 3. 全局配置与诊断系统 (工业级能力)
+
+Verses 提供了一套完备的诊断系统，帮助你调试复杂的列表行为并追踪线上错误。
+
+#### A. 初始化 (Kotlin DSL)
+在 `Application` 类中初始化 Verses 以启用全局能力：
+```kotlin
+Verses.initialize(this) {
+    debug(true)           // 开启内部生命周期与 Diff 日志
+    logTag("MyApp")       // 自定义 Logcat 标签
+    logToFile(true)       // 开启本地文件日志用于排障分享
+    
+    // 生产环境错误遥测
+    onError { throwable, message ->
+        // 对接 Sentry / Bugly / Crashlytics
+        Bugly.postCatchedException(throwable)
+    }
+}
+```
+
+#### B. Java 兼容性 (Builder 模式)
+```java
+VersesConfig config = new VersesConfig.Builder()
+    .debug(true)
+    .logToFile(true)
+    .onError((throwable, msg) -> { /* 处理错误 */ })
+    .build();
+Verses.initialize(context, config);
+```
+
+#### C. 低成本排障
+当用户反馈 Bug 时，你可以使用内置工具引导其分享诊断日志：
+```kotlin
+// 获取原始 Intent 以进行最大程度的自定义
+val shareIntent = Verses.getShareLogIntent(context)
+startActivity(Intent.createChooser(shareIntent, "分享日志"))
+
+// 或者参考示例项目中的工具类：
+// ShareUtils.shareLogFile(context)
+```
+
+### 4. 全局生命周期与资源管理
 Verses 会在 View 分离或 Activity 销毁时自动清理。如需手动重置全局注册表（如退出登录时）：
 ```kotlin
 VerseAdapter.clearRegistry()
