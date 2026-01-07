@@ -42,6 +42,7 @@ class VerseScope @PublishedApi internal constructor(
         noinline onClick: ((T) -> Unit)? = null,
         noinline onAttach: ((T) -> Unit)? = null,
         noinline onDetach: ((T) -> Unit)? = null,
+        noinline onCreate: (VB.(SmartViewHolder) -> Unit)? = null,
         crossinline onBind: VB.(T) -> Unit
     ) {
         val layoutKey = contentType ?: VB::class.java
@@ -54,6 +55,12 @@ class VerseScope @PublishedApi internal constructor(
                 bind = { data ->
                     @Suppress("UNCHECKED_CAST")
                     (binding as VB).onBind(data as T)
+                },
+                onCreate = onCreate?.let { block ->
+                    { 
+                        @Suppress("UNCHECKED_CAST")
+                        (binding as VB).block(this)
+                    }
                 },
                 layoutRes = layoutRes,
                 layoutKey = layoutKey,
@@ -82,6 +89,7 @@ class VerseScope @PublishedApi internal constructor(
         noinline onClick: ((T) -> Unit)? = null,
         noinline onAttach: ((T) -> Unit)? = null,
         noinline onDetach: ((T) -> Unit)? = null,
+        noinline onCreate: (V.(SmartViewHolder) -> Unit)? = null,
         crossinline onBind: V.(T) -> Unit
     ) {
         val layoutKey = contentType ?: V::class.java
@@ -91,6 +99,12 @@ class VerseScope @PublishedApi internal constructor(
                 bind = { data ->
                     @Suppress("UNCHECKED_CAST")
                     (view as V).onBind(data as T)
+                },
+                onCreate = onCreate?.let { block ->
+                    { 
+                        @Suppress("UNCHECKED_CAST")
+                        (view as V).block(this)
+                    }
                 },
                 layoutRes = layoutRes,
                 layoutKey = layoutKey,
@@ -123,6 +137,7 @@ class VerseScope @PublishedApi internal constructor(
         noinline onClick: (() -> Unit)? = null,
         noinline onAttach: (() -> Unit)? = null,
         noinline onDetach: (() -> Unit)? = null,
+        noinline onCreate: (VB.(SmartViewHolder) -> Unit)? = null,
         crossinline onBind: VB.() -> Unit = {}
     ) {
         val layoutKey = contentType ?: VB::class.java
@@ -134,6 +149,12 @@ class VerseScope @PublishedApi internal constructor(
             bind = { 
                 @Suppress("UNCHECKED_CAST")
                 (binding as VB).onBind()
+            },
+            onCreate = onCreate?.let { block ->
+                { 
+                    @Suppress("UNCHECKED_CAST")
+                    (binding as VB).block(this)
+                }
             },
             layoutRes = layoutRes,
             layoutKey = layoutKey,
@@ -161,6 +182,7 @@ class VerseScope @PublishedApi internal constructor(
         noinline onClick: (() -> Unit)? = null,
         noinline onAttach: (() -> Unit)? = null,
         noinline onDetach: (() -> Unit)? = null,
+        noinline onCreate: (V.(SmartViewHolder) -> Unit)? = null,
         crossinline onBind: V.() -> Unit = {}
     ) {
         val layoutKey = contentType ?: V::class.java
@@ -169,6 +191,12 @@ class VerseScope @PublishedApi internal constructor(
             bind = { 
                 @Suppress("UNCHECKED_CAST")
                 (view as V).onBind()
+            },
+            onCreate = onCreate?.let { block ->
+                { 
+                    @Suppress("UNCHECKED_CAST")
+                    (view as V).block(this)
+                }
             },
             layoutRes = layoutRes,
             layoutKey = layoutKey,
@@ -207,6 +235,7 @@ class VerseScope @PublishedApi internal constructor(
         noinline onClick: (() -> Unit)? = null,
         noinline onAttach: (() -> Unit)? = null,
         noinline onDetach: (() -> Unit)? = null,
+        noinline onCreate: (VB.(SmartViewHolder) -> Unit)? = null,
         crossinline onBind: VB.() -> Unit
     ) {
         val layoutKey = contentType ?: VB::class.java
@@ -220,6 +249,12 @@ class VerseScope @PublishedApi internal constructor(
             bind = { 
                 @Suppress("UNCHECKED_CAST")
                 (binding as VB).onBind()
+            },
+            onCreate = onCreate?.let { block ->
+                { 
+                    @Suppress("UNCHECKED_CAST")
+                    (binding as VB).block(this)
+                }
             },
             layoutRes = layoutRes,
             layoutKey = layoutKey,
@@ -242,6 +277,7 @@ class VerseScope @PublishedApi internal constructor(
         noinline onClick: (() -> Unit)? = null,
         noinline onAttach: (() -> Unit)? = null,
         noinline onDetach: (() -> Unit)? = null,
+        noinline onCreate: (V.(SmartViewHolder) -> Unit)? = null,
         crossinline onBind: V.() -> Unit
     ) {
         val layoutKey = contentType ?: V::class.java
@@ -252,6 +288,12 @@ class VerseScope @PublishedApi internal constructor(
             bind = { 
                 @Suppress("UNCHECKED_CAST")
                 (view as V).onBind()
+            },
+            onCreate = onCreate?.let { block ->
+                { 
+                    @Suppress("UNCHECKED_CAST")
+                    (view as V).block(this)
+                }
             },
             layoutRes = layoutRes,
             layoutKey = layoutKey,
@@ -283,6 +325,7 @@ class VerseScope @PublishedApi internal constructor(
     internal fun internalRender(
         factory: (ViewGroup) -> SmartViewHolder,
         bind: SmartViewHolder.(Any) -> Unit,
+        onCreate: (SmartViewHolder.() -> Unit)? = null,
         @LayoutRes layoutRes: Int,
         layoutKey: Any,
         data: Any,
@@ -299,6 +342,7 @@ class VerseScope @PublishedApi internal constructor(
             layoutRes = layoutRes,
             layoutKey = layoutKey,
             factory = factory,
+            onCreateBlock = onCreate,
             bindBlock = bind,
             span = span,
             fullSpan = fullSpan,
@@ -307,10 +351,7 @@ class VerseScope @PublishedApi internal constructor(
             onDetach = onDetach
         )
         
-        // [Eager Registration] Register the prototype as soon as it's defined in DSL.
-        // This allows the preloader to start working even before the list is fully submitted.
         VerseTypeRegistry.registerPrototype(model)
-        
         newModels.add(model)
     }
 }

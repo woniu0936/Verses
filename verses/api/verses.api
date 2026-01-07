@@ -96,7 +96,8 @@ public final class com/woniu0936/verses/dsl/VerseScope {
 	public final fun getCurrentData ()Ljava/lang/Object;
 	public final fun getCurrentId ()Ljava/lang/Object;
 	public final fun getNewModels ()Ljava/util/List;
-	public final fun internalRender (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;IZLkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)V
+	public final fun internalRender (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;IZLkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)V
+	public static synthetic fun internalRender$default (Lcom/woniu0936/verses/dsl/VerseScope;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;IZLkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
 	public final fun items (Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
 	public static synthetic fun items$default (Lcom/woniu0936/verses/dsl/VerseScope;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
 	public final fun setCurrentData (Ljava/lang/Object;)V
@@ -149,6 +150,7 @@ public abstract class com/woniu0936/verses/model/VerseModel {
 	public fun getSpanSize (II)I
 	public abstract fun getViewType ()I
 	public fun hashCode ()I
+	public fun onCreate (Lcom/woniu0936/verses/model/SmartViewHolder;)V
 	public fun onViewCreated (Landroid/view/View;)V
 }
 

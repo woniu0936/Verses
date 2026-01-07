@@ -9,23 +9,14 @@ import com.woniu0936.verses.core.pool.VerseTypeRegistry
 
 /**
  * Represents a piece of UI in a [androidx.recyclerview.widget.RecyclerView].
- * It encapsulates the data, the View creation logic, and the binding logic.
  */
 abstract class VerseModel<T : Any>(
     val id: Any,
     val data: T
 ) {
-    /**
-     * The layout resource ID associated with this model.
-     * Required for asynchronous pre-inflation support.
-     * Use 0 if the view is created programmatically without XML.
-     */
     @get:LayoutRes
     abstract val layoutRes: Int
 
-    /**
-     * Returns a stable ViewType ID.
-     */
     abstract fun getViewType(): Int
 
     /**
@@ -34,8 +25,13 @@ abstract class VerseModel<T : Any>(
     abstract fun createHolder(parent: ViewGroup): SmartViewHolder
 
     /**
-     * Optional callback executed when the view is created, useful for 
-     * initializing complex custom views or one-time styling.
+     * One-time initialization callback executed immediately after [createHolder].
+     * Use this to set up click listeners or one-time styling.
+     */
+    open fun onCreate(holder: SmartViewHolder) {}
+
+    /**
+     * Optional callback executed when the view is created.
      */
     open fun onViewCreated(view: View) {}
 
@@ -44,31 +40,14 @@ abstract class VerseModel<T : Any>(
      */
     abstract fun bind(holder: SmartViewHolder)
 
-    /**
-     * Binds the [data] to the [holder] with partial updates.
-     */
     open fun bind(holder: SmartViewHolder, payloads: List<Any>) {
         bind(holder)
     }
 
-    /**
-     * Returns the span size for this item in a grid layout.
-     */
     open fun getSpanSize(totalSpan: Int, position: Int): Int = 1
 
-    /**
-     * Optional click listener for the item.
-     */
     open val onClick: (() -> Unit)? = null
-
-    /**
-     * Optional callback when the item view is attached to the window.
-     */
     open val onAttach: (() -> Unit)? = null
-
-    /**
-     * Optional callback when the item view is detached from the window.
-     */
     open val onDetach: (() -> Unit)? = null
 
     override fun equals(other: Any?): Boolean {

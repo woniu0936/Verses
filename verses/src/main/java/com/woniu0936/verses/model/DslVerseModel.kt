@@ -1,5 +1,6 @@
 package com.woniu0936.verses.model
 
+import android.view.View
 import android.view.ViewGroup
 import com.woniu0936.verses.core.pool.VerseTypeRegistry
 
@@ -12,6 +13,7 @@ internal class DslVerseModel(
     override val layoutRes: Int,
     private val layoutKey: Any,
     private val factory: (ViewGroup) -> SmartViewHolder,
+    private val onCreateBlock: (SmartViewHolder.() -> Unit)? = null,
     private val bindBlock: SmartViewHolder.(Any) -> Unit,
     private val span: Int = 1,
     private val fullSpan: Boolean = false,
@@ -33,6 +35,10 @@ internal class DslVerseModel(
         val holder = factory(parent)
         onViewCreated(holder.view)
         return holder
+    }
+
+    override fun onCreate(holder: SmartViewHolder) {
+        onCreateBlock?.invoke(holder)
     }
 
     override fun bind(holder: SmartViewHolder) {

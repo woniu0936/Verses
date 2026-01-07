@@ -56,6 +56,10 @@ internal class VerseAdapter : ListAdapter<VerseModel<*>, SmartViewHolder>(
 
         val startTime = System.currentTimeMillis()
         val holder = template.createHolder(parent)
+        
+        // [Lifecycle Optimization] Trigger onCreate exactly once per ViewHolder creation.
+        template.onCreate(holder)
+        
         val duration = System.currentTimeMillis() - startTime
         
         if (duration > 10) {
