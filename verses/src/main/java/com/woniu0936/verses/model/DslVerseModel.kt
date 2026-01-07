@@ -1,6 +1,5 @@
 package com.woniu0936.verses.model
 
-import android.view.View
 import android.view.ViewGroup
 import com.woniu0936.verses.core.pool.VerseTypeRegistry
 

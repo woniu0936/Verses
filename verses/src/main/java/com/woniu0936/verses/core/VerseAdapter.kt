@@ -43,7 +43,9 @@ internal class VerseAdapter : ListAdapter<VerseModel<*>, SmartViewHolder>(
     override fun onCurrentListChanged(previousList: List<VerseModel<*>>, currentList: List<VerseModel<*>>) {
         super.onCurrentListChanged(previousList, currentList)
         if (currentList.isNotEmpty()) {
-            VersePreloader.autoPreload(VerseAdapterRegistry.latestContext ?: return)
+            VerseAdapterRegistry.latestContext?.let { context ->
+                VersePreloader.autoPreload(context)
+            }
         }
     }
 
@@ -214,7 +216,14 @@ internal class VerseAdapter : ListAdapter<VerseModel<*>, SmartViewHolder>(
 
 /**
  * A small utility to capture the latest context for preloading.
+ * Uses WeakReference to prevent memory leaks if the Activity/Fragment is destroyed.
  */
 internal object VerseAdapterRegistry {
-    var latestContext: android.content.Context? = null
+    private var contextRef: java.lang.ref.WeakReference<android.content.Context>? = null
+
+    var latestContext: android.content.Context?
+        get() = contextRef?.get()
+        set(value) {
+            contextRef = if (value != null) java.lang.ref.WeakReference(value) else null
+        }
 }
