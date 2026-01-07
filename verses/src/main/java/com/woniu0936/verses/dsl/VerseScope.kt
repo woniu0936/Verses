@@ -3,9 +3,11 @@ package com.woniu0936.verses.dsl
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.LayoutRes
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.woniu0936.verses.core.VerseAdapter
+import com.woniu0936.verses.core.pool.VerseTypeRegistry
 import com.woniu0936.verses.model.*
 
 /**
@@ -17,7 +19,7 @@ class VerseScope @PublishedApi internal constructor(
 ) {
 
     @PublishedApi
-    internal val newWrappers = mutableListOf<ItemWrapper>()
+    internal val newModels = mutableListOf<VerseModel<*>>()
 
     @PublishedApi internal var currentData: Any? = null
     @PublishedApi internal var currentId: Any? = null
@@ -28,12 +30,11 @@ class VerseScope @PublishedApi internal constructor(
 
     /**
      * Renders a list of items using ViewBinding.
-     * 
-     * @param contentType Optional key to differentiate layouts using the same Binding class.
      */
     inline fun <T : Any, reified VB : ViewBinding> items(
         items: List<T>,
         noinline inflate: Inflate<VB>,
+        @LayoutRes layoutRes: Int = 0,
         noinline key: ((T) -> Any)? = null,
         contentType: Any? = null,
         span: Int = 1,
@@ -43,7 +44,7 @@ class VerseScope @PublishedApi internal constructor(
         noinline onDetach: ((T) -> Unit)? = null,
         crossinline onBind: VB.(T) -> Unit
     ) {
-        val stableKey = contentType ?: VB::class.java
+        val layoutKey = contentType ?: VB::class.java
         items.forEachIndexed { index, item ->
             internalRender(
                 factory = { p -> 
@@ -54,7 +55,8 @@ class VerseScope @PublishedApi internal constructor(
                     @Suppress("UNCHECKED_CAST")
                     (binding as VB).onBind(data as T)
                 },
-                key = stableKey,
+                layoutRes = layoutRes,
+                layoutKey = layoutKey,
                 data = item,
                 id = key?.invoke(item) ?: index,
                 span = span,
@@ -72,6 +74,7 @@ class VerseScope @PublishedApi internal constructor(
     inline fun <T : Any, reified V : View> items(
         items: List<T>,
         noinline create: ViewCreator<V>,
+        @LayoutRes layoutRes: Int = 0,
         noinline key: ((T) -> Any)? = null,
         contentType: Any? = null,
         span: Int = 1,
@@ -81,7 +84,7 @@ class VerseScope @PublishedApi internal constructor(
         noinline onDetach: ((T) -> Unit)? = null,
         crossinline onBind: V.(T) -> Unit
     ) {
-        val stableKey = contentType ?: V::class.java
+        val layoutKey = contentType ?: V::class.java
         items.forEachIndexed { index, item ->
             internalRender(
                 factory = { p -> createSafeViewHolder(p, create) },
@@ -89,7 +92,8 @@ class VerseScope @PublishedApi internal constructor(
                     @Suppress("UNCHECKED_CAST")
                     (view as V).onBind(data as T)
                 },
-                key = stableKey,
+                layoutRes = layoutRes,
+                layoutKey = layoutKey,
                 data = item,
                 id = key?.invoke(item) ?: index,
                 span = span,
@@ -110,6 +114,7 @@ class VerseScope @PublishedApi internal constructor(
      */
     inline fun <reified VB : ViewBinding> item(
         noinline inflate: Inflate<VB>,
+        @LayoutRes layoutRes: Int = 0,
         data: Any? = Unit,
         key: Any? = null,
         contentType: Any? = null,
@@ -120,7 +125,7 @@ class VerseScope @PublishedApi internal constructor(
         noinline onDetach: (() -> Unit)? = null,
         crossinline onBind: VB.() -> Unit = {}
     ) {
-        val stableKey = contentType ?: VB::class.java
+        val layoutKey = contentType ?: VB::class.java
         internalRender(
             factory = { p -> 
                 val binding = inflate(LayoutInflater.from(p.context), p, false)
@@ -130,9 +135,10 @@ class VerseScope @PublishedApi internal constructor(
                 @Suppress("UNCHECKED_CAST")
                 (binding as VB).onBind()
             },
-            key = stableKey,
+            layoutRes = layoutRes,
+            layoutKey = layoutKey,
             data = data ?: Unit,
-            id = key ?: "single_vb_${stableKey.hashCode()}",
+            id = key ?: "single_vb_${layoutKey.hashCode()}",
             span = span,
             fullSpan = fullSpan,
             onClick = onClick,
@@ -146,6 +152,7 @@ class VerseScope @PublishedApi internal constructor(
      */
     inline fun <reified V : View> item(
         noinline create: ViewCreator<V>,
+        @LayoutRes layoutRes: Int = 0,
         data: Any? = Unit,
         key: Any? = null,
         contentType: Any? = null,
@@ -156,16 +163,17 @@ class VerseScope @PublishedApi internal constructor(
         noinline onDetach: (() -> Unit)? = null,
         crossinline onBind: V.() -> Unit = {}
     ) {
-        val stableKey = contentType ?: V::class.java
+        val layoutKey = contentType ?: V::class.java
         internalRender(
             factory = { p -> createSafeViewHolder(p, create) },
             bind = { 
                 @Suppress("UNCHECKED_CAST")
                 (view as V).onBind()
             },
-            key = stableKey,
+            layoutRes = layoutRes,
+            layoutKey = layoutKey,
             data = data ?: Unit,
-            id = key ?: "single_view_${stableKey.hashCode()}",
+            id = key ?: "single_view_${layoutKey.hashCode()}",
             span = span,
             fullSpan = fullSpan,
             onClick = onClick,
@@ -192,6 +200,7 @@ class VerseScope @PublishedApi internal constructor(
 
     inline fun <reified VB : ViewBinding> render(
         noinline inflate: Inflate<VB>,
+        @LayoutRes layoutRes: Int = 0,
         contentType: Any? = null,
         span: Int = 1,
         fullSpan: Boolean = false,
@@ -200,7 +209,7 @@ class VerseScope @PublishedApi internal constructor(
         noinline onDetach: (() -> Unit)? = null,
         crossinline onBind: VB.() -> Unit
     ) {
-        val stableKey = contentType ?: VB::class.java
+        val layoutKey = contentType ?: VB::class.java
         val data = currentData ?: Unit
         
         internalRender(
@@ -212,7 +221,8 @@ class VerseScope @PublishedApi internal constructor(
                 @Suppress("UNCHECKED_CAST")
                 (binding as VB).onBind()
             },
-            key = stableKey,
+            layoutRes = layoutRes,
+            layoutKey = layoutKey,
             data = data,
             id = currentId ?: System.identityHashCode(data),
             span = span,
@@ -225,6 +235,7 @@ class VerseScope @PublishedApi internal constructor(
 
     inline fun <reified V : View> render(
         noinline create: ViewCreator<V>,
+        @LayoutRes layoutRes: Int = 0,
         contentType: Any? = null,
         span: Int = 1,
         fullSpan: Boolean = false,
@@ -233,7 +244,7 @@ class VerseScope @PublishedApi internal constructor(
         noinline onDetach: (() -> Unit)? = null,
         crossinline onBind: V.() -> Unit
     ) {
-        val stableKey = contentType ?: V::class.java
+        val layoutKey = contentType ?: V::class.java
         val data = currentData ?: Unit
 
         internalRender(
@@ -242,7 +253,8 @@ class VerseScope @PublishedApi internal constructor(
                 @Suppress("UNCHECKED_CAST")
                 (view as V).onBind()
             },
-            key = stableKey,
+            layoutRes = layoutRes,
+            layoutKey = layoutKey,
             data = data,
             id = currentId ?: System.identityHashCode(data),
             span = span,
@@ -271,7 +283,8 @@ class VerseScope @PublishedApi internal constructor(
     internal fun internalRender(
         factory: (ViewGroup) -> SmartViewHolder,
         bind: SmartViewHolder.(Any) -> Unit,
-        key: Any,
+        @LayoutRes layoutRes: Int,
+        layoutKey: Any,
         data: Any,
         id: Any,
         span: Int,
@@ -280,18 +293,24 @@ class VerseScope @PublishedApi internal constructor(
         onAttach: (() -> Unit)?,
         onDetach: (() -> Unit)?
     ) {
-        val viewType = adapter.getOrCreateViewType(key, factory)
-        newWrappers.add(ItemWrapper(
+        val model = DslVerseModel(
             id = id,
-            viewType = viewType,
             data = data,
+            layoutRes = layoutRes,
+            layoutKey = layoutKey,
+            factory = factory,
+            bindBlock = bind,
             span = span,
             fullSpan = fullSpan,
-            factory = factory,
-            bind = bind,
             onClick = onClick,
             onAttach = onAttach,
             onDetach = onDetach
-        ))
+        )
+        
+        // [Eager Registration] Register the prototype as soon as it's defined in DSL.
+        // This allows the preloader to start working even before the list is fully submitted.
+        VerseTypeRegistry.registerPrototype(model)
+        
+        newModels.add(model)
     }
 }

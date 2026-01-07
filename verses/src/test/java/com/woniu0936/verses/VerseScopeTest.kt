@@ -4,69 +4,57 @@ import androidx.viewbinding.ViewBinding
 import com.woniu0936.verses.core.VerseAdapter
 import com.woniu0936.verses.dsl.VerseScope
 import com.woniu0936.verses.model.Inflate
-import io.mockk.every
+import com.woniu0936.verses.model.DslVerseModel
 import io.mockk.mockk
-import io.mockk.mockkObject
-import io.mockk.unmockkObject
-import io.mockk.verify
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
- * Unit tests for [VerseScope] to verify the DSL building logic and reified safety.
+ * Unit tests for [VerseScope] to verify the DSL building logic and model creation.
  */
 class VerseScopeTest {
 
     private val adapter: VerseAdapter = mockk(relaxed = true)
     private val scope = VerseScope(adapter)
 
-    // Mock ViewBinding and Inflate function
-    // Use a concrete interface for reified testing
     interface TestBinding : ViewBinding
     private val mockBinding: TestBinding = mockk(relaxed = true)
     private val mockInflate: Inflate<TestBinding> = { _, _, _ -> mockBinding }
 
     /**
-     * Verifies that [VerseScope.item] correctly creates and adds a single [com.woniu0936.verses.model.ItemWrapper]
-     * using the reified Binding class as the key.
+     * Verifies that [VerseScope.item] correctly creates and adds a single [DslVerseModel]
+     * to the internal list.
      */
     @Test
-    fun `item() adds single wrapper to list`() {
+    fun `item() adds single model to list`() {
         val testData = "Test Data"
         val testKey = "Test Key"
 
-        // Mock the instance method of the adapter
-        every { adapter.getOrCreateViewType(any(), any()) } returns 1
-
         scope.item(
             inflate = mockInflate,
+            layoutRes = 123,
             data = testData,
             key = testKey,
             span = 2,
             fullSpan = true
         )
 
-        assertEquals(1, scope.newWrappers.size)
-        val wrapper = scope.newWrappers.first()
+        assertEquals(1, scope.newModels.size)
+        val model = scope.newModels.first() as DslVerseModel
 
-        assertEquals(testData, wrapper.data)
-        assertEquals(testKey, wrapper.id)
-        assertEquals(2, wrapper.span)
-        assertEquals(true, wrapper.fullSpan)
-        assertEquals(1, wrapper.viewType)
-        
-        // Verify the instance method was called with the correct key (Binding Class)
-        verify { adapter.getOrCreateViewType(TestBinding::class.java, any()) }
+        assertEquals(testData, model.data)
+        assertEquals(testKey, model.id)
+        assertEquals(123, model.layoutRes)
+        // For DslVerseModel, if fullSpan is true, getSpanSize returns totalSpan
+        assertEquals(100, model.getSpanSize(100, 0))
     }
 
     /**
      * Verifies that the simple [VerseScope.items] API correctly maps a list of data objects.
      */
     @Test
-    fun `items() adds multiple wrappers`() {
+    fun `items() adds multiple models`() {
         val list = listOf("A", "B", "C")
-
-        every { adapter.getOrCreateViewType(any(), any()) } returns 2
 
         scope.items(
             items = list,
@@ -74,12 +62,10 @@ class VerseScopeTest {
             key = { it }
         ) { _ -> }
 
-        assertEquals(3, scope.newWrappers.size)
-        assertEquals("A", scope.newWrappers[0].data)
-        assertEquals("B", scope.newWrappers[1].data)
-        assertEquals("C", scope.newWrappers[2].data)
-        
-        verify(exactly = 3) { adapter.getOrCreateViewType(TestBinding::class.java, any()) }
+        assertEquals(3, scope.newModels.size)
+        assertEquals("A", scope.newModels[0].data)
+        assertEquals("B", scope.newModels[1].data)
+        assertEquals("C", scope.newModels[2].data)
     }
 
     /**
@@ -87,10 +73,8 @@ class VerseScopeTest {
      * rendering using the [VerseScope.render] function.
      */
     @Test
-    fun `render() inside items() with block adds wrappers`() {
+    fun `render() inside items() with block adds models`() {
         val list = listOf(1, 2)
-
-        every { adapter.getOrCreateViewType(any(), any()) } returns 3
 
         scope.items(list, key = { it }) { item ->
             if (item == 1) {
@@ -100,35 +84,15 @@ class VerseScopeTest {
             }
         }
 
-        assertEquals(2, scope.newWrappers.size)
+        assertEquals(2, scope.newModels.size)
 
-        val first = scope.newWrappers[0]
+        val first = scope.newModels[0] as DslVerseModel
         assertEquals(1, first.data)
-        assertEquals(false, first.fullSpan)
+        // Default span is 1, not full span
+        assertEquals(1, first.getSpanSize(100, 0))
 
-        val second = scope.newWrappers[1]
+        val second = scope.newModels[1] as DslVerseModel
         assertEquals(2, second.data)
-        assertEquals(true, second.fullSpan)
-        
-        verify(exactly = 2) { adapter.getOrCreateViewType(TestBinding::class.java, any()) }
-    }
-
-    /**
-     * Verifies that the ViewType caching mechanism uses the Class as the key by default.
-     */
-    @Test
-    fun `adapter getOrCreateViewType is called with correct keys`() {
-        every { adapter.getOrCreateViewType(any(), any()) } returns 1
-
-        // Case 1: Simple item should use the Class as the cache key
-        scope.item(mockInflate)
-        verify { adapter.getOrCreateViewType(TestBinding::class.java, any()) }
-
-        // Case 2: Rendering with an explicit contentType should use that key instead
-        val contentType = "MY_TYPE"
-        scope.items(listOf("A")) {
-            render(mockInflate, contentType = contentType) {}
-        }
-        verify { adapter.getOrCreateViewType(eq(contentType), any()) }
+        assertEquals(100, second.getSpanSize(100, 0))
     }
 }

@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.SimpleItemAnimator
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.woniu0936.verses.core.VerseAdapter
 import com.woniu0936.verses.core.VerseSpacingDecoration
+import com.woniu0936.verses.core.pool.VerseRecycledViewPool
 import com.woniu0936.verses.dsl.VerseScope
 
 /**
@@ -36,18 +37,24 @@ fun RecyclerView.compose(
     contentPadding: Int = 0,
     horizontalPadding: Int? = null,
     verticalPadding: Int? = null,
+    nestedScrollingEnabled: Boolean? = null,
     block: VerseScope.() -> Unit
 ) {
     val hP = horizontalPadding ?: contentPadding
     val vP = verticalPadding ?: contentPadding
     val adapter = getOrCreateAdapter(spacing, spacing, hP, vP) {
-        LinearLayoutManager(context, orientation, reverseLayout)
+        LinearLayoutManager(context, orientation, reverseLayout).apply {
+            // Optimization for nested lists
+            initialPrefetchItemCount = 4
+        }
     }
 
     (layoutManager as? LinearLayoutManager)?.let {
         if (it.orientation != orientation) it.orientation = orientation
         if (it.reverseLayout != reverseLayout) it.reverseLayout = reverseLayout
     }
+    
+    nestedScrollingEnabled?.let { this.isNestedScrollingEnabled = it }
 
     submit(adapter, block)
 }
@@ -61,8 +68,9 @@ fun RecyclerView.composeColumn(
     contentPadding: Int = 0,
     horizontalPadding: Int? = null,
     verticalPadding: Int? = null,
+    nestedScrollingEnabled: Boolean? = null,
     block: VerseScope.() -> Unit
-) = compose(RecyclerView.VERTICAL, reverseLayout, spacing, contentPadding, horizontalPadding, verticalPadding, block)
+) = compose(RecyclerView.VERTICAL, reverseLayout, spacing, contentPadding, horizontalPadding, verticalPadding, nestedScrollingEnabled, block)
 
 /**
  * Convenience DSL for horizontal row lists (LazyRow).
@@ -73,8 +81,9 @@ fun RecyclerView.composeRow(
     contentPadding: Int = 0,
     horizontalPadding: Int? = null,
     verticalPadding: Int? = null,
+    nestedScrollingEnabled: Boolean? = null,
     block: VerseScope.() -> Unit
-) = compose(RecyclerView.HORIZONTAL, reverseLayout, spacing, contentPadding, horizontalPadding, verticalPadding, block)
+) = compose(RecyclerView.HORIZONTAL, reverseLayout, spacing, contentPadding, horizontalPadding, verticalPadding, nestedScrollingEnabled, block)
 
 /**
  * Entry point for vertical grid layouts (LazyVerticalGrid).
@@ -88,6 +97,7 @@ fun RecyclerView.composeVerticalGrid(
     contentPadding: Int = 0,
     horizontalPadding: Int? = null,
     verticalPadding: Int? = null,
+    nestedScrollingEnabled: Boolean? = null,
     block: VerseScope.() -> Unit
 ) {
     internalComposeGrid(
@@ -100,6 +110,7 @@ fun RecyclerView.composeVerticalGrid(
         contentPadding = contentPadding,
         horizontalPadding = horizontalPadding,
         verticalPadding = verticalPadding,
+        nestedScrollingEnabled = nestedScrollingEnabled,
         block = block
     )
 }
@@ -116,6 +127,7 @@ fun RecyclerView.composeHorizontalGrid(
     contentPadding: Int = 0,
     horizontalPadding: Int? = null,
     verticalPadding: Int? = null,
+    nestedScrollingEnabled: Boolean? = null,
     block: VerseScope.() -> Unit
 ) {
     internalComposeGrid(
@@ -128,6 +140,7 @@ fun RecyclerView.composeHorizontalGrid(
         contentPadding = contentPadding,
         horizontalPadding = horizontalPadding,
         verticalPadding = verticalPadding,
+        nestedScrollingEnabled = nestedScrollingEnabled,
         block = block
     )
 }
@@ -145,6 +158,7 @@ fun RecyclerView.composeVerticalStaggeredGrid(
     horizontalPadding: Int? = null,
     verticalPadding: Int? = null,
     gapStrategy: Int = StaggeredGridLayoutManager.GAP_HANDLING_NONE,
+    nestedScrollingEnabled: Boolean? = null,
     block: VerseScope.() -> Unit
 ) {
     internalComposeStaggered(
@@ -158,6 +172,7 @@ fun RecyclerView.composeVerticalStaggeredGrid(
         horizontalPadding = horizontalPadding,
         verticalPadding = verticalPadding,
         gapStrategy = gapStrategy,
+        nestedScrollingEnabled = nestedScrollingEnabled,
         block = block
     )
 }
@@ -175,6 +190,7 @@ fun RecyclerView.composeHorizontalStaggeredGrid(
     horizontalPadding: Int? = null,
     verticalPadding: Int? = null,
     gapStrategy: Int = StaggeredGridLayoutManager.GAP_HANDLING_NONE,
+    nestedScrollingEnabled: Boolean? = null,
     block: VerseScope.() -> Unit
 ) {
     internalComposeStaggered(
@@ -188,6 +204,7 @@ fun RecyclerView.composeHorizontalStaggeredGrid(
         horizontalPadding = horizontalPadding,
         verticalPadding = verticalPadding,
         gapStrategy = gapStrategy,
+        nestedScrollingEnabled = nestedScrollingEnabled,
         block = block
     )
 }
@@ -205,6 +222,7 @@ internal fun RecyclerView.internalComposeGrid(
     contentPadding: Int,
     horizontalPadding: Int?,
     verticalPadding: Int?,
+    nestedScrollingEnabled: Boolean?,
     block: VerseScope.() -> Unit
 ) {
     val hS = horizontalSpacing ?: spacing
@@ -228,6 +246,8 @@ internal fun RecyclerView.internalComposeGrid(
         if (it.orientation != orientation) it.orientation = orientation
         if (it.reverseLayout != reverseLayout) it.reverseLayout = reverseLayout
     }
+    
+    nestedScrollingEnabled?.let { this.isNestedScrollingEnabled = it }
 
     submit(adapter, block)
 }
@@ -244,6 +264,7 @@ internal fun RecyclerView.internalComposeStaggered(
     horizontalPadding: Int?,
     verticalPadding: Int?,
     gapStrategy: Int,
+    nestedScrollingEnabled: Boolean?,
     block: VerseScope.() -> Unit
 ) {
     val hS = horizontalSpacing ?: spacing
@@ -263,6 +284,8 @@ internal fun RecyclerView.internalComposeStaggered(
         if (it.reverseLayout != reverseLayout) it.reverseLayout = reverseLayout
         if (it.gapStrategy != gapStrategy) it.gapStrategy = gapStrategy
     }
+    
+    nestedScrollingEnabled?.let { this.isNestedScrollingEnabled = it }
 
     submit(adapter, block)
 }
@@ -292,7 +315,16 @@ internal fun RecyclerView.getOrCreateAdapter(
     this.layoutManager = newLM
     this.adapter = newAdapter
 
-    this.setRecycledViewPool(VerseAdapter.getPool(context))
+    // Capture context for background preloading
+    com.woniu0936.verses.core.VerseAdapterRegistry.latestContext = context
+
+    // Performance optimizations for nested and complex lists
+    this.setHasFixedSize(true)
+    this.setRecycledViewPool(VerseRecycledViewPool.GLOBAL)
+    
+    // [Implicit Optimization] Increase primary cache size to handle scrolling micro-adjustments.
+    this.setItemViewCacheSize(5)
+
     updateDecoration(hS, vS, hP, vP)
 
     (itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
@@ -344,5 +376,5 @@ internal fun RecyclerView.updateDecoration(hS: Int, vS: Int, hP: Int, vP: Int) {
 internal inline fun submit(adapter: VerseAdapter, block: VerseScope.() -> Unit) {
     val scope = VerseScope(adapter)
     scope.block()
-    adapter.submitList(scope.newWrappers)
+    adapter.submitList(scope.newModels)
 }

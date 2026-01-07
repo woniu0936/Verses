@@ -6,36 +6,27 @@ public final class com/woniu0936/verses/BuildConfig {
 }
 
 public final class com/woniu0936/verses/core/VerseAdapter : androidx/recyclerview/widget/ListAdapter {
-	public static final field Companion Lcom/woniu0936/verses/core/VerseAdapter$Companion;
 	public fun <init> ()V
-	public fun getItem (I)Lcom/woniu0936/verses/model/ItemWrapper;
+	public fun getItem (I)Lcom/woniu0936/verses/model/VerseModel;
 	public synthetic fun getItem (I)Ljava/lang/Object;
+	public fun getItemId (I)J
 	public fun getItemViewType (I)I
-	public final fun getOrCreateViewType (Ljava/lang/Object;Lkotlin/jvm/functions/Function1;)I
 	public final fun getSpanSize (II)I
 	public synthetic fun onBindViewHolder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;I)V
+	public synthetic fun onBindViewHolder (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;ILjava/util/List;)V
 	public fun onBindViewHolder (Lcom/woniu0936/verses/model/SmartViewHolder;I)V
+	public fun onBindViewHolder (Lcom/woniu0936/verses/model/SmartViewHolder;ILjava/util/List;)V
 	public synthetic fun onCreateViewHolder (Landroid/view/ViewGroup;I)Landroidx/recyclerview/widget/RecyclerView$ViewHolder;
 	public fun onCreateViewHolder (Landroid/view/ViewGroup;I)Lcom/woniu0936/verses/model/SmartViewHolder;
+	public fun onCurrentListChanged (Ljava/util/List;Ljava/util/List;)V
+	public synthetic fun onFailedToRecycleView (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)Z
+	public fun onFailedToRecycleView (Lcom/woniu0936/verses/model/SmartViewHolder;)Z
 	public synthetic fun onViewAttachedToWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public fun onViewAttachedToWindow (Lcom/woniu0936/verses/model/SmartViewHolder;)V
 	public synthetic fun onViewDetachedFromWindow (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public fun onViewDetachedFromWindow (Lcom/woniu0936/verses/model/SmartViewHolder;)V
 	public synthetic fun onViewRecycled (Landroidx/recyclerview/widget/RecyclerView$ViewHolder;)V
 	public fun onViewRecycled (Lcom/woniu0936/verses/model/SmartViewHolder;)V
-}
-
-public final class com/woniu0936/verses/core/VerseAdapter$Companion {
-	public final fun clearRegistry ()V
-	public final fun getPool (Landroid/content/Context;)Landroidx/recyclerview/widget/RecyclerView$RecycledViewPool;
-}
-
-public final class com/woniu0936/verses/core/VerseAdapter$WrapperDiffCallback : androidx/recyclerview/widget/DiffUtil$ItemCallback {
-	public static final field INSTANCE Lcom/woniu0936/verses/core/VerseAdapter$WrapperDiffCallback;
-	public fun areContentsTheSame (Lcom/woniu0936/verses/model/ItemWrapper;Lcom/woniu0936/verses/model/ItemWrapper;)Z
-	public synthetic fun areContentsTheSame (Ljava/lang/Object;Ljava/lang/Object;)Z
-	public fun areItemsTheSame (Lcom/woniu0936/verses/model/ItemWrapper;Lcom/woniu0936/verses/model/ItemWrapper;)Z
-	public synthetic fun areItemsTheSame (Ljava/lang/Object;Ljava/lang/Object;)Z
 }
 
 public final class com/woniu0936/verses/core/VerseSpacingDecoration : androidx/recyclerview/widget/RecyclerView$ItemDecoration {
@@ -77,6 +68,24 @@ public final class com/woniu0936/verses/core/VersesKt {
 	public static final fun initialize (Lcom/woniu0936/verses/core/Verses;Landroid/content/Context;Lkotlin/jvm/functions/Function1;)V
 }
 
+public final class com/woniu0936/verses/core/perf/VersePreloader {
+	public static final field INSTANCE Lcom/woniu0936/verses/core/perf/VersePreloader;
+	public final fun preload (Landroid/content/Context;Ljava/util/List;I)V
+	public static synthetic fun preload$default (Lcom/woniu0936/verses/core/perf/VersePreloader;Landroid/content/Context;Ljava/util/List;IILjava/lang/Object;)V
+}
+
+public final class com/woniu0936/verses/core/pool/VerseRecycledViewPool : androidx/recyclerview/widget/RecyclerView$RecycledViewPool {
+	public static final field Companion Lcom/woniu0936/verses/core/pool/VerseRecycledViewPool$Companion;
+	public fun <init> ()V
+	public final fun getPoolSize (I)I
+	public final fun setMaxPoolSize (Ljava/lang/Class;I)V
+	public final fun setPoolSize (II)V
+}
+
+public final class com/woniu0936/verses/core/pool/VerseRecycledViewPool$Companion {
+	public final fun getGLOBAL ()Lcom/woniu0936/verses/core/pool/VerseRecycledViewPool;
+}
+
 public abstract interface annotation class com/woniu0936/verses/dsl/VerseDsl : java/lang/annotation/Annotation {
 }
 
@@ -86,8 +95,8 @@ public final class com/woniu0936/verses/dsl/VerseScope {
 	public final fun getAdapter ()Lcom/woniu0936/verses/core/VerseAdapter;
 	public final fun getCurrentData ()Ljava/lang/Object;
 	public final fun getCurrentId ()Ljava/lang/Object;
-	public final fun getNewWrappers ()Ljava/util/List;
-	public final fun internalRender (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;IZLkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)V
+	public final fun getNewModels ()Ljava/util/List;
+	public final fun internalRender (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;IZLkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)V
 	public final fun items (Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
 	public static synthetic fun items$default (Lcom/woniu0936/verses/dsl/VerseScope;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
 	public final fun setCurrentData (Ljava/lang/Object;)V
@@ -95,55 +104,25 @@ public final class com/woniu0936/verses/dsl/VerseScope {
 }
 
 public final class com/woniu0936/verses/ext/RecyclerViewExtKt {
-	public static final fun compose (Landroidx/recyclerview/widget/RecyclerView;IZIILjava/lang/Integer;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;)V
-	public static synthetic fun compose$default (Landroidx/recyclerview/widget/RecyclerView;IZIILjava/lang/Integer;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
-	public static final fun composeColumn (Landroidx/recyclerview/widget/RecyclerView;ZIILjava/lang/Integer;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;)V
-	public static synthetic fun composeColumn$default (Landroidx/recyclerview/widget/RecyclerView;ZIILjava/lang/Integer;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
-	public static final fun composeHorizontalGrid (Landroidx/recyclerview/widget/RecyclerView;IZILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Integer;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;)V
-	public static synthetic fun composeHorizontalGrid$default (Landroidx/recyclerview/widget/RecyclerView;IZILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Integer;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
-	public static final fun composeHorizontalStaggeredGrid (Landroidx/recyclerview/widget/RecyclerView;IZILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Integer;Ljava/lang/Integer;ILkotlin/jvm/functions/Function1;)V
-	public static synthetic fun composeHorizontalStaggeredGrid$default (Landroidx/recyclerview/widget/RecyclerView;IZILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Integer;Ljava/lang/Integer;ILkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
-	public static final fun composeRow (Landroidx/recyclerview/widget/RecyclerView;ZIILjava/lang/Integer;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;)V
-	public static synthetic fun composeRow$default (Landroidx/recyclerview/widget/RecyclerView;ZIILjava/lang/Integer;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
-	public static final fun composeVerticalGrid (Landroidx/recyclerview/widget/RecyclerView;IZILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Integer;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;)V
-	public static synthetic fun composeVerticalGrid$default (Landroidx/recyclerview/widget/RecyclerView;IZILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Integer;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
-	public static final fun composeVerticalStaggeredGrid (Landroidx/recyclerview/widget/RecyclerView;IZILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Integer;Ljava/lang/Integer;ILkotlin/jvm/functions/Function1;)V
-	public static synthetic fun composeVerticalStaggeredGrid$default (Landroidx/recyclerview/widget/RecyclerView;IZILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Integer;Ljava/lang/Integer;ILkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final fun compose (Landroidx/recyclerview/widget/RecyclerView;IZIILjava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Boolean;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun compose$default (Landroidx/recyclerview/widget/RecyclerView;IZIILjava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Boolean;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final fun composeColumn (Landroidx/recyclerview/widget/RecyclerView;ZIILjava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Boolean;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun composeColumn$default (Landroidx/recyclerview/widget/RecyclerView;ZIILjava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Boolean;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final fun composeHorizontalGrid (Landroidx/recyclerview/widget/RecyclerView;IZILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Boolean;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun composeHorizontalGrid$default (Landroidx/recyclerview/widget/RecyclerView;IZILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Boolean;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final fun composeHorizontalStaggeredGrid (Landroidx/recyclerview/widget/RecyclerView;IZILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Boolean;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun composeHorizontalStaggeredGrid$default (Landroidx/recyclerview/widget/RecyclerView;IZILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Boolean;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final fun composeRow (Landroidx/recyclerview/widget/RecyclerView;ZIILjava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Boolean;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun composeRow$default (Landroidx/recyclerview/widget/RecyclerView;ZIILjava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Boolean;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final fun composeVerticalGrid (Landroidx/recyclerview/widget/RecyclerView;IZILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Boolean;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun composeVerticalGrid$default (Landroidx/recyclerview/widget/RecyclerView;IZILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Boolean;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
+	public static final fun composeVerticalStaggeredGrid (Landroidx/recyclerview/widget/RecyclerView;IZILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Boolean;Lkotlin/jvm/functions/Function1;)V
+	public static synthetic fun composeVerticalStaggeredGrid$default (Landroidx/recyclerview/widget/RecyclerView;IZILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Boolean;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 	public static final fun getOrCreateAdapter (Landroidx/recyclerview/widget/RecyclerView;IIIILkotlin/jvm/functions/Function0;)Lcom/woniu0936/verses/core/VerseAdapter;
-	public static final fun internalComposeGrid (Landroidx/recyclerview/widget/RecyclerView;IIZILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Integer;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;)V
-	public static final fun internalComposeStaggered (Landroidx/recyclerview/widget/RecyclerView;IIZILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Integer;Ljava/lang/Integer;ILkotlin/jvm/functions/Function1;)V
+	public static final fun internalComposeGrid (Landroidx/recyclerview/widget/RecyclerView;IIZILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Integer;Ljava/lang/Integer;Ljava/lang/Boolean;Lkotlin/jvm/functions/Function1;)V
+	public static final fun internalComposeStaggered (Landroidx/recyclerview/widget/RecyclerView;IIZILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Integer;Ljava/lang/Integer;ILjava/lang/Boolean;Lkotlin/jvm/functions/Function1;)V
 	public static final fun submit (Lcom/woniu0936/verses/core/VerseAdapter;Lkotlin/jvm/functions/Function1;)V
 	public static final fun updateDecoration (Landroidx/recyclerview/widget/RecyclerView;IIII)V
-}
-
-public final class com/woniu0936/verses/model/ItemWrapper {
-	public fun <init> (Ljava/lang/Object;ILjava/lang/Object;IZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)V
-	public synthetic fun <init> (Ljava/lang/Object;ILjava/lang/Object;IZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/Object;
-	public final fun component10 ()Lkotlin/jvm/functions/Function0;
-	public final fun component2 ()I
-	public final fun component3 ()Ljava/lang/Object;
-	public final fun component4 ()I
-	public final fun component5 ()Z
-	public final fun component6 ()Lkotlin/jvm/functions/Function1;
-	public final fun component7 ()Lkotlin/jvm/functions/Function2;
-	public final fun component8 ()Lkotlin/jvm/functions/Function0;
-	public final fun component9 ()Lkotlin/jvm/functions/Function0;
-	public final fun copy (Ljava/lang/Object;ILjava/lang/Object;IZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)Lcom/woniu0936/verses/model/ItemWrapper;
-	public static synthetic fun copy$default (Lcom/woniu0936/verses/model/ItemWrapper;Ljava/lang/Object;ILjava/lang/Object;IZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Lcom/woniu0936/verses/model/ItemWrapper;
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getBind ()Lkotlin/jvm/functions/Function2;
-	public final fun getData ()Ljava/lang/Object;
-	public final fun getFactory ()Lkotlin/jvm/functions/Function1;
-	public final fun getFullSpan ()Z
-	public final fun getId ()Ljava/lang/Object;
-	public final fun getOnAttach ()Lkotlin/jvm/functions/Function0;
-	public final fun getOnClick ()Lkotlin/jvm/functions/Function0;
-	public final fun getOnDetach ()Lkotlin/jvm/functions/Function0;
-	public final fun getSpan ()I
-	public final fun getViewType ()I
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
 }
 
 public final class com/woniu0936/verses/model/SmartViewHolder : androidx/recyclerview/widget/RecyclerView$ViewHolder {
@@ -153,5 +132,32 @@ public final class com/woniu0936/verses/model/SmartViewHolder : androidx/recycle
 	public final fun getView ()Landroid/view/View;
 	public final fun itemData ()Ljava/lang/Object;
 	public final fun prepare (Ljava/lang/Object;)V
+}
+
+public abstract class com/woniu0936/verses/model/VerseModel {
+	public fun <init> (Ljava/lang/Object;Ljava/lang/Object;)V
+	public abstract fun bind (Lcom/woniu0936/verses/model/SmartViewHolder;)V
+	public fun bind (Lcom/woniu0936/verses/model/SmartViewHolder;Ljava/util/List;)V
+	public abstract fun createHolder (Landroid/view/ViewGroup;)Lcom/woniu0936/verses/model/SmartViewHolder;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getData ()Ljava/lang/Object;
+	public final fun getId ()Ljava/lang/Object;
+	public abstract fun getLayoutRes ()I
+	public fun getOnAttach ()Lkotlin/jvm/functions/Function0;
+	public fun getOnClick ()Lkotlin/jvm/functions/Function0;
+	public fun getOnDetach ()Lkotlin/jvm/functions/Function0;
+	public fun getSpanSize (II)I
+	public abstract fun getViewType ()I
+	public fun hashCode ()I
+	public fun onViewCreated (Landroid/view/View;)V
+}
+
+public abstract class com/woniu0936/verses/model/ViewBindingModel : com/woniu0936/verses/model/VerseModel {
+	public fun <init> (Ljava/lang/Object;Ljava/lang/Object;)V
+	public abstract fun bind (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;)V
+	public fun bind (Lcom/woniu0936/verses/model/SmartViewHolder;)V
+	public fun createHolder (Landroid/view/ViewGroup;)Lcom/woniu0936/verses/model/SmartViewHolder;
+	public fun getViewType ()I
+	public abstract fun inflate (Landroid/view/LayoutInflater;Landroid/view/ViewGroup;)Landroidx/viewbinding/ViewBinding;
 }
 

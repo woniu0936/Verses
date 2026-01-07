@@ -1,10 +1,7 @@
 package com.woniu0936.verses.core
 
 import android.util.Log
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.mockkStatic
-import io.mockk.unmockkStatic
+import io.mockk.*
 import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -19,17 +16,15 @@ class VersesLoggerTest {
 
     @Before
     fun setup() {
-        // Mock android.util.Log to prevent RuntimeException during unit tests
         mockkStatic(Log::class)
         every { Log.d(any<String>(), any<String>()) } returns 0
         every { Log.i(any<String>(), any<String>()) } returns 0
         every { Log.w(any<String>(), any<String>()) } returns 0
         every { Log.e(any<String>(), any<String>(), any<Throwable>()) } returns 0
+        every { Log.getStackTraceString(any<Throwable>()) } answers { firstArg<Throwable>().message ?: "" }
 
         tempLogDir = Files.createTempDirectory("verses_test").toFile()
         logFile = File(tempLogDir, "verses_diagnostic.log")
-        
-        // Inject temp path for testing
         Verses.logFilePath = logFile.absolutePath
     }
 
@@ -41,19 +36,6 @@ class VersesLoggerTest {
 
     @Test
     fun `test logging to file works when enabled`() {
-        // Setup config
-        val config = VersesConfig.Builder()
-            .debug(true)
-            .logToFile(true)
-            .build()
-        
-        // Manual injection for test since Verses.initialize requires a real Context for path
-        // We already set Verses.logFilePath in @Before
-        
-        // We need to use reflection or make Verses.config accessible for testing
-        // But since Verses is an object, we can just use its initialize DSL
-        
-        // Mock context for initialize
         val mockContext = mockk<android.content.Context>(relaxed = true) {
             every { getExternalFilesDir(any()) } returns tempLogDir
         }
@@ -66,10 +48,17 @@ class VersesLoggerTest {
         VersesLogger.d("This is a test debug message")
         VersesLogger.e("This is a test error message", Exception("Oops"))
 
+        // Give some time for the async logger to write to file
+        Thread.sleep(500)
+
         assertTrue(logFile.exists())
         val content = logFile.readText()
         assertTrue(content.contains("DEBUG: This is a test debug message"))
-        assertTrue(content.contains("ERROR: This is a test error message | Oops"))
+        // Based on the updated VersesLogger.e, it appends trace via message + trace
+        // where trace = "\n" + stackTrace. 
+        // We mocked stackTrace to return the message ("Oops").
+        assertTrue(content.contains("ERROR: This is a test error message"))
+        assertTrue(content.contains("Oops"))
     }
 
     @Test
@@ -84,8 +73,8 @@ class VersesLoggerTest {
         }
 
         VersesLogger.i("Should not be in file")
+        Thread.sleep(200)
 
-        // File might exist from previous tests or initialization, but content shouldn't have the message
         if (logFile.exists()) {
             val content = logFile.readText()
             assertTrue(!content.contains("Should not be in file"))

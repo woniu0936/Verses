@@ -156,7 +156,61 @@ startActivity(Intent.createChooser(shareIntent, "Share Log"))
 // ShareUtils.shareLogFile(context)
 ```
 
-### 4. Global Lifecycle & Resource Management
+### 4. Advanced Performance Tuning (New in 2.0)
+
+Verses 2.0 introduces model-driven architecture and asynchronous pre-inflation to achieve 60 FPS even with extremely complex layouts.
+
+#### A. Model-Driven Architecture (VerseModel)
+For complex business logic that needs to be decoupled from the DSL, you can implement `VerseModel` directly.
+
+```kotlin
+class MyCustomModel(id: Any, data: MyData) : ViewBindingModel<ItemUserBinding, MyData>(id, data) {
+    override fun inflate(inflater: LayoutInflater, parent: ViewGroup) = 
+        ItemUserBinding.inflate(inflater, parent, false)
+
+    override fun bind(binding: ItemUserBinding, item: MyData) {
+        binding.tvName.text = item.name
+    }
+    
+    override fun getSpanSize(totalSpan: Int, position: Int) = 1
+}
+```
+
+#### B. Asynchronous Pre-inflation (VersePreloader)
+Eliminate `CreateViewHolder` lag by pre-inflating views during idle time (e.g., while waiting for a network response).
+
+```kotlin
+// Pre-inflate 5 instances of each type to the global pool
+VersePreloader.preload(
+    context = this,
+    models = listOf(
+        MyCustomModel("template", MyData()),
+        // ... other templates
+    ),
+    countPerType = 5
+)
+```
+
+#### C. Enabling Async Pre-inflation in DSL
+To enable `VersePreloader` for items created via DSL, you must provide the `layoutRes` parameter.
+
+```kotlin
+recyclerView.composeColumn {
+    items(
+        items = userList,
+        inflate = ItemUserBinding::inflate,
+        layoutRes = R.layout.item_user, // Required for async preload
+        key = { it.id }
+    ) { user ->
+        tvName.text = user.name
+    }
+}
+```
+
+#### D. Automatic Pool Optimization
+Verses 2.0 automatically uses a **Global Shared RecycledViewPool**. This ensures that nested RecyclerViews (like horizontal lists inside a vertical list) share ViewHolders, drastically reducing memory usage and inflation overhead.
+
+### 5. Global Lifecycle & Resource Management
 Verses automatically cleans up when the View is detached or the Activity is destroyed. To manually wipe all registries (e.g., on Logout):
 ```kotlin
 VerseAdapter.clearRegistry()

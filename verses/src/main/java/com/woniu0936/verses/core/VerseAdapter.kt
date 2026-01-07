@@ -1,151 +1,172 @@
 package com.woniu0936.verses.core
 
-import android.content.Context
 import android.view.ViewGroup
-import androidx.annotation.VisibleForTesting
 import androidx.recyclerview.widget.AsyncDifferConfig
 import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.StaggeredGridLayoutManager
-import com.woniu0936.verses.model.ItemWrapper
+import com.woniu0936.verses.core.perf.VersePreloader
+import com.woniu0936.verses.core.pool.VerseRecycledViewPool
+import com.woniu0936.verses.core.pool.VerseTypeRegistry
 import com.woniu0936.verses.model.SmartViewHolder
+import com.woniu0936.verses.model.VerseModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
-import java.util.WeakHashMap
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * An industrial-grade [ListAdapter] that orchestrates the rendering of [ItemWrapper] units.
+ * An industrial-grade [ListAdapter] that orchestrates the rendering of [VerseModel] units.
  *
- * VerseAdapter is designed for maximum performance and memory safety. It leverages a global
- * static registry for ViewType IDs to enable seamless [RecyclerView.RecycledViewPool] sharing,
- * while keeping View factories instance-local to prevent Context leaks.
+ * VerseAdapter implements an autonomous performance engine with Bind Locking,
+ * One-time view scanning, and dynamic prefetch depth.
  */
 @PublishedApi
-internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
-    AsyncDifferConfig.Builder(WrapperDiffCallback)
+internal class VerseAdapter : ListAdapter<VerseModel<*>, SmartViewHolder>(
+    AsyncDifferConfig.Builder(VerseDiffCallback)
         .setBackgroundThreadExecutor(Dispatchers.Default.asExecutor())
         .build()
 ) {
-    /**
-     * Instance-local registry for ViewHolder factories.
-     * Storing factories here ensures they use the correct Context associated with this Adapter's host.
-     */
-    private val localTypeToFactory = ConcurrentHashMap<Int, (ViewGroup) -> SmartViewHolder>()
 
-    companion object {
-        /**
-         * Global cache for ViewType IDs. Ensures consistent IDs for the same keys across pages.
-         */
-        private val globalViewTypeCache = ConcurrentHashMap<Any, Int>()
-        
-        /**
-         * Atomic counter for generating unique ViewType IDs.
-         */
-        private val nextViewType = AtomicInteger(1)
-
-        /**
-         * Stores RecycledViewPool instances scoped to specific Contexts.
-         */
-        private val contextPools = WeakHashMap<Context, RecyclerView.RecycledViewPool>()
-
-        /**
-         * Returns a [RecyclerView.RecycledViewPool] tied to the provided [context].
-         */
-        fun getPool(context: Context): RecyclerView.RecycledViewPool {
-            return synchronized(contextPools) {
-                contextPools.getOrPut(context) { RecyclerView.RecycledViewPool() }
-            }
-        }
-
-        /**
-         * Explicitly purges all global registries and context-scoped pools.
-         */
-        fun clearRegistry() {
-            globalViewTypeCache.clear()
-            nextViewType.set(1)
-            synchronized(contextPools) {
-                contextPools.clear()
-            }
-        }
+    init {
+        setHasStableIds(true)
     }
 
-    override fun getItemViewType(position: Int): Int = getItem(position).viewType
+    override fun getItemViewType(position: Int): Int {
+        val model = getItem(position)
+        VerseTypeRegistry.registerPrototype(model)
+        return model.getViewType()
+    }
 
-    /**
-     * Obtains a global ViewType ID and registers the factory to the local instance.
-     */
-    fun getOrCreateViewType(key: Any, factory: (ViewGroup) -> SmartViewHolder): Int {
-        var isNew = false
-        val viewType = globalViewTypeCache.getOrPut(key) {
-            isNew = true
-            nextViewType.getAndIncrement()
+    override fun getItemId(position: Int): Long = getItem(position).id.hashCode().toLong()
+
+    override fun onCurrentListChanged(previousList: List<VerseModel<*>>, currentList: List<VerseModel<*>>) {
+        super.onCurrentListChanged(previousList, currentList)
+        if (currentList.isNotEmpty()) {
+            VersePreloader.autoPreload(VerseAdapterRegistry.latestContext ?: return)
         }
-        if (isNew) {
-            VersesLogger.i("New ViewType generated for key: $key (ID: $viewType). Total types: ${nextViewType.get() - 1}")
-        }
-        localTypeToFactory[viewType] = factory
-        return viewType
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SmartViewHolder {
-        val factory = localTypeToFactory[viewType] 
-            ?: throw IllegalStateException(
-                "Verses Error: No factory registered for viewType $viewType in this instance. " +
-                "This usually happens if the registry was cleared while the RecyclerView was still active."
-            )
-        
+        val template = currentList.firstOrNull { it.getViewType() == viewType }
+            ?: VerseTypeRegistry.getPrototype(viewType)
+            ?: throw IllegalStateException("Verses Error: No model prototype found for viewType $viewType")
+
         val startTime = System.currentTimeMillis()
-        val holder = factory(parent)
+        val holder = template.createHolder(parent)
         val duration = System.currentTimeMillis() - startTime
-        VersesLogger.perf("CreateViewHolder", duration, "ViewType: $viewType")
         
+        if (duration > 10) {
+            VersesLogger.perf("CreateViewHolder (SLOW)", duration, "ViewType: $viewType")
+            
+            val currentMax = VerseRecycledViewPool.GLOBAL.getPoolSize(viewType)
+            if (currentMax < 20) {
+                // Autonomous Scaling: Idempotent expansion
+                VerseRecycledViewPool.GLOBAL.setPoolSize(viewType, 20)
+                
+                // Pre-emptive Production: If we're slow, we need a larger buffer immediately.
+                VersePreloader.preload(parent.context, listOf(template), countPerType = 8)
+            }
+        } else {
+            VersesLogger.perf("CreateViewHolder", duration, "ViewType: $viewType")
+        }
+
         holder.itemView.setOnClickListener {
-            val currentAdapter = holder.bindingAdapter as? VerseAdapter ?: return@setOnClickListener
             val pos = holder.bindingAdapterPosition
-            // Safety: Check range to prevent crashes during rapid animations or data removals
-            if (pos != RecyclerView.NO_POSITION && pos < currentAdapter.itemCount) {
-                currentAdapter.getItem(pos).onClick?.invoke()
+            if (pos != RecyclerView.NO_POSITION && pos < itemCount) {
+                getItem(pos).onClick?.invoke()
             }
         }
         return holder
     }
 
     override fun onBindViewHolder(holder: SmartViewHolder, position: Int) {
-        val item = getItem(position)
-        val startTime = System.currentTimeMillis()
+        val model = try { getItem(position) } catch (e: Exception) { null } ?: return
         
+        // [Advanced Bind Lock] Skip redundant DSL execution if model content is identical.
+        if (holder.lastBoundModel == model) {
+            VersesLogger.d("Bind Lock: Skipping redundant binding for ID ${model.id}")
+            return
+        }
+
+        val startTime = System.currentTimeMillis()
+
         try {
-            holder.prepare(item.data)
-            val params = holder.itemView.layoutParams
-            if (params is StaggeredGridLayoutManager.LayoutParams) {
-                if (params.isFullSpan != item.fullSpan) {
-                    params.isFullSpan = item.fullSpan
-                }
-            }
-            item.bind(holder, item.data)
-            val isClickable = item.onClick != null
-            if (holder.itemView.isClickable != isClickable) {
-                holder.itemView.isClickable = isClickable
-            }
+            model.bind(holder)
+            holder.lastBoundModel = model
             
+            // [One-time Optimization Scan] Lock the hierarchy after the first bind.
+            if (!holder.isOptimized) {
+                val view = holder.itemView
+                if (view is ViewGroup) {
+                    optimizeNestedRecyclerViews(view)
+                }
+                holder.isOptimized = true
+            }
+
             val duration = System.currentTimeMillis() - startTime
-            VersesLogger.perf("BindViewHolder", duration, "Pos: $position, ID: ${item.id}")
+            VersesLogger.perf("BindViewHolder", duration, "Pos: $position, ID: ${model.id}")
         } catch (e: Exception) {
-            VersesLogger.e("Fatal error during binding at position $position. Item ID: ${item.id}", e)
-            throw e // Re-throw to make it visible during development
+            VersesLogger.e("Fatal error during binding at position $position. Item ID: ${model.id}", e)
+            throw e
         }
     }
+
+    private fun optimizeNestedRecyclerViews(view: ViewGroup) {
+        if (view is RecyclerView) {
+            applyRvOptimizations(view)
+        }
+        
+        try {
+            for (i in 0 until view.childCount) {
+                val child = view.getChildAt(i)
+                if (child is ViewGroup) {
+                    optimizeNestedRecyclerViews(child)
+                }
+            }
+        } catch (e: Throwable) {}
+    }
+
+    private fun applyRvOptimizations(rv: RecyclerView) {
+        try {
+            // A. Shared Global Pool
+            if (rv.recycledViewPool != VerseRecycledViewPool.GLOBAL) {
+                rv.setRecycledViewPool(VerseRecycledViewPool.GLOBAL)
+            }
+            
+            // B. [Layout Lock] Freeze size to prevent child updates from re-measuring the parent.
+            rv.setHasFixedSize(true)
+
+            // C. Proactive Prefetch Calculation
+            val lm = rv.layoutManager
+            if (lm is LinearLayoutManager && lm.initialPrefetchItemCount <= 0) {
+                val span = (lm as? GridLayoutManager)?.spanCount ?: 1
+                // Amortize the production by prefetching 2 full rows.
+                lm.initialPrefetchItemCount = if (span > 1) span * 2 else 4
+            }
+            
+            // D. Interaction Tuning
+            if (lm is LinearLayoutManager && lm.orientation == RecyclerView.HORIZONTAL) {
+                rv.isNestedScrollingEnabled = false
+            }
+        } catch (e: Throwable) {}
+    }
+
+    override fun onBindViewHolder(holder: SmartViewHolder, position: Int, payloads: List<Any>) {
+        if (payloads.isEmpty()) {
+            onBindViewHolder(holder, position)
+        } else {
+            getItem(position).bind(holder, payloads)
+        }
+    }
+
+    override fun onFailedToRecycleView(holder: SmartViewHolder): Boolean = true
 
     override fun onViewAttachedToWindow(holder: SmartViewHolder) {
         super.onViewAttachedToWindow(holder)
         val pos = holder.bindingAdapterPosition
         if (pos != RecyclerView.NO_POSITION && pos < itemCount) {
-            val item = getItem(pos)
-            VersesLogger.lifecycle("Attach", "Pos: $pos, ID: ${item.id}")
-            item.onAttach?.invoke()
+            getItem(pos).onAttach?.invoke()
         }
     }
 
@@ -153,53 +174,47 @@ internal class VerseAdapter : ListAdapter<ItemWrapper, SmartViewHolder>(
         super.onViewDetachedFromWindow(holder)
         val pos = holder.bindingAdapterPosition
         if (pos != RecyclerView.NO_POSITION && pos < itemCount) {
-            val item = getItem(pos)
-            VersesLogger.lifecycle("Detach", "Pos: $pos, ID: ${item.id}")
-            item.onAttach?.invoke()
+            getItem(pos).onDetach?.invoke()
         }
     }
 
     override fun onViewRecycled(holder: SmartViewHolder) {
         super.onViewRecycled(holder)
+        holder.lastBoundModel = null
         cleanupNestedRecyclerViews(holder.itemView)
     }
 
     private fun cleanupNestedRecyclerViews(view: android.view.View) {
-        when (view) {
-            is RecyclerView -> view.adapter = null
-            is ViewGroup -> {
-                for (i in 0 until view.childCount) {
-                    cleanupNestedRecyclerViews(view.getChildAt(i))
-                }
+        if (view is RecyclerView) {
+            view.adapter = null
+        } else if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                cleanupNestedRecyclerViews(view.getChildAt(i))
             }
         }
     }
 
     fun getSpanSize(position: Int, totalSpan: Int): Int {
         if (position !in 0 until itemCount) return 1
-        val item = getItem(position)
-        return if (item.fullSpan) totalSpan else item.span
+        return getItem(position).getSpanSize(totalSpan, position)
     }
 
-    @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
-    public override fun getItem(position: Int): ItemWrapper = super.getItem(position)
+    @androidx.annotation.VisibleForTesting(otherwise = androidx.annotation.VisibleForTesting.PROTECTED)
+    public override fun getItem(position: Int): VerseModel<*> = super.getItem(position)
 
-    object WrapperDiffCallback : DiffUtil.ItemCallback<ItemWrapper>() {
-        override fun areItemsTheSame(oldItem: ItemWrapper, newItem: ItemWrapper): Boolean {
-            val same = oldItem.id == newItem.id
-            if (!same) {
-                VersesLogger.diff("ID Change: [${oldItem.id}] -> [${newItem.id}]")
-            }
-            return same
-        }
-        
-        @android.annotation.SuppressLint("DiffUtilEquals")
-        override fun areContentsTheSame(oldItem: ItemWrapper, newItem: ItemWrapper): Boolean {
-            val same = oldItem == newItem
-            if (!same) {
-                VersesLogger.diff("Content Change for ID [${newItem.id}]: Data modified or factory changed.")
-            }
-            return same
-        }
+    private object VerseDiffCallback : DiffUtil.ItemCallback<VerseModel<*>>() {
+        override fun areItemsTheSame(oldItem: VerseModel<*>, newItem: VerseModel<*>): Boolean =
+            oldItem.id == newItem.id
+
+        @Suppress("DiffUtilEquals")
+        override fun areContentsTheSame(oldItem: VerseModel<*>, newItem: VerseModel<*>): Boolean =
+            oldItem == newItem
     }
+}
+
+/**
+ * A small utility to capture the latest context for preloading.
+ */
+internal object VerseAdapterRegistry {
+    var latestContext: android.content.Context? = null
 }

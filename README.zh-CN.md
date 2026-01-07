@@ -156,7 +156,61 @@ startActivity(Intent.createChooser(shareIntent, "分享日志"))
 // ShareUtils.shareLogFile(context)
 ```
 
-### 4. 全局生命周期与资源管理
+### 4. 高级性能调优 (2.0 版本新特性)
+
+Verses 2.0 引入了模型驱动架构与异步预加载技术，即使在极其复杂的布局下也能实现丝滑的 60 FPS。
+
+#### A. 模型驱动架构 (VerseModel)
+对于需要解耦 DSL 的复杂业务逻辑，你可以直接实现 `VerseModel`。
+
+```kotlin
+class MyCustomModel(id: Any, data: MyData) : ViewBindingModel<ItemUserBinding, MyData>(id, data) {
+    override fun inflate(inflater: LayoutInflater, parent: ViewGroup) = 
+        ItemUserBinding.inflate(inflater, parent, false)
+
+    override fun bind(binding: ItemUserBinding, item: MyData) {
+        binding.tvName.text = item.name
+    }
+    
+    override fun getSpanSize(totalSpan: Int, position: Int) = 1
+}
+```
+
+#### B. 异步预加载器 (VersePreloader)
+通过在闲时（如等待网络请求时）预先解析 XML，彻底消除 `CreateViewHolder` 带来的卡顿。
+
+```kotlin
+// 为全局池预先填充 5 个特定类型的实例
+VersePreloader.preload(
+    context = this,
+    models = listOf(
+        MyCustomModel("template", MyData()),
+        // ... 其他模版
+    ),
+    countPerType = 5
+)
+```
+
+#### C. 在 DSL 中启用异步预加载
+若要在 DSL 中使用 `VersePreloader`，必须手动提供 `layoutRes` 参数。
+
+```kotlin
+recyclerView.composeColumn {
+    items(
+        items = userList,
+        inflate = ItemUserBinding::inflate,
+        layoutRes = R.layout.item_user, // 异步预加载必需
+        key = { it.id }
+    ) { user ->
+        tvName.text = user.name
+    }
+}
+```
+
+#### D. 自动复用池优化
+Verses 2.0 默认强制开启 **全局共享复用池 (Global Shared Pool)**。这意味着嵌套的 RecyclerView（如纵向列表中的横向滑动栏）将自动共用缓存，极大地降低内存占用与 View 创建开销。
+
+### 5. 全局生命周期与资源管理
 Verses 会在 View 分离或 Activity 销毁时自动清理。如需手动重置全局注册表（如退出登录时）：
 ```kotlin
 VerseAdapter.clearRegistry()
