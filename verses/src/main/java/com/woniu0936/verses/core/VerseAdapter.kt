@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.woniu0936.verses.core.perf.VersePreloader
 import com.woniu0936.verses.core.pool.VerseRecycledViewPool
+import com.woniu0936.verses.core.pool.VerseStateRegistry
 import com.woniu0936.verses.core.pool.VerseTypeRegistry
 import com.woniu0936.verses.model.SmartViewHolder
 import com.woniu0936.verses.model.VerseModel
@@ -119,6 +120,12 @@ internal class VerseAdapter : ListAdapter<VerseModel<*>, SmartViewHolder>(
                 holder.isOptimized = true
             }
 
+            // [State Restoration] Automatically restore nested scroll position.
+            val nestedRv = findNestedRecyclerView(holder.itemView)
+            if (nestedRv != null) {
+                VerseStateRegistry.restoreState(model.id, nestedRv)
+            }
+
             val duration = System.currentTimeMillis() - startTime
             VersesLogger.perf("BindViewHolder", duration, "Pos: $position, ID: ${model.id}")
         } catch (e: Exception) {
@@ -195,8 +202,30 @@ internal class VerseAdapter : ListAdapter<VerseModel<*>, SmartViewHolder>(
 
     override fun onViewRecycled(holder: SmartViewHolder) {
         super.onViewRecycled(holder)
+        
+        // [State Saving] Automatically save nested scroll position before recycling.
+        val nestedRv = findNestedRecyclerView(holder.itemView)
+        if (nestedRv != null && holder.lastBoundModel != null) {
+            // Use the ID from the last bound model to ensure we save state for the correct data item.
+            VerseStateRegistry.saveState(holder.lastBoundModel!!.id, nestedRv)
+        }
+
         holder.lastBoundModel = null
         cleanupNestedRecyclerViews(holder.itemView)
+    }
+
+    /**
+     * Recursively finds the first nested RecyclerView in the view hierarchy.
+     */
+    private fun findNestedRecyclerView(view: android.view.View): RecyclerView? {
+        if (view is RecyclerView) return view
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                val found = findNestedRecyclerView(view.getChildAt(i))
+                if (found != null) return found
+            }
+        }
+        return null
     }
 
     private fun cleanupNestedRecyclerViews(view: android.view.View) {
