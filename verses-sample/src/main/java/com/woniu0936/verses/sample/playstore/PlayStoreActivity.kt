@@ -52,6 +52,9 @@ class PlayStoreActivity : AppCompatActivity() {
     }
 
     private fun render(state: HomeState) {
+        binding.progressBar.visibility = if (state.isLoading) android.view.View.VISIBLE else android.view.View.GONE
+        binding.recyclerView.visibility = if (state.isLoading) android.view.View.GONE else android.view.View.VISIBLE
+        
         if (state.isLoading) return
         binding.recyclerView.composeVerticalGrid(
             spanCount = 3,
