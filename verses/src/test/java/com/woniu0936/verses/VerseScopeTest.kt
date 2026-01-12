@@ -58,8 +58,8 @@ class VerseScopeTest {
 
         scope.items(
             items = list,
-            inflate = mockInflate,
-            key = { it }
+            key = { it },
+            inflate = mockInflate
         ) { _ -> }
 
         assertEquals(3, scope.newModels.size)

@@ -30,12 +30,13 @@ class VerseScope @PublishedApi internal constructor(
 
     /**
      * Renders a list of items using ViewBinding.
+     * @param key A function to extract a stable ID from each item. Mandatory for DiffUtil and State Saving.
      */
     inline fun <T : Any, reified VB : ViewBinding> items(
         items: List<T>,
+        noinline key: (T) -> Any,
         noinline inflate: Inflate<VB>,
         @LayoutRes layoutRes: Int = 0,
-        noinline key: ((T) -> Any)? = null,
         contentType: Any? = null,
         span: Int = 1,
         fullSpan: Boolean = false,
@@ -46,7 +47,7 @@ class VerseScope @PublishedApi internal constructor(
         crossinline onBind: VB.(T) -> Unit
     ) {
         val layoutKey = contentType ?: VB::class.java
-        items.forEachIndexed { index, item ->
+        items.forEach { item ->
             internalRender(
                 factory = { p -> 
                     val binding = inflate(LayoutInflater.from(p.context), p, false)
@@ -65,7 +66,7 @@ class VerseScope @PublishedApi internal constructor(
                 layoutRes = layoutRes,
                 layoutKey = layoutKey,
                 data = item,
-                id = key?.invoke(item) ?: index,
+                id = key(item),
                 span = span,
                 fullSpan = fullSpan,
                 onClick = onClick?.let { { it(item) } },
@@ -77,12 +78,13 @@ class VerseScope @PublishedApi internal constructor(
 
     /**
      * Renders a list of items using a Custom View.
+     * @param key A function to extract a stable ID from each item. Mandatory for DiffUtil and State Saving.
      */
     inline fun <T : Any, reified V : View> items(
         items: List<T>,
+        noinline key: (T) -> Any,
         noinline create: ViewCreator<V>,
         @LayoutRes layoutRes: Int = 0,
-        noinline key: ((T) -> Any)? = null,
         contentType: Any? = null,
         span: Int = 1,
         fullSpan: Boolean = false,
@@ -93,7 +95,7 @@ class VerseScope @PublishedApi internal constructor(
         crossinline onBind: V.(T) -> Unit
     ) {
         val layoutKey = contentType ?: V::class.java
-        items.forEachIndexed { index, item ->
+        items.forEach { item ->
             internalRender(
                 factory = { p -> createSafeViewHolder(p, create) },
                 bind = { data ->
@@ -109,7 +111,7 @@ class VerseScope @PublishedApi internal constructor(
                 layoutRes = layoutRes,
                 layoutKey = layoutKey,
                 data = item,
-                id = key?.invoke(item) ?: index,
+                id = key(item),
                 span = span,
                 fullSpan = fullSpan,
                 onClick = onClick?.let { { it(item) } },
@@ -141,6 +143,9 @@ class VerseScope @PublishedApi internal constructor(
         crossinline onBind: VB.() -> Unit = {}
     ) {
         val layoutKey = contentType ?: VB::class.java
+        // Intelligent Default Key: Use explicit key OR data OR layout class
+        val finalKey = key ?: data.takeIf { it != Unit && it != null } ?: VB::class.java
+        
         internalRender(
             factory = { p -> 
                 val binding = inflate(LayoutInflater.from(p.context), p, false)
@@ -159,7 +164,7 @@ class VerseScope @PublishedApi internal constructor(
             layoutRes = layoutRes,
             layoutKey = layoutKey,
             data = data ?: Unit,
-            id = key ?: "single_vb_${layoutKey.hashCode()}",
+            id = finalKey,
             span = span,
             fullSpan = fullSpan,
             onClick = onClick,
@@ -186,6 +191,9 @@ class VerseScope @PublishedApi internal constructor(
         crossinline onBind: V.() -> Unit = {}
     ) {
         val layoutKey = contentType ?: V::class.java
+        // Intelligent Default Key: Use explicit key OR data OR layout class
+        val finalKey = key ?: data.takeIf { it != Unit && it != null } ?: V::class.java
+
         internalRender(
             factory = { p -> createSafeViewHolder(p, create) },
             bind = { 
@@ -201,7 +209,7 @@ class VerseScope @PublishedApi internal constructor(
             layoutRes = layoutRes,
             layoutKey = layoutKey,
             data = data ?: Unit,
-            id = key ?: "single_view_${layoutKey.hashCode()}",
+            id = finalKey,
             span = span,
             fullSpan = fullSpan,
             onClick = onClick,
@@ -216,12 +224,12 @@ class VerseScope @PublishedApi internal constructor(
 
     fun <T : Any> items(
         items: List<T>,
-        key: ((T) -> Any)? = null,
+        key: (T) -> Any,
         block: VerseScope.(T) -> Unit
     ) {
-        items.forEachIndexed { index, item ->
+        items.forEach { item ->
             currentData = item
-            currentId = key?.invoke(item) ?: index
+            currentId = key(item)
             block(item)
         }
     }
@@ -240,6 +248,8 @@ class VerseScope @PublishedApi internal constructor(
     ) {
         val layoutKey = contentType ?: VB::class.java
         val data = currentData ?: Unit
+        // In advanced 'items' block, currentId is guaranteed to be set via 'key' param
+        val finalId = currentId ?: throw IllegalStateException("Verses Error: 'render' called outside of 'items' scope or key is missing.")
         
         internalRender(
             factory = { p -> 
@@ -259,7 +269,7 @@ class VerseScope @PublishedApi internal constructor(
             layoutRes = layoutRes,
             layoutKey = layoutKey,
             data = data,
-            id = currentId ?: System.identityHashCode(data),
+            id = finalId,
             span = span,
             fullSpan = fullSpan,
             onClick = onClick,
@@ -282,6 +292,7 @@ class VerseScope @PublishedApi internal constructor(
     ) {
         val layoutKey = contentType ?: V::class.java
         val data = currentData ?: Unit
+        val finalId = currentId ?: throw IllegalStateException("Verses Error: 'render' called outside of 'items' scope or key is missing.")
 
         internalRender(
             factory = { p -> createSafeViewHolder(p, create) },

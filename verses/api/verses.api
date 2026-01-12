@@ -99,7 +99,6 @@ public final class com/woniu0936/verses/dsl/VerseScope {
 	public final fun internalRender (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;IZLkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;)V
 	public static synthetic fun internalRender$default (Lcom/woniu0936/verses/dsl/VerseScope;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;IZLkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
 	public final fun items (Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)V
-	public static synthetic fun items$default (Lcom/woniu0936/verses/dsl/VerseScope;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
 	public final fun setCurrentData (Ljava/lang/Object;)V
 	public final fun setCurrentId (Ljava/lang/Object;)V
 }

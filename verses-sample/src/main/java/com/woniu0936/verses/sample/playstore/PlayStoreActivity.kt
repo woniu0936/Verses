@@ -68,8 +68,8 @@ class PlayStoreActivity : AppCompatActivity() {
                 rvHorizontal.composeRow(spacing = 12) {
                     items(
                         items = state.banners,
-                        inflate = ItemBannerBinding::inflate,
                         key = { it.id },
+                        inflate = ItemBannerBinding::inflate,
                         onClick = { banner ->
                             Toast.makeText(this@PlayStoreActivity, "Clicked Banner: ${banner.title}", Toast.LENGTH_SHORT).show()
                         }
@@ -86,8 +86,8 @@ class PlayStoreActivity : AppCompatActivity() {
                 rvHorizontal.composeRow(spacing = 8) {
                     items(
                         items = state.categories,
-                        inflate = ItemCategoryBinding::inflate,
-                        key = { it.id }
+                        key = { it.id },
+                        inflate = ItemCategoryBinding::inflate
                     ) { category ->
                         chipCategory.text = category.name
                     }
@@ -101,8 +101,8 @@ class PlayStoreActivity : AppCompatActivity() {
                 }
                 items(
                     items = state.gridApps,
-                    inflate = ItemAppGridBinding::inflate,
                     key = { "grid_${it.id}" },
+                    inflate = ItemAppGridBinding::inflate,
                     span = 1,
                     onClick = { app ->
                         Toast.makeText(this@PlayStoreActivity, "Clicked Grid App: ${app.name}", Toast.LENGTH_SHORT).show()
@@ -128,6 +128,9 @@ class PlayStoreActivity : AppCompatActivity() {
                         items(
                             items = section.apps,
                             inflate = ItemAppBinding::inflate,
+                            // Implicitly using hashCode as key in old version, now we must provide explicit key.
+                            // Assuming AppModel has an ID.
+                            key = { it.id },
                             onClick = { app ->
                                 Toast.makeText(this@PlayStoreActivity, "Clicked App: ${app.name}", Toast.LENGTH_SHORT).show()
                             }

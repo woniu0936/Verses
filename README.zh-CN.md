@@ -104,7 +104,7 @@ recyclerView.composeVerticalGrid(
     // E. 嵌套横向列表 (自动关联 Context 级复用池)
     item(ItemHorizontalListBinding::inflate, fullSpan = true) {
         rvNested.composeRow(spacing = 8.dp, horizontalPadding = 16.dp) {
-            items(categories, ItemCategoryBinding::inflate) { cat ->
+            items(categories, key = { it.id }, inflate = ItemCategoryBinding::inflate) { cat ->
                 tvCategory.text = cat.name
             }
         }

@@ -123,8 +123,8 @@ class TikTokActivity : AppCompatActivity() {
         binding.recyclerView.composeColumn {
             items(
                 items = videos,
-                inflate = ItemTiktokVideoBinding::inflate,
                 key = { it.id },
+                inflate = ItemTiktokVideoBinding::inflate,
                 onAttach = { video -> playVideo(video) },
                 onDetach = { video -> 
                     stopVideo(video)
