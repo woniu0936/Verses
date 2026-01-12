@@ -8,6 +8,8 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.woniu0936.verses.core.VerseAdapter
 import com.woniu0936.verses.core.pool.VerseTypeRegistry
+import com.woniu0936.verses.core.Verses
+import com.woniu0936.verses.core.VersesLogger
 import com.woniu0936.verses.model.*
 
 /**
@@ -20,6 +22,9 @@ class VerseScope @PublishedApi internal constructor(
 
     @PublishedApi
     internal val newModels = mutableListOf<VerseModel<*>>()
+    
+    // Tracks keys within this scope to prevent duplicates.
+    private val seenKeys = HashSet<Any>()
 
     @PublishedApi internal var currentData: Any? = null
     @PublishedApi internal var currentId: Any? = null
@@ -347,6 +352,22 @@ class VerseScope @PublishedApi internal constructor(
         onAttach: (() -> Unit)?,
         onDetach: (() -> Unit)?
     ) {
+        // [Smart Deduping] Prevent duplicate keys that cause DiffUtil inconsistencies.
+        if (seenKeys.contains(id)) {
+            val message = "Verses Error: Duplicate key detected: '$id'. " +
+                    "Each item in a list must have a unique stable key. " +
+                    "Check your 'items(..., key = { ... })' or 'item(key = ...)' calls."
+            
+            if (Verses.getConfig().isDebug) {
+                throw IllegalArgumentException(message)
+            } else {
+                VersesLogger.e(message, IllegalStateException("Duplicate Key: $id"))
+                return // Skip this item to prevent Crash in Release
+            }
+        }
+        
+        seenKeys.add(id)
+
         val model = DslVerseModel(
             id = id,
             data = data,
