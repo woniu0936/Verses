@@ -50,12 +50,12 @@ recyclerView.composeVerticalGrid(
     contentPadding = 20.dp       // 外部边距
 ) {
     // A. 单个 ViewBinding 项目 (占满全行)
-    item(ItemHeaderBinding::inflate, fullSpan = true) {
+    item("header_1", ItemHeaderBinding::inflate, fullSpan = true) {
         tvTitle.text = "全功能演示"
     }
 
     // B. 纯代码构建的自定义 View
-    item(create = { context -> MyCustomHeader(context) }) {
+    item("header_2", create = { context -> MyCustomHeader(context) }) {
         // 'this' 即是 MyCustomHeader 实例
         setTitle("区域 A")
     }
@@ -102,7 +102,7 @@ recyclerView.composeVerticalGrid(
     }
 
     // E. 嵌套横向列表 (自动关联 Context 级复用池)
-    item(ItemHorizontalListBinding::inflate, fullSpan = true) {
+    item("horizontal_list", ItemHorizontalListBinding::inflate, fullSpan = true) {
         rvNested.composeRow(spacing = 8.dp, horizontalPadding = 16.dp) {
             items(categories, key = { it.id }, inflate = ItemCategoryBinding::inflate) { cat ->
                 tvCategory.text = cat.name

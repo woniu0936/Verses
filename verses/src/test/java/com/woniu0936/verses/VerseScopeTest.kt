@@ -31,10 +31,10 @@ class VerseScopeTest {
         val testKey = "Test Key"
 
         scope.item(
+            key = testKey,
             inflate = mockInflate,
             layoutRes = 123,
             data = testData,
-            key = testKey,
             span = 2,
             fullSpan = true
         )

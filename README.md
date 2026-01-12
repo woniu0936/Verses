@@ -50,12 +50,12 @@ recyclerView.composeVerticalGrid(
     contentPadding = 20.dp       // Outer list padding
 ) {
     // A. Single ViewBinding Item (Full Span)
-    item(ItemHeaderBinding::inflate, fullSpan = true) {
+    item("header_1", ItemHeaderBinding::inflate, fullSpan = true) {
         tvTitle.text = "Comprehensive Demo"
     }
 
     // B. Custom View Item (Programmatic)
-    item(create = { context -> MyCustomHeader(context) }) {
+    item("header_2", create = { context -> MyCustomHeader(context) }) {
         // 'this' is MyCustomHeader
         setTitle("Section A")
     }
@@ -102,7 +102,7 @@ recyclerView.composeVerticalGrid(
     }
 
     // E. Horizontal Nested List (Automatic Pool Optimization)
-    item(ItemHorizontalListBinding::inflate, fullSpan = true) {
+    item("horizontal_list", ItemHorizontalListBinding::inflate, fullSpan = true) {
         rvNested.composeRow(spacing = 8.dp, horizontalPadding = 16.dp) {
             items(categories, key = { it.id }, inflate = ItemCategoryBinding::inflate) { cat ->
                 tvCategory.text = cat.name

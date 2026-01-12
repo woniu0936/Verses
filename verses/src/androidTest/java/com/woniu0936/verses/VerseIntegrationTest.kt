@@ -79,7 +79,7 @@ class VerseIntegrationTest {
 
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             recyclerView.compose {
-                items(items, ::testInflate, onClick = { clickResults.add(it) }) {
+                items(items, key = { it }, inflate = ::testInflate, onClick = { clickResults.add(it) }) {
                     textView.text = it
                 }
             }
@@ -102,7 +102,7 @@ class VerseIntegrationTest {
 
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             recyclerView.compose {
-                items(items, ::testInflate, key = { it }) { item ->
+                items(items, key = { it }, inflate = ::testInflate) { item ->
                     textView.text = item
                 }
             }
@@ -125,7 +125,7 @@ class VerseIntegrationTest {
     fun testComposeRow() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             recyclerView.composeRow {
-                item(::testInflate, data = "Row Item")
+                item("row_item", ::testInflate, data = "Row Item")
             }
         }
         Thread.sleep(500)
@@ -141,7 +141,7 @@ class VerseIntegrationTest {
     fun testComposeVerticalGrid() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             recyclerView.composeVerticalGrid(spanCount = 3) {
-                items(listOf(1, 2, 3, 4), ::testInflate) { _ -> }
+                items(listOf(1, 2, 3, 4), key = { it }, inflate = ::testInflate) { _ -> }
             }
         }
         Thread.sleep(500)
@@ -158,7 +158,7 @@ class VerseIntegrationTest {
     fun testComposeVerticalStaggeredGrid() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             recyclerView.composeVerticalStaggeredGrid(spanCount = 2) {
-                item(::testInflate)
+                item("staggered_item", ::testInflate)
             }
         }
         Thread.sleep(500)
@@ -178,13 +178,13 @@ class VerseIntegrationTest {
         
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             recyclerView.composeColumn {
-                item(::testInflate)
+                item("item_1", ::testInflate)
             }
             firstLM = recyclerView.layoutManager as LinearLayoutManager
             
             // Re-configuring with different parameters (orientation, reverse)
             recyclerView.composeRow(reverseLayout = true) {
-                item(::testInflate)
+                item("item_1_rev", ::testInflate)
             }
         }
         
@@ -205,9 +205,10 @@ class VerseIntegrationTest {
     fun testMultipleItemsSameTypeShareViewType() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             recyclerView.compose {
-                // Both items use TestBinding::class.java as the key
-                item(::testInflate, data = "Header") { }
-                items(listOf("A"), ::testInflate) { _ -> }
+                // Both items use TestBinding::class.java as the layoutKey (ViewType)
+                // but MUST have unique 'id' (key) to pass the deduping check.
+                item("header_key", ::testInflate, data = "Header") { }
+                items(listOf("A"), key = { "item_key_$it" }, inflate = ::testInflate) { _ -> }
             }
         }
         
@@ -230,6 +231,7 @@ class VerseIntegrationTest {
             recyclerView.compose {
                 items(
                     items = listOf("Custom 1", "Custom 2"),
+                    key = { it },
                     create = { context -> TextView(context) }
                 ) { text ->
                     // 'this' is TextView
@@ -257,7 +259,7 @@ class VerseIntegrationTest {
     fun testSpacingDecorationIsApplied() {
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             recyclerView.composeColumn(spacing = 16) {
-                item(::testInflate)
+                item("spacing_item", ::testInflate)
             }
         }
         Thread.sleep(500)

@@ -59,12 +59,12 @@ class PlayStoreActivity : AppCompatActivity() {
             contentPadding = 8
         ) {
             // 1. Search Bar
-            item(ItemSearchBarBinding::inflate, fullSpan = true) {
+            item("search_bar", ItemSearchBarBinding::inflate, fullSpan = true) {
                 tvSearchHint.text = state.searchHint
             }
 
             // 2. Featured Banners
-            item(ItemHorizontalListBinding::inflate, data = state.banners, key = "banners_container") {
+            item("banners_container", ItemHorizontalListBinding::inflate, data = state.banners) {
                 rvHorizontal.composeRow(spacing = 12) {
                     items(
                         items = state.banners,
@@ -82,7 +82,7 @@ class PlayStoreActivity : AppCompatActivity() {
             }
 
             // 3. Categories
-            item(ItemHorizontalListBinding::inflate, data = state.categories, key = "categories_container") {
+            item("categories_container", ItemHorizontalListBinding::inflate, data = state.categories) {
                 rvHorizontal.composeRow(spacing = 8) {
                     items(
                         items = state.categories,
@@ -96,7 +96,7 @@ class PlayStoreActivity : AppCompatActivity() {
 
             // 4. Grid Apps (3 Columns)
             if (state.gridApps.isNotEmpty()) {
-                item(ItemSectionHeaderBinding::inflate, fullSpan = true, key = "grid_header_title") {
+                item("grid_header_title", ItemSectionHeaderBinding::inflate, fullSpan = true) {
                     tvSectionTitle.text = "Popular Apps"
                 }
                 items(
@@ -120,17 +120,15 @@ class PlayStoreActivity : AppCompatActivity() {
 
             // 5. Dynamic Sections
             state.sections.forEach { section ->
-                item(ItemSectionHeaderBinding::inflate, data = section.title, fullSpan = true, key = "header_${section.id}") {
+                item("header_${section.id}", ItemSectionHeaderBinding::inflate, data = section.title, fullSpan = true) {
                     tvSectionTitle.text = section.title
                 }
-                item(ItemHorizontalListBinding::inflate, data = section.apps, fullSpan = true, key = "list_${section.id}") {
+                item("list_${section.id}", ItemHorizontalListBinding::inflate, data = section.apps, fullSpan = true) {
                     rvHorizontal.composeRow(spacing = 8) {
                         items(
                             items = section.apps,
-                            inflate = ItemAppBinding::inflate,
-                            // Implicitly using hashCode as key in old version, now we must provide explicit key.
-                            // Assuming AppModel has an ID.
                             key = { it.id },
+                            inflate = ItemAppBinding::inflate,
                             onClick = { app ->
                                 Toast.makeText(this@PlayStoreActivity, "Clicked App: ${app.name}", Toast.LENGTH_SHORT).show()
                             }

@@ -132,12 +132,12 @@ class VerseScope @PublishedApi internal constructor(
 
     /**
      * Renders a single item using ViewBinding.
+     * @param key A stable unique ID for this item. Mandatory.
      */
     inline fun <reified VB : ViewBinding> item(
+        key: Any,
         noinline inflate: Inflate<VB>,
         @LayoutRes layoutRes: Int = 0,
-        data: Any? = Unit,
-        key: Any? = null,
         contentType: Any? = null,
         span: Int = 1,
         fullSpan: Boolean = true,
@@ -147,18 +147,49 @@ class VerseScope @PublishedApi internal constructor(
         noinline onCreate: (VB.(SmartViewHolder) -> Unit)? = null,
         crossinline onBind: VB.() -> Unit = {}
     ) {
+        item<Unit, VB>(
+            key = key,
+            inflate = inflate,
+            data = Unit,
+            layoutRes = layoutRes,
+            contentType = contentType,
+            span = span,
+            fullSpan = fullSpan,
+            onClick = onClick?.let { { it() } },
+            onAttach = onAttach?.let { { it() } },
+            onDetach = onDetach?.let { { it() } },
+            onCreate = onCreate,
+            onBind = { onBind() }
+        )
+    }
+
+    /**
+     * Renders a single item using ViewBinding with a data object.
+     * @param key A stable unique ID for this item. Mandatory.
+     */
+    inline fun <T : Any, reified VB : ViewBinding> item(
+        key: Any,
+        noinline inflate: Inflate<VB>,
+        data: T,
+        @LayoutRes layoutRes: Int = 0,
+        contentType: Any? = null,
+        span: Int = 1,
+        fullSpan: Boolean = true,
+        noinline onClick: ((T) -> Unit)? = null,
+        noinline onAttach: ((T) -> Unit)? = null,
+        noinline onDetach: ((T) -> Unit)? = null,
+        noinline onCreate: (VB.(SmartViewHolder) -> Unit)? = null,
+        crossinline onBind: VB.(T) -> Unit = {}
+    ) {
         val layoutKey = contentType ?: VB::class.java
-        // Intelligent Default Key: Use explicit key OR data OR layout class
-        val finalKey = key ?: data.takeIf { it != Unit && it != null } ?: VB::class.java
-        
         internalRender(
             factory = { p -> 
                 val binding = inflate(LayoutInflater.from(p.context), p, false)
                 SmartViewHolder(binding.root, binding)
             },
-            bind = { 
+            bind = { d -> 
                 @Suppress("UNCHECKED_CAST")
-                (binding as VB).onBind()
+                (binding as VB).onBind(d as T)
             },
             onCreate = onCreate?.let { block ->
                 { 
@@ -168,24 +199,24 @@ class VerseScope @PublishedApi internal constructor(
             },
             layoutRes = layoutRes,
             layoutKey = layoutKey,
-            data = data ?: Unit,
-            id = finalKey,
+            data = data,
+            id = key,
             span = span,
             fullSpan = fullSpan,
-            onClick = onClick,
-            onAttach = onAttach,
-            onDetach = onDetach
+            onClick = onClick?.let { { it(data) } },
+            onAttach = onAttach?.let { { it(data) } },
+            onDetach = onDetach?.let { { it(data) } }
         )
     }
 
     /**
      * Renders a single item using a Custom View.
+     * @param key A stable unique ID for this item. Mandatory.
      */
     inline fun <reified V : View> item(
+        key: Any,
         noinline create: ViewCreator<V>,
         @LayoutRes layoutRes: Int = 0,
-        data: Any? = Unit,
-        key: Any? = null,
         contentType: Any? = null,
         span: Int = 1,
         fullSpan: Boolean = true,
@@ -195,15 +226,46 @@ class VerseScope @PublishedApi internal constructor(
         noinline onCreate: (V.(SmartViewHolder) -> Unit)? = null,
         crossinline onBind: V.() -> Unit = {}
     ) {
-        val layoutKey = contentType ?: V::class.java
-        // Intelligent Default Key: Use explicit key OR data OR layout class
-        val finalKey = key ?: data.takeIf { it != Unit && it != null } ?: V::class.java
+        item<Unit, V>(
+            key = key,
+            create = create,
+            data = Unit,
+            layoutRes = layoutRes,
+            contentType = contentType,
+            span = span,
+            fullSpan = fullSpan,
+            onClick = onClick?.let { { it() } },
+            onAttach = onAttach?.let { { it() } },
+            onDetach = onDetach?.let { { it() } },
+            onCreate = onCreate,
+            onBind = { onBind() }
+        )
+    }
 
+    /**
+     * Renders a single item using a Custom View with a data object.
+     * @param key A stable unique ID for this item. Mandatory.
+     */
+    inline fun <T : Any, reified V : View> item(
+        key: Any,
+        noinline create: ViewCreator<V>,
+        data: T,
+        @LayoutRes layoutRes: Int = 0,
+        contentType: Any? = null,
+        span: Int = 1,
+        fullSpan: Boolean = true,
+        noinline onClick: ((T) -> Unit)? = null,
+        noinline onAttach: ((T) -> Unit)? = null,
+        noinline onDetach: ((T) -> Unit)? = null,
+        noinline onCreate: (V.(SmartViewHolder) -> Unit)? = null,
+        crossinline onBind: V.(T) -> Unit = {}
+    ) {
+        val layoutKey = contentType ?: V::class.java
         internalRender(
             factory = { p -> createSafeViewHolder(p, create) },
-            bind = { 
+            bind = { d -> 
                 @Suppress("UNCHECKED_CAST")
-                (view as V).onBind()
+                (view as V).onBind(d as T)
             },
             onCreate = onCreate?.let { block ->
                 { 
@@ -213,13 +275,13 @@ class VerseScope @PublishedApi internal constructor(
             },
             layoutRes = layoutRes,
             layoutKey = layoutKey,
-            data = data ?: Unit,
-            id = finalKey,
+            data = data,
+            id = key,
             span = span,
             fullSpan = fullSpan,
-            onClick = onClick,
-            onAttach = onAttach,
-            onDetach = onDetach
+            onClick = onClick?.let { { it(data) } },
+            onAttach = onAttach?.let { { it(data) } },
+            onDetach = onDetach?.let { { it(data) } }
         )
     }
 
