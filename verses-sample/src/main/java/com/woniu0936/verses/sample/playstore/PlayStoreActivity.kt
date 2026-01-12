@@ -32,6 +32,12 @@ class PlayStoreActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+        binding.fabShuffle.setOnClickListener {
+            viewModel.shuffleData()
+            Toast.makeText(this, "Shuffling content...", Toast.LENGTH_SHORT).show()
+        }
+
         observeState()
     }
 
