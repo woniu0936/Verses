@@ -30,11 +30,11 @@
 - **🧩 极高灵活性**：原生支持 `ViewBinding`、`自定义 View` 以及通过 `contentType` 区分的多样式逻辑。
 - **📦 隐式优化**：Context 隔离的全局资源复用池，在多 Fragment/Activity 间自动优化内存性能。
 
-## 📦 安装
+## 📦 安装 (Installation)
 
 ```kotlin
 dependencies {
-    implementation("io.github.woniu0936:verses:1.0.0")
+    implementation("io.github.woniu0936:verses:1.1.0")
 }
 ```
 

@@ -34,7 +34,7 @@
 
 ```kotlin
 dependencies {
-    implementation("io.github.woniu0936:verses:1.0.0")
+    implementation("io.github.woniu0936:verses:1.1.0")
 }
 ```
 
