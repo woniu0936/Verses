@@ -2,6 +2,7 @@ package com.woniu0936.verses.model
 
 import android.view.View
 import android.view.ViewGroup
+import com.woniu0936.verses.core.VersesLogger
 import com.woniu0936.verses.core.pool.VerseTypeRegistry
 
 /**
@@ -22,7 +23,7 @@ internal class DslVerseModel(
     override val onDetach: (() -> Unit)? = null
 ) : VerseModel<Any>(id, data) {
 
-    override fun getViewType(): Int {
+    override fun resolveViewType(): Int {
         val key = layoutKey
         return if (key is Class<*>) {
             VerseTypeRegistry.getViewType(key)
@@ -39,6 +40,16 @@ internal class DslVerseModel(
 
     override fun onCreate(holder: SmartViewHolder) {
         onCreateBlock?.invoke(holder)
+        
+        // [DX Guard] Detect if user manually set a listener on the root view.
+        // Since VerseAdapter sets its own listener AFTER this method returns, 
+        // the user's manual listener would be silently overwritten.
+        if (holder.itemView.hasOnClickListeners()) {
+            VersesLogger.w(
+                "⚠️ [Anti-Pattern] Manual 'setOnClickListener' detected on root view in 'onCreate'. " +
+                "It WILL BE OVERWRITTEN by Verses. Please use the 'onClick' parameter in the DSL."
+            )
+        }
     }
 
     override fun bind(holder: SmartViewHolder) {

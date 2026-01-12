@@ -60,15 +60,25 @@ recyclerView.composeVerticalGrid(
         setTitle("区域 A")
     }
 
-    // C. 标准数据列表 (ViewBinding)
+    // C. 标准数据列表 (集成最佳实践)
     items(
         items = userList,
         inflate = ItemUserBinding::inflate,
         key = { it.id },
         span = 1,
-        onClick = { user -> toast("点击了 ${user.name}") }
+        // ✅ 整行点击：使用参数 (零对象分配)
+        onClick = { user -> toast("点击了 ${user.name}") },
+        // ✅ 子控件点击：使用 onCreate (一次性初始化)
+        onCreate = {
+            btnFollow.setOnClickListener {
+                val user = itemData<User>() // 延迟获取数据
+                viewModel.follow(user)
+            }
+        }
     ) { user ->
+        // onBind：只负责更新视图状态
         tvName.text = user.name
+        btnFollow.text = if (user.isFollowed) "取关" else "关注"
     }
 
     // D. 带业务逻辑的多类型渲染
@@ -156,9 +166,9 @@ startActivity(Intent.createChooser(shareIntent, "分享日志"))
 // ShareUtils.shareLogFile(context)
 ```
 
-### 4. 高级性能调优 (2.0 版本新特性)
+### 4. 高级性能调优
 
-Verses 2.0 引入了模型驱动架构与异步预加载技术，即使在极其复杂的布局下也能实现丝滑的 60 FPS。
+Verses 引入了模型驱动架构与异步预加载技术，即使在极其复杂的布局下也能实现丝滑的 60 FPS。
 
 #### A. 模型驱动架构 (VerseModel)
 对于需要解耦 DSL 的复杂业务逻辑，你可以直接实现 `VerseModel`。
@@ -208,7 +218,7 @@ recyclerView.composeColumn {
 ```
 
 #### D. 自动复用池优化
-Verses 2.0 默认强制开启 **全局共享复用池 (Global Shared Pool)**。这意味着嵌套的 RecyclerView（如纵向列表中的横向滑动栏）将自动共用缓存，极大地降低内存占用与 View 创建开销。
+Verses 默认强制开启 **全局共享复用池 (Global Shared Pool)**。这意味着嵌套的 RecyclerView（如纵向列表中的横向滑动栏）将自动共用缓存，极大地降低内存占用与 View 创建开销。
 
 ### 5. 全局生命周期与资源管理
 Verses 会在 View 分离或 Activity 销毁时自动清理。如需手动重置全局注册表（如退出登录时）：

@@ -14,10 +14,26 @@ abstract class VerseModel<T : Any>(
     val id: Any,
     val data: T
 ) {
+    private var _cachedViewType: Int = -1
+
     @get:LayoutRes
     abstract val layoutRes: Int
 
-    abstract fun getViewType(): Int
+    /**
+     * Returns the stable ViewType ID for this model.
+     * Uses instance-level caching to ensure O(1) performance during scrolling.
+     */
+    fun getViewType(): Int {
+        if (_cachedViewType == -1) {
+            _cachedViewType = resolveViewType()
+        }
+        return _cachedViewType
+    }
+
+    /**
+     * Internal strategy to resolve the ViewType ID.
+     */
+    protected abstract fun resolveViewType(): Int
 
     /**
      * Creates a new [SmartViewHolder] for this model.
@@ -72,7 +88,7 @@ abstract class ViewBindingModel<VB : ViewBinding, T : Any>(
     abstract fun inflate(inflater: LayoutInflater, parent: ViewGroup): VB
     abstract fun bind(binding: VB, item: T)
 
-    override fun getViewType(): Int = VerseTypeRegistry.getViewType(this.javaClass)
+    override fun resolveViewType(): Int = VerseTypeRegistry.getViewType(this.javaClass)
 
     override fun createHolder(parent: ViewGroup): SmartViewHolder {
         val inflater = LayoutInflater.from(parent.context)

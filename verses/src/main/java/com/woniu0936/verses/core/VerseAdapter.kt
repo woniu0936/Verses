@@ -34,8 +34,16 @@ internal class VerseAdapter : ListAdapter<VerseModel<*>, SmartViewHolder>(
 
     override fun getItemViewType(position: Int): Int {
         val model = getItem(position)
-        VerseTypeRegistry.registerPrototype(model)
-        return model.getViewType()
+        // Instance-level caching in VerseModel makes this O(1) without registry overhead.
+        val type = model.getViewType()
+        
+        // Asynchronous Prototype Registration: If this is a new type, register it 
+        // to enable background preloading without blocking the UI thread.
+        if (VerseTypeRegistry.getPrototype(type) == null) {
+            VerseTypeRegistry.registerPrototype(model)
+        }
+        
+        return type
     }
 
     override fun getItemId(position: Int): Long = getItem(position).id.hashCode().toLong()
@@ -50,8 +58,9 @@ internal class VerseAdapter : ListAdapter<VerseModel<*>, SmartViewHolder>(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SmartViewHolder {
-        val template = currentList.firstOrNull { it.getViewType() == viewType }
-            ?: VerseTypeRegistry.getPrototype(viewType)
+        // [Fast Path] Use the global registry to find the model prototype.
+        val template = VerseTypeRegistry.getPrototype(viewType)
+            ?: currentList.firstOrNull { it.getViewType() == viewType }
             ?: throw IllegalStateException("Verses Error: No model prototype found for viewType $viewType")
 
         val startTime = System.currentTimeMillis()

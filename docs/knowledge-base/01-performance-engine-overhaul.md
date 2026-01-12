@@ -1,4 +1,4 @@
-# 🌌 Verses 2.0 深度解析：构建工业级自进化渲染引擎
+# 🌌 Verses 深度解析：构建工业级自进化渲染引擎
 
 > **文档定位**：技术分享 / 架构复盘
 > **阅读对象**：Android 研发工程师（初级至资深）
@@ -33,7 +33,7 @@
 
 ### 💡 核心思想：从“黑盒”到“蓝图”
 旧版设计中，Adapter 收到的是数据，它不知道这个数据对应什么 UI。
-Verses 2.0 引入了 **`VerseModel`**，它不仅承载数据，还携带了“生产说明书”。
+Verses 引入了 **`VerseModel`**，它不仅承载数据，还携带了“生产说明书”。
 
 ```kotlin
 // VerseModel：自描述的 UI 单元
@@ -55,7 +55,7 @@ abstract class VerseModel<T : Any>(val id: Any, val data: T) {
 
 ## 🚀 第三部分：抢占式性能引擎 (Proactive Engine)
 
-这是 Verses 2.0 的心脏。我们不再被动等待 RecyclerView 请求 View，而是主动出击，实行 **“双轨抢占式生产”**。
+这是 Verses 的心脏。我们不再被动等待 RecyclerView 请求 View，而是主动出击，实行 **“双轨抢占式生产”**。
 
 ### 轨道一：异步 XML 解析 (Async Inflation Track)
 针对复杂的 XML 布局，我们将其剥离出主线程。
@@ -125,7 +125,7 @@ override fun onBindViewHolder(holder: SmartViewHolder, position: Int) {
 引擎会实时监控生产耗时。如果发现某类 View 创建超过 10ms，会自动将该类型的缓存池容量从默认的 5 提升到 20，用空间换时间。
 
 ### 4. 生命周期分离 (Lifecycle Separation / onCreate)
-为了彻底消灭 `onBindViewHolder` 中的对象分配压力，Verses 2.0 引入了 `onCreate` 回调。
+为了彻底消灭 `onBindViewHolder` 中的对象分配压力，Verses 引入了 `onCreate` 回调。
 
 *   **设计逻辑**：区分“结构初始化”与“数据更新”。
 *   **应用场景**：设置点击监听器、初始化复杂自定义 View 状态、设置一次性样式。

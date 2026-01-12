@@ -36,9 +36,7 @@ internal object VerseTypeRegistry {
      */
     fun registerPrototype(model: VerseModel<*>) {
         val type = model.getViewType()
-        if (!viewTypeToPrototype.containsKey(type)) {
-            viewTypeToPrototype[type] = model
-        }
+        viewTypeToPrototype.putIfAbsent(type, model)
     }
 
     /**

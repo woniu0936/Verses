@@ -148,10 +148,11 @@ public abstract class com/woniu0936/verses/model/VerseModel {
 	public fun getOnClick ()Lkotlin/jvm/functions/Function0;
 	public fun getOnDetach ()Lkotlin/jvm/functions/Function0;
 	public fun getSpanSize (II)I
-	public abstract fun getViewType ()I
+	public final fun getViewType ()I
 	public fun hashCode ()I
 	public fun onCreate (Lcom/woniu0936/verses/model/SmartViewHolder;)V
 	public fun onViewCreated (Landroid/view/View;)V
+	protected abstract fun resolveViewType ()I
 }
 
 public abstract class com/woniu0936/verses/model/ViewBindingModel : com/woniu0936/verses/model/VerseModel {
@@ -159,7 +160,7 @@ public abstract class com/woniu0936/verses/model/ViewBindingModel : com/woniu093
 	public abstract fun bind (Landroidx/viewbinding/ViewBinding;Ljava/lang/Object;)V
 	public fun bind (Lcom/woniu0936/verses/model/SmartViewHolder;)V
 	public fun createHolder (Landroid/view/ViewGroup;)Lcom/woniu0936/verses/model/SmartViewHolder;
-	public fun getViewType ()I
 	public abstract fun inflate (Landroid/view/LayoutInflater;Landroid/view/ViewGroup;)Landroidx/viewbinding/ViewBinding;
+	protected fun resolveViewType ()I
 }
 

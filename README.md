@@ -60,15 +60,25 @@ recyclerView.composeVerticalGrid(
         setTitle("Section A")
     }
 
-    // C. Standard List (ViewBinding)
+    // C. Standard List (ViewBinding) with Best Practices
     items(
         items = userList,
         inflate = ItemUserBinding::inflate,
         key = { it.id },
         span = 1,
-        onClick = { user -> toast("Clicked ${user.name}") }
+        // ✅ Root Click: Use 'onClick' parameter (Zero allocation)
+        onClick = { user -> toast("Clicked ${user.name}") },
+        // ✅ Child Click: Use 'onCreate' for one-time initialization
+        onCreate = {
+            btnFollow.setOnClickListener {
+                val user = itemData<User>() // Lazy access data
+                viewModel.follow(user)
+            }
+        }
     ) { user ->
+        // onBind: Only update visual state
         tvName.text = user.name
+        btnFollow.text = if (user.isFollowed) "Unfollow" else "Follow"
     }
 
     // D. Multi-Type rendering with logic
@@ -156,9 +166,9 @@ startActivity(Intent.createChooser(shareIntent, "Share Log"))
 // ShareUtils.shareLogFile(context)
 ```
 
-### 4. Advanced Performance Tuning (New in 2.0)
+### 4. Advanced Performance Tuning
 
-Verses 2.0 introduces model-driven architecture and asynchronous pre-inflation to achieve 60 FPS even with extremely complex layouts.
+Verses introduces model-driven architecture and asynchronous pre-inflation to achieve 60 FPS even with extremely complex layouts.
 
 #### A. Model-Driven Architecture (VerseModel)
 For complex business logic that needs to be decoupled from the DSL, you can implement `VerseModel` directly.
@@ -208,7 +218,7 @@ recyclerView.composeColumn {
 ```
 
 #### D. Automatic Pool Optimization
-Verses 2.0 automatically uses a **Global Shared RecycledViewPool**. This ensures that nested RecyclerViews (like horizontal lists inside a vertical list) share ViewHolders, drastically reducing memory usage and inflation overhead.
+Verses automatically uses a **Global Shared RecycledViewPool**. This ensures that nested RecyclerViews (like horizontal lists inside a vertical list) share ViewHolders, drastically reducing memory usage and inflation overhead.
 
 ### 5. Global Lifecycle & Resource Management
 Verses automatically cleans up when the View is detached or the Activity is destroyed. To manually wipe all registries (e.g., on Logout):
