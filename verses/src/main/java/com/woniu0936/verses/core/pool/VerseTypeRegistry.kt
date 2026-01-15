@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger
  *
  * It also maintains "prototype" models to enable automatic background pre-inflation.
  */
+@PublishedApi
 internal object VerseTypeRegistry {
     private val layoutIdToViewType = ConcurrentHashMap<Int, Int>()
     private val classToViewType = ConcurrentHashMap<Class<*>, Int>()

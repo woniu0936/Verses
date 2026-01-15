@@ -12,7 +12,7 @@ import com.woniu0936.verses.core.pool.VerseTypeRegistry
  */
 abstract class VerseModel<T : Any>(
     val id: Any,
-    val data: T
+    val data: T,
 ) {
     private var _cachedViewType: Int = -1
 

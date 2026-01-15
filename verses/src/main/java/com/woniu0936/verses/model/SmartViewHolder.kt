@@ -30,6 +30,11 @@ class SmartViewHolder(
     internal var lastBoundModel: VerseModel<*>? = null
 
     /**
+     * Cached reference to a nested RecyclerView to avoid recursive searches.
+     */
+    internal var nestedRv: RecyclerView? = null
+
+    /**
      * Flag indicating if this ViewHolder's view hierarchy has already been 
      * scanned and optimized for nested RecyclerViews.
      */

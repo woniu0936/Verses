@@ -21,13 +21,24 @@ class VerseScope @PublishedApi internal constructor(
 ) {
 
     @PublishedApi
-    internal val newModels = mutableListOf<VerseModel<*>>()
+    internal val newModels = ArrayList<VerseModel<*>>(32)
     
     // Tracks keys within this scope to prevent duplicates.
-    private val seenKeys = HashSet<Any>()
+    private val seenKeys = HashSet<Any>(32)
 
     @PublishedApi internal var currentData: Any? = null
     @PublishedApi internal var currentId: Any? = null
+
+    /**
+     * Resets the scope for reuse, avoiding new object allocations.
+     */
+    @PublishedApi
+    internal fun clear() {
+        newModels.clear()
+        seenKeys.clear()
+        currentData = null
+        currentId = null
+    }
 
     // ============================================================================================
     //  Group 1: Standard List (1:1 Mapping)

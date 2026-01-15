@@ -17,6 +17,7 @@ class VerseStateTest {
     @Before
     fun setup() {
         VerseStateRegistry.clear()
+        VerseStateRegistry.unlock()
         mockRecyclerView = mockk(relaxed = true)
         mockLayoutManager = mockk(relaxed = true)
         mockState = mockk()

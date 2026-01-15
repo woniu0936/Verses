@@ -42,9 +42,13 @@ fun RecyclerView.compose(
 ) {
     val hP = horizontalPadding ?: contentPadding
     val vP = verticalPadding ?: contentPadding
-    val adapter = getOrCreateAdapter(spacing, spacing, hP, vP) {
+    
+    // [Internal Heuristic] Rows are typically nested and require sync diff to prevent flickering.
+    // Columns are typically root and require async diff for performance.
+    val useSync = orientation == RecyclerView.HORIZONTAL
+    
+    val adapter = getOrCreateAdapter(spacing, spacing, hP, vP, useSync) {
         LinearLayoutManager(context, orientation, reverseLayout).apply {
-            // Optimization for nested lists
             initialPrefetchItemCount = 4
         }
     }
@@ -56,7 +60,7 @@ fun RecyclerView.compose(
     
     nestedScrollingEnabled?.let { this.isNestedScrollingEnabled = it }
 
-    submit(adapter, block)
+    submit(this, adapter, block)
 }
 
 /**
@@ -111,6 +115,7 @@ fun RecyclerView.composeVerticalGrid(
         horizontalPadding = horizontalPadding,
         verticalPadding = verticalPadding,
         nestedScrollingEnabled = nestedScrollingEnabled,
+        useSynchronousDiff = false, // Grids are usually root
         block = block
     )
 }
@@ -141,6 +146,7 @@ fun RecyclerView.composeHorizontalGrid(
         horizontalPadding = horizontalPadding,
         verticalPadding = verticalPadding,
         nestedScrollingEnabled = nestedScrollingEnabled,
+        useSynchronousDiff = true, // Horizontal grids often nested
         block = block
     )
 }
@@ -173,6 +179,7 @@ fun RecyclerView.composeVerticalStaggeredGrid(
         verticalPadding = verticalPadding,
         gapStrategy = gapStrategy,
         nestedScrollingEnabled = nestedScrollingEnabled,
+        useSynchronousDiff = false,
         block = block
     )
 }
@@ -205,6 +212,7 @@ fun RecyclerView.composeHorizontalStaggeredGrid(
         verticalPadding = verticalPadding,
         gapStrategy = gapStrategy,
         nestedScrollingEnabled = nestedScrollingEnabled,
+        useSynchronousDiff = true,
         block = block
     )
 }
@@ -223,6 +231,7 @@ internal fun RecyclerView.internalComposeGrid(
     horizontalPadding: Int?,
     verticalPadding: Int?,
     nestedScrollingEnabled: Boolean?,
+    useSynchronousDiff: Boolean,
     block: VerseScope.() -> Unit
 ) {
     val hS = horizontalSpacing ?: spacing
@@ -230,7 +239,7 @@ internal fun RecyclerView.internalComposeGrid(
     val hP = horizontalPadding ?: contentPadding
     val vP = verticalPadding ?: contentPadding
 
-    val adapter = getOrCreateAdapter(hS, vS, hP, vP) {
+    val adapter = getOrCreateAdapter(hS, vS, hP, vP, useSynchronousDiff) {
         GridLayoutManager(context, spanCount, orientation, reverseLayout).apply {
             spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
                 override fun getSpanSize(position: Int): Int {
@@ -249,7 +258,7 @@ internal fun RecyclerView.internalComposeGrid(
     
     nestedScrollingEnabled?.let { this.isNestedScrollingEnabled = it }
 
-    submit(adapter, block)
+    submit(this, adapter, block)
 }
 
 @PublishedApi
@@ -265,6 +274,7 @@ internal fun RecyclerView.internalComposeStaggered(
     verticalPadding: Int?,
     gapStrategy: Int,
     nestedScrollingEnabled: Boolean?,
+    useSynchronousDiff: Boolean,
     block: VerseScope.() -> Unit
 ) {
     val hS = horizontalSpacing ?: spacing
@@ -272,7 +282,7 @@ internal fun RecyclerView.internalComposeStaggered(
     val hP = horizontalPadding ?: contentPadding
     val vP = verticalPadding ?: contentPadding
 
-    val adapter = getOrCreateAdapter(hS, vS, hP, vP) {
+    val adapter = getOrCreateAdapter(hS, vS, hP, vP, useSynchronousDiff) {
         StaggeredGridLayoutManager(spanCount, orientation).apply {
             this.gapStrategy = gapStrategy
         }
@@ -287,7 +297,7 @@ internal fun RecyclerView.internalComposeStaggered(
     
     nestedScrollingEnabled?.let { this.isNestedScrollingEnabled = it }
 
-    submit(adapter, block)
+    submit(this, adapter, block)
 }
 
 /**
@@ -299,6 +309,7 @@ internal fun RecyclerView.getOrCreateAdapter(
     vS: Int,
     hP: Int,
     vP: Int,
+    useSynchronousDiff: Boolean,
     createLayoutManager: () -> RecyclerView.LayoutManager
 ): VerseAdapter {
     val currentAdapter = this.adapter as? VerseAdapter
@@ -311,9 +322,12 @@ internal fun RecyclerView.getOrCreateAdapter(
         }
     }
 
-    val newAdapter = VerseAdapter()
+    val newAdapter = VerseAdapter(useSynchronousDiff)
     this.layoutManager = newLM
     this.adapter = newAdapter
+
+    // Unlock registry for new session
+    com.woniu0936.verses.core.pool.VerseStateRegistry.unlock()
 
     // Capture context for background preloading
     com.woniu0936.verses.core.VerseAdapterRegistry.latestContext = context
@@ -327,16 +341,29 @@ internal fun RecyclerView.getOrCreateAdapter(
 
     updateDecoration(hS, vS, hP, vP)
 
-    (itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
+    // [Flicker-Free Architecture] Disable change animations to prevent white flashes 
+    // during item updates, while still allowing Move/Add/Remove animations.
+    if (this.itemAnimator == null) {
+        this.itemAnimator = androidx.recyclerview.widget.DefaultItemAnimator()
+    }
+    (this.itemAnimator as? androidx.recyclerview.widget.SimpleItemAnimator)?.supportsChangeAnimations = false
 
-    val cleanup = {
+    val cleanup = { isFinishing: Boolean ->
+        com.woniu0936.verses.core.VersesLogger.d("Adapter: Cleanup called (isFinishing=$isFinishing)")
         this.adapter = null
         this.setRecycledViewPool(null)
+        // [State Management] Clear saved states only when the activity is actually finishing.
+        // This preserves state during rotation/backgrounding but clears it on true exit.
+        if (isFinishing) {
+            com.woniu0936.verses.core.pool.VerseStateRegistry.clear()
+        }
     }
 
-    val observer = LifecycleEventObserver { _, event ->
+    val observer = LifecycleEventObserver { owner, event ->
         if (event == Lifecycle.Event.ON_DESTROY) {
-            cleanup()
+            val activity = (owner as? android.app.Activity) ?: (context as? android.app.Activity)
+            val isFinishing = activity?.isFinishing ?: true
+            cleanup(isFinishing)
         }
     }
 
@@ -346,8 +373,9 @@ internal fun RecyclerView.getOrCreateAdapter(
     this.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
         override fun onViewAttachedToWindow(v: View) {}
         override fun onViewDetachedFromWindow(v: View) {
+            // [Safety] Clean up the view-local listener, but let LifecycleObserver 
+            // handle the global destruction to avoid skipping cleanup for off-screen views.
             this@getOrCreateAdapter.removeOnAttachStateChangeListener(this)
-            lifecycle?.removeObserver(observer)
         }
     })
 
@@ -359,22 +387,65 @@ internal fun RecyclerView.getOrCreateAdapter(
  */
 @PublishedApi
 internal fun RecyclerView.updateDecoration(hS: Int, vS: Int, hP: Int, vP: Int) {
-    for (i in itemDecorationCount - 1 downTo 0) {
-        if (getItemDecorationAt(i) is VerseSpacingDecoration) {
-            removeItemDecorationAt(i)
+    var found = false
+    for (i in 0 until itemDecorationCount) {
+        val deco = getItemDecorationAt(i)
+        if (deco is VerseSpacingDecoration) {
+            // [Performance Guard] Only update if values have changed to avoid unnecessary requestLayout()
+            if (deco.horizontalSpacing != hS || deco.verticalSpacing != vS || 
+                deco.horizontalPadding != hP || deco.verticalPadding != vP) {
+                removeItemDecorationAt(i)
+                addItemDecoration(VerseSpacingDecoration(hS, vS, hP, vP))
+            }
+            found = true
+            break
         }
     }
-    if (hS > 0 || vS > 0 || hP > 0 || vP > 0) {
+    
+    if (!found && (hS > 0 || vS > 0 || hP > 0 || vP > 0)) {
         addItemDecoration(VerseSpacingDecoration(hS, vS, hP, vP))
     }
 }
 
 /**
+ * A simple pool for VerseScope objects to minimize allocations in nested lists.
+ */
+@PublishedApi
+internal val scopePool = java.util.ArrayDeque<VerseScope>(8)
+
+/**
  * Orchestrates the DSL execution and item submission.
  */
 @PublishedApi
-internal inline fun submit(adapter: VerseAdapter, block: VerseScope.() -> Unit) {
-    val scope = VerseScope(adapter)
-    scope.block()
-    adapter.submitList(scope.newModels)
+internal inline fun submit(recyclerView: RecyclerView, adapter: VerseAdapter, block: VerseScope.() -> Unit) {
+    // 1. Get a scope from pool or create new
+    val scope = synchronized(scopePool) {
+        if (scopePool.isNotEmpty()) scopePool.pop() else VerseScope(adapter)
+    }
+    
+    try {
+        scope.clear()
+        // 2. Build the model tree
+        scope.block()
+        
+        // 3. Early preloading (Safe to do before submission)
+        if (scope.newModels.isNotEmpty()) {
+            com.woniu0936.verses.core.perf.VersePreloader.preload(adapter.latestContext ?: recyclerView.context, scope.newModels)
+        }
+        
+        // 4. Synchronous submission to guarantee correct measurement and layout
+        val models = ArrayList(scope.newModels)
+        if (recyclerView.isComputingLayout) {
+            recyclerView.post {
+                adapter.submitList(models)
+            }
+        } else {
+            adapter.submitList(models)
+        }
+    } finally {
+        // 5. Return to pool for reuse
+        synchronized(scopePool) {
+            if (scopePool.size < 8) scopePool.push(scope)
+        }
+    }
 }

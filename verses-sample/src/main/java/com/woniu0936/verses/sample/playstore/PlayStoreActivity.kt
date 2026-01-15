@@ -1,6 +1,8 @@
 package com.woniu0936.verses.sample.playstore
 
 import android.os.Bundle
+import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -11,9 +13,16 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import coil.load
-import com.woniu0936.verses.ext.composeVerticalGrid
 import com.woniu0936.verses.ext.composeRow
-import com.woniu0936.verses.sample.databinding.*
+import com.woniu0936.verses.ext.composeVerticalGrid
+import com.woniu0936.verses.sample.databinding.ActivityPlayStoreBinding
+import com.woniu0936.verses.sample.databinding.ItemAppBinding
+import com.woniu0936.verses.sample.databinding.ItemAppGridBinding
+import com.woniu0936.verses.sample.databinding.ItemBannerBinding
+import com.woniu0936.verses.sample.databinding.ItemCategoryBinding
+import com.woniu0936.verses.sample.databinding.ItemHorizontalListBinding
+import com.woniu0936.verses.sample.databinding.ItemSearchBarBinding
+import com.woniu0936.verses.sample.databinding.ItemSectionHeaderBinding
 import com.woniu0936.verses.sample.playstore.model.HomeState
 import com.woniu0936.verses.sample.playstore.viewmodel.PlayStoreViewModel
 import kotlinx.coroutines.launch
@@ -52,9 +61,9 @@ class PlayStoreActivity : AppCompatActivity() {
     }
 
     private fun render(state: HomeState) {
-        binding.progressBar.visibility = if (state.isLoading) android.view.View.VISIBLE else android.view.View.GONE
-        binding.recyclerView.visibility = if (state.isLoading) android.view.View.GONE else android.view.View.VISIBLE
-        
+        binding.progressBar.visibility = if (state.isLoading) View.VISIBLE else View.GONE
+        binding.recyclerView.visibility = if (state.isLoading) View.GONE else View.VISIBLE
+
         if (state.isLoading) return
         binding.recyclerView.composeVerticalGrid(
             spanCount = 3,
@@ -79,7 +88,11 @@ class PlayStoreActivity : AppCompatActivity() {
                     ) { banner ->
                         tvTitle.text = banner.title
                         tvSubtitle.text = banner.subtitle
-                        ivBanner.load(banner.imageUrl)
+                        ivBanner.load(banner.imageUrl) {
+                            placeholder(android.R.color.darker_gray)
+                            error(android.R.color.darker_gray)
+                            crossfade(true)
+                        }
                     }
                 }
             }
@@ -116,7 +129,8 @@ class PlayStoreActivity : AppCompatActivity() {
                     ratingBar.rating = app.rating
                     ivIcon.load(app.iconUrl) {
                         crossfade(true)
-                        placeholder(android.R.drawable.ic_menu_report_image)
+                        placeholder(android.R.color.darker_gray)
+                        error(android.R.color.darker_gray)
                     }
                 }
             }
@@ -141,7 +155,8 @@ class PlayStoreActivity : AppCompatActivity() {
                             ratingBar.rating = app.rating
                             ivIcon.load(app.iconUrl) {
                                 crossfade(true)
-                                placeholder(android.R.drawable.ic_menu_report_image)
+                                placeholder(android.R.color.darker_gray)
+                                error(android.R.color.darker_gray)
                             }
                         }
                     }

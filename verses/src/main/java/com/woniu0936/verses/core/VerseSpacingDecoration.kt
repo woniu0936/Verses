@@ -11,10 +11,10 @@ import androidx.recyclerview.widget.RecyclerView
  */
 @PublishedApi
 internal class VerseSpacingDecoration(
-    private val hSpacing: Int,
-    private val vSpacing: Int,
-    private val hPadding: Int,
-    private val vPadding: Int
+    internal val horizontalSpacing: Int,
+    internal val verticalSpacing: Int,
+    internal val horizontalPadding: Int,
+    internal val verticalPadding: Int
 ) : RecyclerView.ItemDecoration() {
 
     override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
@@ -29,8 +29,8 @@ internal class VerseSpacingDecoration(
             val spanIndex = lp.spanIndex
             
             // 1. Horizontal Logic (Grid)
-            outRect.left = hPadding + spanIndex * hSpacing / spanCount
-            outRect.right = hSpacing - (spanIndex + 1) * hSpacing / spanCount + hPadding
+            outRect.left = horizontalPadding + spanIndex * horizontalSpacing / spanCount
+            outRect.right = horizontalSpacing - (spanIndex + 1) * horizontalSpacing / spanCount + horizontalPadding
             
             // 2. Vertical Logic (Grid)
             // Use spanGroupIndex to accurately detect rows even with variable span sizes
@@ -39,20 +39,20 @@ internal class VerseSpacingDecoration(
             
             // Note: detecting the last row accurately in variable-span grids is computationally 
             // expensive. We maintain symmetrical internal gaps for now.
-            outRect.top = if (isFirstRow) vPadding else vSpacing / 2
-            outRect.bottom = vSpacing / 2
+            outRect.top = if (isFirstRow) verticalPadding else verticalSpacing / 2
+            outRect.bottom = verticalSpacing / 2
         } else if (lm is LinearLayoutManager) {
             val isVertical = lm.orientation == RecyclerView.VERTICAL
             if (isVertical) {
-                outRect.left = hPadding
-                outRect.right = hPadding
-                outRect.top = if (position == 0) vPadding else vSpacing / 2
-                outRect.bottom = if (position == itemCount - 1) vPadding else vSpacing / 2
+                outRect.left = horizontalPadding
+                outRect.right = horizontalPadding
+                outRect.top = if (position == 0) verticalPadding else verticalSpacing / 2
+                outRect.bottom = if (position == itemCount - 1) verticalPadding else verticalSpacing / 2
             } else {
-                outRect.top = vPadding
-                outRect.bottom = vPadding
-                outRect.left = if (position == 0) hPadding else hSpacing / 2
-                outRect.right = if (position == itemCount - 1) hPadding else hSpacing / 2
+                outRect.top = verticalPadding
+                outRect.bottom = verticalPadding
+                outRect.left = if (position == 0) horizontalPadding else horizontalSpacing / 2
+                outRect.right = if (position == itemCount - 1) horizontalPadding else horizontalSpacing / 2
             }
         }
     }

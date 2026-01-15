@@ -104,10 +104,10 @@ internal object VersesLogger {
         if (!config.isDebug) return
 
         // String concat here is unavoidable for Logcat, but it's lightweight enough usually.
-        val icon = if (durationMs > 10) "⚠️ [PERF_SLOW]" else "⚡ [PERF]"
+        val icon = if (durationMs > 16) "⚠️ [PERF_SLOW]" else "⚡ [PERF]"
         val msg = "$icon $action took ${durationMs}ms | $details"
 
-        if (durationMs > 10) Log.w(config.logTag, msg) else Log.d(config.logTag, msg)
+        if (durationMs > 16) Log.w(config.logTag, msg) else Log.d(config.logTag, msg)
         enqueueLog("PERF ", msg)
     }
 
