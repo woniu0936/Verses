@@ -129,13 +129,22 @@ internal class VerseAdapter(
             null
         } ?: return
 
-        VersesLogger.d("Adapter: Binding pos $position, ID ${model.id}")
+        val lastModel = holder.lastBoundModel
+        val isLockHit = lastModel != null && lastModel.id == model.id && lastModel.data == model.data
+        
+        // [Surgery Log] Scan full physical state
+        val v = holder.itemView
+        VersesLogger.d("🔍 [BIND] Pos: $position | ID: ${model.id} | " +
+                "LockHit: $isLockHit | " +
+                "Alpha: ${v.alpha} | " +
+                "Vis: ${v.visibility} | " +
+                "Scale: ${v.scaleX} | " +
+                "Trans: ${v.translationY} | " +
+                "Attached: ${v.isAttachedToWindow} | " +
+                "Holder: ${Integer.toHexString(holder.hashCode())}")
 
-        // [Advanced Bind Lock] Skip redundant DSL execution if model content is identical.
-        // We compare against the last content bound to THIS specific view instance to 
-        // prevent flickering during rapid recycling.
-        if (holder.lastBoundModel == model) {
-            VersesLogger.d("Bind Lock: Skipping redundant binding for ID ${model.id}")
+        if (isLockHit) {
+            VersesLogger.d("  -> Skipping bind (Lock)")
             return
         }
 
@@ -234,7 +243,12 @@ internal class VerseAdapter(
         super.onViewRecycled(holder)
 
         val lastId = holder.lastBoundModel?.id
-        VersesLogger.d("Adapter: Recycled holder for ID $lastId")
+        val v = holder.itemView
+        VersesLogger.d("♻️ [RECYCLE] ID: $lastId | " +
+                "Alpha: ${v.alpha} | " +
+                "Vis: ${v.visibility} | " +
+                "Scale: ${v.scaleX} | " +
+                "Holder: ${Integer.toHexString(holder.hashCode())}")
 
         // [State Saving] Automatically save nested scroll position before recycling.
         val nestedRv = holder.nestedRv

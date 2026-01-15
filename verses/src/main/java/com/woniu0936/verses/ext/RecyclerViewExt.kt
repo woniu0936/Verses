@@ -435,7 +435,12 @@ internal inline fun submit(recyclerView: RecyclerView, adapter: VerseAdapter, bl
         
         // 4. Synchronous submission to guarantee correct measurement and layout
         val models = ArrayList(scope.newModels)
-        if (recyclerView.isComputingLayout) {
+        val isComputing = recyclerView.isComputingLayout
+        
+        com.woniu0936.verses.core.VersesLogger.d("⚡ [SUBMIT] RV: ${Integer.toHexString(recyclerView.hashCode())} | " +
+                "Computing: $isComputing | Items: ${models.size}")
+
+        if (isComputing) {
             recyclerView.post {
                 adapter.submitList(models)
             }

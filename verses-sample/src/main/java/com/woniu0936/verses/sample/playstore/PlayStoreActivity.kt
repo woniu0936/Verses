@@ -127,11 +127,21 @@ class PlayStoreActivity : AppCompatActivity() {
                     tvAppName.text = app.name
                     tvRating.text = app.rating.toString()
                     ratingBar.rating = app.rating
-                    ivIcon.load(app.iconUrl) {
-                        crossfade(true)
-                        placeholder(android.R.color.darker_gray)
-                        error(android.R.color.darker_gray)
-                    }
+                                        ivIcon.load(app.iconUrl) {
+                                            crossfade(true)
+                                            placeholder(android.R.color.darker_gray)
+                                            error(android.R.color.darker_gray)
+                                            listener(
+                                                onStart = {
+                                                    com.woniu0936.verses.core.VersesLogger.d("📸 [COIL_START] App: ${app.name} | " +
+                                                            "URL: ${app.iconUrl} | " +
+                                                            "Alpha: ${ivIcon.alpha} | " +
+                                                            "Vis: ${ivIcon.visibility}")
+                                                },
+                                                onSuccess = { _, _ -> com.woniu0936.verses.core.VersesLogger.d("✅ [COIL_SUCCESS] App: ${app.name}") },
+                                                onError = { _, result -> com.woniu0936.verses.core.VersesLogger.e("❌ [COIL_ERROR] App: ${app.name}", result.throwable) }
+                                            )
+                                        }
                 }
             }
 
@@ -153,11 +163,21 @@ class PlayStoreActivity : AppCompatActivity() {
                             tvAppName.text = app.name
                             tvRating.text = app.rating.toString()
                             ratingBar.rating = app.rating
-                            ivIcon.load(app.iconUrl) {
-                                crossfade(true)
-                                placeholder(android.R.color.darker_gray)
-                                error(android.R.color.darker_gray)
-                            }
+                                                        ivIcon.load(app.iconUrl) {
+                                                            crossfade(true)
+                                                            placeholder(android.R.color.darker_gray)
+                                                            error(android.R.color.darker_gray)
+                                                            listener(
+                                                                onStart = {
+                                                                    com.woniu0936.verses.core.VersesLogger.d("📸 [COIL_START_DYNAMIC] App: ${app.name} | " +
+                                                                            "URL: ${app.iconUrl} | " +
+                                                                            "Alpha: ${ivIcon.alpha} | " +
+                                                                            "Vis: ${ivIcon.visibility}")
+                                                                },
+                                                                onSuccess = { _, _ -> com.woniu0936.verses.core.VersesLogger.d("✅ [COIL_SUCCESS_DYNAMIC] App: ${app.name}") },
+                                                                onError = { _, result -> com.woniu0936.verses.core.VersesLogger.e("❌ [COIL_ERROR_DYNAMIC] App: ${app.name}", result.throwable) }
+                                                            )
+                                                        }
                         }
                     }
                 }

@@ -363,40 +363,39 @@ class VerseScope @PublishedApi internal constructor(
         span: Int = 1,
         fullSpan: Boolean = false,
         noinline onClick: (() -> Unit)? = null,
-        noinline onAttach: (() -> Unit)? = null,
-        noinline onDetach: (() -> Unit)? = null,
-        noinline onCreate: (V.(SmartViewHolder) -> Unit)? = null,
-        crossinline onBind: V.() -> Unit
-    ) {
-        val layoutKey = contentType ?: V::class.java
-        val data = currentData ?: Unit
-        val finalId = currentId ?: throw IllegalStateException("Verses Error: 'render' called outside of 'items' scope or key is missing.")
-
-        internalRender(
-            factory = { p -> createSafeViewHolder(p, create) },
-            bind = { 
-                @Suppress("UNCHECKED_CAST")
-                (view as V).onBind()
-            },
-            onCreate = onCreate?.let { block ->
-                { 
-                    @Suppress("UNCHECKED_CAST")
-                    (view as V).block(this)
-                }
-            },
-            layoutRes = layoutRes,
-            layoutKey = layoutKey,
-            data = data,
-            id = currentId ?: System.identityHashCode(data),
-            span = span,
-            fullSpan = fullSpan,
-            onClick = onClick,
-            onAttach = onAttach,
-            onDetach = onDetach
-        )
-    }
-
-    @PublishedApi
+                        noinline onAttach: (() -> Unit)? = null,
+                        noinline onDetach: (() -> Unit)? = null,
+                        noinline onCreate: (V.(SmartViewHolder) -> Unit)? = null,
+                        crossinline onBind: V.() -> Unit
+                    ) {
+                        val layoutKey = contentType ?: V::class.java
+                        val data = currentData ?: Unit
+                        // In advanced 'items' block, currentId is guaranteed to be set via 'key' param
+                        val finalId = currentId ?: throw IllegalStateException("Verses Error: 'render' called outside of 'items' scope or key is missing.")
+                        
+                        internalRender(
+                            factory = { p -> createSafeViewHolder(p, create) },
+                            bind = { 
+                                @Suppress("UNCHECKED_CAST")
+                                (view as V).onBind()
+                            },
+                            onCreate = onCreate?.let { block ->
+                                { 
+                                    @Suppress("UNCHECKED_CAST")
+                                    (view as V).block(this)
+                                }
+                            },
+                            layoutRes = layoutRes,
+                            layoutKey = layoutKey,
+                            data = data,
+                            id = finalId,
+                            span = span,
+                            fullSpan = fullSpan,
+                            onClick = onClick,
+                            onAttach = onAttach,
+                            onDetach = onDetach
+                        )
+                    }    @PublishedApi
     internal fun <V : View> createSafeViewHolder(parent: ViewGroup, create: ViewCreator<V>): SmartViewHolder {
         val view = create(parent.context)
         if (view.layoutParams == null) {

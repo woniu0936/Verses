@@ -22,13 +22,14 @@ import java.util.concurrent.TimeUnit
  * 3. Buffered IO to reduce syscall overhead.
  * 4. Error resilience.
  */
-internal object VersesLogger {
+public object VersesLogger {
 
     // 1. Config: Max 200 pending logs. If the queue is full, old logs are dropped.
     // This prevents the app from crashing due to OOM if logging goes crazy.
     private const val MAX_QUEUE_SIZE = 200
 
-    private val config get() = Verses.getConfig()
+    @PublishedApi
+    internal val config get() = Verses.getConfig()
 
     // 2. Custom Executor with Bounded Queue and Discard Policy
     private val logExecutor = ThreadPoolExecutor(
@@ -113,7 +114,8 @@ internal object VersesLogger {
 
     // --- Internal Logic ---
 
-    private fun enqueueLog(level: String, message: String) {
+    @PublishedApi
+    internal fun enqueueLog(level: String, message: String) {
         if (!config.isLogToFile) return
 
         // Capture dependencies (path, time) on the calling thread to ensure accuracy
